@@ -444,8 +444,8 @@
 | link:camel-jcr/src/main/docs/jcr-component.adoc[JCR] (camel-jcr) +
 `jcr:host/base` | 1.3 | The jcr component allows you to add/read nodes to/from a JCR compliant content repository.
 
-| link:camel-jdbc/src/main/docs/jdbc-component.adoc[JDBC] (camel-jdbc) +
-`jdbc:dataSourceName` | 1.2 | The jdbc component enables you to access databases through JDBC, where SQL queries are sent in the message body.
+| link:camel-jdbc/src/main/docs/jdbc-component.ja.adoc[JDBC] (camel-jdbc) +
+`jdbc:dataSourceName` | 1.2 | jdbc コンポーネントは JDBC 経由でデータベースにアクセスでき、SQL のクエリはメッセージボディで送信される。
 
 | link:camel-jetty/src/main/docs/jetty-component.adoc[Jetty] (camel-jetty) +
 `jetty:httpUri` | 1.2 | The jetty component provides HTTP-based endpoints for consuming and producing HTTP requests.
