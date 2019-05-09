@@ -933,7 +933,7 @@
 
 | link:camel-ical/src/main/docs/ical-dataformat.adoc[iCal] (camel-ical) | 2.12 | The iCal dataformat is used for working with iCalendar messages.
 
-| link:camel-jacksonxml/src/main/docs/jacksonxml-dataformat.adoc[JacksonXML] (camel-jacksonxml) | 2.16 | JacksonXML data format is used for unmarshal a XML payload to POJO or to marshal POJO back to XML payload.
+| link:camel-jacksonxml/src/main/docs/jacksonxml-dataformat.ja.adoc[JacksonXML] (camel-jacksonxml) | 2.16 | JacksonXML データフォーマットは XML ペイロードをアンマーシャリングしたり、POJO を XML ペイロードにマーシャリングしたりするのに使われる。
 
 | link:../core/camel-core/src/main/docs/serialization-dataformat.adoc[Java Object Serialization] (camel-core) | 2.12 | Serialization is a data format which uses the standard Java Serialization mechanism to unmarshal a binary payload into Java objects or to marshal Java objects into a binary blob.
 
@@ -945,7 +945,7 @@
 
 | link:camel-gson/src/main/docs/json-gson-dataformat.adoc[JSon GSon] (camel-gson) | 2.10 | JSon data format is used for unmarshal a JSon payload to POJO or to marshal POJO back to JSon payload.
 
-| link:camel-jackson/src/main/docs/json-jackson-dataformat.adoc[JSon Jackson] (camel-jackson) | 2.0 | JSon data format is used for unmarshal a JSon payload to POJO or to marshal POJO back to JSon payload.
+| link:camel-jackson/src/main/docs/json-jackson-dataformat.ja.adoc[JSon Jackson] (camel-jackson) | 2.0 | JSon データフォーマットは JSon ペイロードをアンマーシャリングしたり、POJO を JSon ペイロードにマーシャリングしたりするのに使われる。
 
 | link:camel-johnzon/src/main/docs/json-johnzon-dataformat.adoc[JSon Johnzon] (camel-johnzon) | 2.18 | JSon data format is used for unmarshal a JSon payload to POJO or to marshal POJO back to JSon payload.
 
