@@ -60,22 +60,21 @@ public class EventAdminEndpoint extends DefaultEndpoint implements MultipleConsu
         this.send = send;
     }
 
+    @Override
     public EventAdminComponent getComponent() {
         return (EventAdminComponent) super.getComponent();
     }
 
+    @Override
     public Producer createProducer() throws Exception {
         return new EventAdminProducer(this);
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         EventAdminConsumer answer = new EventAdminConsumer(this, processor);
         configureConsumer(answer);
         return answer;
-    }
-
-    public boolean isSingleton() {
-        return true;
     }
 
     @Override

@@ -20,11 +20,11 @@ import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.camel.BindToRegistry;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.impl.JndiRegistry;
-import org.apache.camel.impl.MemoryStateRepository;
+import org.apache.camel.impl.engine.MemoryStateRepository;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.After;
 import org.junit.Test;
@@ -32,9 +32,10 @@ import org.junit.Test;
 public class KafkaConsumerRebalancePartitionRevokeTest extends BaseEmbeddedKafkaTest {
     private static final String TOPIC = "offset-rebalance";
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint result;
 
+    @BindToRegistry("offset")
     private OffsetStateRepository stateRepository;
     private CountDownLatch messagesLatch;
     
@@ -68,13 +69,6 @@ public class KafkaConsumerRebalancePartitionRevokeTest extends BaseEmbeddedKafka
     }
 
     @Override
-    protected JndiRegistry createRegistry() throws Exception {
-        JndiRegistry registry = super.createRegistry();
-        registry.bind("offset", stateRepository);
-        return registry;
-    }
-
-    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             @Override
@@ -99,11 +93,11 @@ public class KafkaConsumerRebalancePartitionRevokeTest extends BaseEmbeddedKafka
         }
 
         @Override
-        public void start() throws Exception {
+        public void start() {
         }
 
         @Override
-        public void stop() throws Exception {
+        public void stop() {
         }
 
         @Override

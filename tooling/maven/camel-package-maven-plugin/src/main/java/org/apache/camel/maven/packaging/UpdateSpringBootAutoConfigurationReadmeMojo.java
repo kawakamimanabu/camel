@@ -23,6 +23,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -149,11 +150,11 @@ public class UpdateSpringBootAutoConfigurationReadmeMojo extends AbstractMojo {
 
                     // find out if the JAR has a Camel component, dataformat, or language
                     boolean hasComponentDataFormatOrLanguage = files.stream().anyMatch(
-                        (f) -> f.getName().endsWith("-component.adoc") || f.getName().endsWith("-dataformat.adoc") || f.getName().endsWith("-language.adoc"));
+                        f -> f.getName().endsWith("-component.adoc") || f.getName().endsWith("-dataformat.adoc") || f.getName().endsWith("-language.adoc"));
 
                     // if so then skip the root adoc file as its just a introduction to the others
                     if (hasComponentDataFormatOrLanguage) {
-                        files = Arrays.stream(docFiles).filter((f) -> !f.getName().equals(componentName + ".adoc")).collect(Collectors.toList());
+                        files = Arrays.stream(docFiles).filter(f -> !f.getName().equals(componentName + ".adoc")).collect(Collectors.toList());
                     }
 
                     if (files.size() == 1) {
@@ -274,8 +275,6 @@ public class UpdateSpringBootAutoConfigurationReadmeMojo extends AbstractMojo {
             return "lpr";
         } else if ("saxon".equals(componentName)) {
             return "xquery";
-        } else if ("script".equals(componentName)) {
-            return "javaScript";
         } else if ("stringtemplate".equals(componentName)) {
             return "string-template";
         } else if ("tagsoup".equals(componentName)) {
@@ -300,12 +299,26 @@ public class UpdateSpringBootAutoConfigurationReadmeMojo extends AbstractMojo {
 
         JsonArray arr = obj.getCollection("properties");
         if (arr != null && !arr.isEmpty()) {
-            arr.forEach((e) -> {
+            arr.forEach(e -> {
                 JsonObject row = (JsonObject) e;
                 String name = row.getString("name");
                 String javaType = row.getString("type");
                 String desc = row.getStringOrDefault("description", "");
                 String defaultValue = row.getStringOrDefault("defaultValue", "");
+
+                // is the option deprecated then include that as well in the description
+                String deprecated = row.getStringOrDefault("deprecated", "");
+                String deprecationNote = row.getStringOrDefault("deprecationNote", "");
+                if ("true".equals(deprecated)) {
+                    desc = "*Deprecated* " + desc;
+                    if (!StringHelper.isEmpty(deprecationNote)) {
+                        if (!desc.endsWith(".")) {
+                            desc = desc + ". Deprecation note: " + deprecationNote;
+                        } else {
+                            desc = desc + " Deprecation note: " + deprecationNote;
+                        }
+                    }
+                }
 
                 // skip this special option and also if not matching the filter
                 boolean skip = name.endsWith("customizer.enabled") || include != null && !name.contains("." + include + ".");
@@ -369,7 +382,7 @@ public class UpdateSpringBootAutoConfigurationReadmeMojo extends AbstractMojo {
 
         try {
             String template = loadText(UpdateSpringBootAutoConfigurationReadmeMojo.class.getClassLoader().getResourceAsStream("spring-boot-auto-configure-options.mvel"));
-            String out = (String) TemplateRuntime.eval(template, model);
+            String out = (String) TemplateRuntime.eval(template, model, Collections.singletonMap("util", MvelHelper.INSTANCE));
             return out;
         } catch (Exception e) {
             throw new MojoExecutionException("Error processing mvel template. Reason: " + e, e);

@@ -252,18 +252,13 @@ public class SjmsEndpoint extends DefaultEndpoint implements AsyncEndpoint, Mult
         return true;
     }
 
-    @Override
-    public boolean isSingleton() {
-        return true;
-    }
-
     protected ConnectionResource createConnectionResource(Object source) {
         if (getConnectionFactory() == null) {
             throw new IllegalArgumentException(String.format("ConnectionResource or ConnectionFactory must be configured for %s", this));
         }
 
         try {
-            logger.debug("Creating ConnectionResource with connectionCount: {} using ConnectionFactory", getConnectionCount(), getConnectionFactory());
+            logger.debug("Creating ConnectionResource with connectionCount: {} using ConnectionFactory: {}", getConnectionCount(), getConnectionFactory());
             // We always use a connection pool, even for a pool of 1
             ConnectionFactoryResource connections = new ConnectionFactoryResource(getConnectionCount(), getConnectionFactory(),
                 getComponent().getConnectionUsername(), getComponent().getConnectionPassword(), getComponent().getConnectionClientId(),
@@ -321,6 +316,7 @@ public class SjmsEndpoint extends DefaultEndpoint implements AsyncEndpoint, Mult
         return destinationName;
     }
 
+    @Override
     public HeaderFilterStrategy getHeaderFilterStrategy() {
         if (headerFilterStrategy == null) {
             headerFilterStrategy = new SjmsHeaderFilterStrategy(isIncludeAllJMSXProperties());
@@ -331,6 +327,7 @@ public class SjmsEndpoint extends DefaultEndpoint implements AsyncEndpoint, Mult
     /**
      * To use a custom HeaderFilterStrategy to filter header to and from Camel message.
      */
+    @Override
     public void setHeaderFilterStrategy(HeaderFilterStrategy strategy) {
         this.headerFilterStrategy = strategy;
     }
@@ -362,11 +359,15 @@ public class SjmsEndpoint extends DefaultEndpoint implements AsyncEndpoint, Mult
     /**
      * Initializes the connectionResource for the endpoint, which takes precedence over the component's connectionResource, if any
      */
+    public void setConnectionResource(ConnectionResource connectionResource) {
+        this.connectionResource = connectionResource;
+    }
+
     public void setConnectionResource(String connectionResource) {
         this.connectionResource = EndpointHelper.resolveReferenceParameter(getCamelContext(), connectionResource, ConnectionResource.class);
     }
 
-
+    @Override
     public boolean isSynchronous() {
         return synchronous;
     }
@@ -374,6 +375,7 @@ public class SjmsEndpoint extends DefaultEndpoint implements AsyncEndpoint, Mult
     /**
      * Sets whether synchronous processing should be strictly used or Camel is allowed to use asynchronous processing (if supported).
      */
+    @Override
     public void setSynchronous(boolean synchronous) {
         this.synchronous = synchronous;
     }
@@ -678,6 +680,10 @@ public class SjmsEndpoint extends DefaultEndpoint implements AsyncEndpoint, Mult
     /**
      * Initializes the connectionFactory for the endpoint, which takes precedence over the component's connectionFactory, if any
      */
+    public void setConnectionFactory(ConnectionFactory connectionFactory) {
+        this.connectionFactory = connectionFactory;
+    }
+
     public void setConnectionFactory(String connectionFactory) {
         this.connectionFactory = EndpointHelper.resolveReferenceParameter(getCamelContext(), connectionFactory, ConnectionFactory.class);
 

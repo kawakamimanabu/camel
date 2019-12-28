@@ -20,8 +20,10 @@ import org.apache.camel.AsyncCallback;
 import org.apache.camel.CamelContext;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.impl.engine.DefaultUnitOfWork;
 import org.apache.camel.spi.UnitOfWork;
 import org.apache.camel.spi.UnitOfWorkFactory;
 import org.junit.Test;
@@ -31,7 +33,7 @@ public class CustomUnitOfWorkFactoryTest extends ContextTestSupport {
     @Override
     protected CamelContext createCamelContext() throws Exception {
         CamelContext context = super.createCamelContext();
-        context.setUnitOfWorkFactory(new MyUnitOfWorkFactory());
+        context.adapt(ExtendedCamelContext.class).setUnitOfWorkFactory(new MyUnitOfWorkFactory());
         return context;
     }
 
@@ -50,9 +52,7 @@ public class CustomUnitOfWorkFactoryTest extends ContextTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:start")
-                    .to("log:foo")
-                    .to("mock:result");
+                from("direct:start").to("log:foo").to("mock:result");
             }
         };
     }

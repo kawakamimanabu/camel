@@ -32,11 +32,10 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import org.apache.camel.builder.xml.Namespaces;
 import org.apache.camel.core.xml.CamelJMXAgentDefinition;
 import org.apache.camel.core.xml.CamelPropertyPlaceholderDefinition;
 import org.apache.camel.core.xml.CamelStreamCachingStrategyDefinition;
-import org.apache.camel.impl.DefaultCamelContextNameStrategy;
+import org.apache.camel.impl.engine.DefaultCamelContextNameStrategy;
 import org.apache.camel.spi.CamelContextNameStrategy;
 import org.apache.camel.spi.NamespaceAware;
 import org.apache.camel.spring.CamelBeanPostProcessor;
@@ -52,6 +51,8 @@ import org.apache.camel.spring.CamelThreadPoolFactoryBean;
 import org.apache.camel.spring.SpringModelJAXBContextFactory;
 import org.apache.camel.spring.remoting.CamelProxyFactoryBean;
 import org.apache.camel.spring.remoting.CamelServiceExporter;
+import org.apache.camel.support.builder.Namespaces;
+import org.apache.camel.support.builder.xml.NamespacesHelper;
 import org.apache.camel.util.ObjectHelper;
 import org.apache.camel.util.StringHelper;
 import org.apache.camel.util.spring.KeyStoreParametersFactoryBean;
@@ -123,6 +124,7 @@ public class CamelNamespaceHandler extends NamespaceHandlerSupport {
         }
     }
 
+    @Override
     public void init() {
         // register restContext parser
         registerParser("restContext", new RestContextDefinitionParser());
@@ -154,28 +156,7 @@ public class CamelNamespaceHandler extends NamespaceHandlerSupport {
         parserMap.put("errorHandler", errorHandlerParser);
 
         // camel context
-        boolean osgi = false;
         Class<?> cl = CamelContextFactoryBean.class;
-        // These code will try to detected if we are in the OSGi environment.
-        // If so, camel will use the OSGi version of CamelContextFactoryBean to create the CamelContext.
-        try {
-            // Try to load the BundleActivator first
-            Class.forName("org.osgi.framework.BundleActivator");
-            Class<?> c = Class.forName("org.apache.camel.osgi.Activator");
-            Method mth = c.getDeclaredMethod("getBundle");
-            Object bundle = mth.invoke(null);
-            if (bundle != null) {
-                cl = Class.forName("org.apache.camel.osgi.CamelContextFactoryBean");
-                osgi = true;
-            }
-        } catch (Throwable t) {
-            // not running with camel-core-osgi so we fallback to the regular factory bean
-            LOG.trace("Cannot find class so assuming not running in OSGi container: {}", t.getMessage());
-        }
-        if (osgi) {
-            LOG.info("OSGi environment detected.");
-        } 
-        LOG.debug("Using {} as CamelContextBeanDefinitionParser", cl.getCanonicalName());
         registerParser("camelContext", new CamelContextBeanDefinitionParser(cl));
     }
 
@@ -504,7 +485,7 @@ public class CamelNamespaceHandler extends NamespaceHandlerSupport {
                 if (object instanceof NamespaceAware) {
                     NamespaceAware namespaceAware = (NamespaceAware) object;
                     if (namespaces == null) {
-                        namespaces = new Namespaces(element);
+                        namespaces = NamespacesHelper.namespaces(element);
                     }
                     namespaces.configure(namespaceAware);
                 }

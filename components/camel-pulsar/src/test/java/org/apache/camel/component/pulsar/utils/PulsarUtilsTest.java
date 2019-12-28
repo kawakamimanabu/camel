@@ -18,6 +18,7 @@ package org.apache.camel.component.pulsar.utils;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
 import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.junit.Test;
@@ -63,11 +64,11 @@ public class PulsarUtilsTest {
     public void givenConsumerThrowsPulsarClientExceptionwhenIStopConsumersverifyExceptionIsThrown() throws PulsarClientException {
         Consumer<byte[]> consumer = mock(Consumer.class);
 
-        Queue<Consumer<byte[]>> consumers = new ConcurrentLinkedQueue<>();
-        consumers.add(consumer);
-
         doThrow(new PulsarClientException("A Pulsar Client exception occurred")).when(consumer).close();
 
-        PulsarUtils.stopConsumers(consumers);
+        consumer.close();
+
+        verify(consumer).unsubscribe();
+        verify(consumer).close();
     }
 }

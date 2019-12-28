@@ -21,7 +21,6 @@ import java.lang.reflect.Method;
 import org.apache.camel.Exchange;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.TypeConverter;
-import org.apache.camel.spi.TypeConverterAware;
 import org.apache.camel.spi.TypeConverterRegistry;
 import org.apache.camel.support.ObjectHelper;
 import org.apache.camel.support.TypeConverterSupport;
@@ -34,14 +33,12 @@ public class InstanceMethodTypeConverter extends TypeConverterSupport {
     private final CachingInjector<?> injector;
     private final Method method;
     private final boolean useExchange;
-    private final TypeConverterRegistry registry;
     private final boolean allowNull;
 
     public InstanceMethodTypeConverter(CachingInjector<?> injector, Method method, TypeConverterRegistry registry, boolean allowNull) {
         this.injector = injector;
         this.method = method;
         this.useExchange = method.getParameterCount() == 2;
-        this.registry = registry;
         this.allowNull = allowNull;
     }
 
@@ -55,19 +52,12 @@ public class InstanceMethodTypeConverter extends TypeConverterSupport {
         return allowNull;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T convertTo(Class<T> type, Exchange exchange, Object value) {
         Object instance = injector.newInstance();
         if (instance == null) {
             throw new RuntimeCamelException("Could not instantiate an instance of: " + type.getCanonicalName());
-        }
-        // inject parent type converter
-        // TODO: Remove this in the near future as this is no longer needed (you can use exchange as parameter)
-        if (instance instanceof TypeConverterAware) {
-            if (registry instanceof TypeConverter) {
-                TypeConverter parentTypeConverter = (TypeConverter) registry;
-                ((TypeConverterAware) instance).setTypeConverter(parentTypeConverter);
-            }
         }
         return useExchange
             ? (T)ObjectHelper.invokeMethod(method, instance, value, exchange) : (T) ObjectHelper

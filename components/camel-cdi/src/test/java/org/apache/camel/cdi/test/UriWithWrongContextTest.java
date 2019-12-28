@@ -17,11 +17,11 @@
 package org.apache.camel.cdi.test;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.apache.camel.Endpoint;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.cdi.CdiCamelExtension;
-import org.apache.camel.cdi.ContextName;
 import org.apache.camel.cdi.Uri;
 import org.apache.camel.cdi.bean.FirstCamelContextBean;
 import org.apache.camel.cdi.rule.ExpectedDeploymentException;
@@ -45,12 +45,12 @@ public class UriWithWrongContextTest {
     @ClassRule
     public static TestRule exception = ExpectedDeploymentException.none()
         .expect(RuntimeException.class)
-//        .expectMessage(containsString("Error adding routes of type [" + UriWithWrongContextRoute.class.getName() + "] to Camel context [first]"))
-//        .expectMessage(containsString("Error injecting endpoint annotated with @org.apache.camel.cdi.Uri"))
-        .expectMessage(allOf(
-                containsString("WELD-001408 Unsatisfied dependencies for type [Endpoint] with qualifiers ["),
-                containsString("] at injection point [[field] @"),
-                containsString(" org.apache.camel.cdi.test.UriWithWrongContextRoute.inbound]")));
+        .expectMessage(
+            // WELD-1.0, WELD-1.2, WELD-2.0 have different exception messages
+            // Check only error code and injection point
+            allOf(
+                containsString("WELD-001408"),
+                containsString("org.apache.camel.cdi.test.UriWithWrongContextRoute.inbound")));
 
     @Deployment
     public static Archive<?> deployment() {
@@ -68,11 +68,12 @@ public class UriWithWrongContextTest {
     }
 }
 
-@ContextName("first")
+@Named("first")
 class UriWithWrongContextRoute extends RouteBuilder {
 
     @Inject
-    @Uri(value = "direct:inbound") @ContextName("second")
+    @Uri(value = "direct:inbound")
+    @Named("second")
     Endpoint inbound;
 
     @Override

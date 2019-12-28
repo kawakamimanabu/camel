@@ -23,15 +23,12 @@ import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.NamedNode;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.impl.BreakpointSupport;
-import org.apache.camel.impl.DefaultDebugger;
 import org.apache.camel.spi.Breakpoint;
 import org.apache.camel.spi.CamelEvent.ExchangeEvent;
 import org.apache.camel.spi.CamelEvent.Type;
 import org.apache.camel.spi.Condition;
 import org.junit.Before;
 import org.junit.Test;
-
 
 public class DebugExceptionEventBreakpointTest extends ContextTestSupport {
 
@@ -86,12 +83,7 @@ public class DebugExceptionEventBreakpointTest extends ContextTestSupport {
                 // use debugger
                 context.setDebugger(new DefaultDebugger());
 
-                from("direct:start")
-                    .to("log:foo")
-                    .choice()
-                        .when(body().contains("Camel")).throwException(new IllegalArgumentException("Damn"))
-                    .end()
-                    .to("mock:result");
+                from("direct:start").to("log:foo").choice().when(body().contains("Camel")).throwException(new IllegalArgumentException("Damn")).end().to("mock:result");
             }
         };
     }

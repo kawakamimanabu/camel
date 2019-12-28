@@ -16,7 +16,6 @@
  */
 package org.apache.camel.spring.spi;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.camel.AsyncCallback;
@@ -26,9 +25,9 @@ import org.apache.camel.LoggingLevel;
 import org.apache.camel.Predicate;
 import org.apache.camel.Processor;
 import org.apache.camel.RuntimeCamelException;
-import org.apache.camel.processor.RedeliveryErrorHandler;
-import org.apache.camel.processor.RedeliveryPolicy;
-import org.apache.camel.processor.exceptionpolicy.ExceptionPolicyStrategy;
+import org.apache.camel.processor.errorhandler.ExceptionPolicyStrategy;
+import org.apache.camel.processor.errorhandler.RedeliveryErrorHandler;
+import org.apache.camel.processor.errorhandler.RedeliveryPolicy;
 import org.apache.camel.spi.CamelLogger;
 import org.apache.camel.support.AsyncProcessorSupport;
 import org.apache.camel.support.ExchangeHelper;
@@ -68,7 +67,7 @@ public class TransactionErrorHandler extends RedeliveryErrorHandler {
             TransactionTemplate transactionTemplate, Predicate retryWhile, ScheduledExecutorService executorService,
             LoggingLevel rollbackLoggingLevel, Processor onExceptionOccurredProcessor) {
 
-        super(camelContext, output, logger, redeliveryProcessor, redeliveryPolicy, null, null, false, false, retryWhile,
+        super(camelContext, output, logger, redeliveryProcessor, redeliveryPolicy, null, null, false, false, false, retryWhile,
                 executorService, null, onExceptionOccurredProcessor);
         setExceptionPolicy(exceptionPolicyStrategy);
         this.transactionTemplate = transactionTemplate;
@@ -76,6 +75,7 @@ public class TransactionErrorHandler extends RedeliveryErrorHandler {
         this.transactionKey = ObjectHelper.getIdentityHashCode(transactionTemplate);
     }
 
+    @Override
     public boolean supportTransacted() {
         return true;
     }

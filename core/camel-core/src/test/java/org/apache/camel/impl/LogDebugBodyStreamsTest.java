@@ -21,9 +21,9 @@ import java.io.InputStream;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
-import org.apache.camel.StringSource;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.apache.camel.util.xml.StringSource;
 import org.junit.Test;
 
 public class LogDebugBodyStreamsTest extends ContextTestSupport {
@@ -95,7 +95,7 @@ public class LogDebugBodyStreamsTest extends ContextTestSupport {
     @Test
     public void testLogBodyStreamDisabled() throws Exception {
         context.getGlobalOptions().put(Exchange.LOG_DEBUG_BODY_STREAMS, "false");
-        
+
         InputStream body = new ByteArrayInputStream("Hello World".getBytes());
 
         MockEndpoint mock = getMockEndpoint("mock:result");

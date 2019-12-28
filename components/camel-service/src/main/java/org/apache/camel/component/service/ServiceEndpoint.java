@@ -43,7 +43,7 @@ import org.apache.camel.support.DefaultEndpoint;
 @UriEndpoint(
     firstVersion = "2.22.0",
     scheme = "service",
-    syntax = "service:serviceName:delegateUri",
+    syntax = "service:delegateUri",
     consumerOnly = true,
     title = "Service",
     lenientProperties = true,
@@ -93,11 +93,6 @@ public class ServiceEndpoint extends DefaultEndpoint implements DelegateEndpoint
     @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         return new ServiceConsumer(this, processor, serviceRegistry);
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     @Override

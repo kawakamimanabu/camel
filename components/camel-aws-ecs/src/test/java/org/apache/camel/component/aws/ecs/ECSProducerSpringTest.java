@@ -20,7 +20,6 @@ import com.amazonaws.services.ecs.model.CreateClusterResult;
 import com.amazonaws.services.ecs.model.DeleteClusterResult;
 import com.amazonaws.services.ecs.model.DescribeClustersResult;
 import com.amazonaws.services.ecs.model.ListClustersResult;
-
 import org.apache.camel.EndpointInject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
@@ -31,7 +30,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class ECSProducerSpringTest extends CamelSpringTestSupport {
     
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint mock;
     
     @Test

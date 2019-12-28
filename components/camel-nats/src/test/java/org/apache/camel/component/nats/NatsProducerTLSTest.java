@@ -16,8 +16,8 @@
  */
 package org.apache.camel.component.nats;
 
+import org.apache.camel.BindToRegistry;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.impl.JndiRegistry;
 import org.apache.camel.support.jsse.KeyManagersParameters;
 import org.apache.camel.support.jsse.KeyStoreParameters;
 import org.apache.camel.support.jsse.SSLContextParameters;
@@ -31,18 +31,13 @@ import org.junit.Test;
  */
 @Ignore("Require a running Nats server")
 public class NatsProducerTLSTest extends CamelTestSupport {
-    
+   
+    @BindToRegistry("ssl")
+    SSLContextParameters ssl = createSSLContextParameters();
+
     @Test
     public void sendTest() throws Exception {
-        
         template.sendBody("direct:send", "pippo");
-    }
-    
-    @Override
-    protected JndiRegistry createRegistry() throws Exception {
-        JndiRegistry registry = super.createRegistry();
-        registry.bind("ssl", createSSLContextParameters());
-        return registry;
     }
     
     private SSLContextParameters createSSLContextParameters() {
@@ -64,7 +59,7 @@ public class NatsProducerTLSTest extends CamelTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:send").to("nats://localhost:4222?topic=test&sslContextParameters=#ssl&secure=true");
+                from("direct:send").to("nats:topic=test?servers=localhost:4222&sslContextParameters=#ssl&secure=true");
             }
         };
     }

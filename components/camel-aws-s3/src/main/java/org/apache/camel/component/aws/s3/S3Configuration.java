@@ -16,9 +16,9 @@
  */
 package org.apache.camel.component.aws.s3;
 
+import com.amazonaws.Protocol;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.EncryptionMaterials;
-
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriParams;
@@ -56,6 +56,9 @@ public class S3Configuration implements Cloneable {
     private String storageClass;
     @UriParam(label = "producer")
     private String serverSideEncryption;
+
+    @UriParam(enums = "HTTP,HTTPS", defaultValue = "HTTPS")
+    private Protocol proxyProtocol = Protocol.HTTPS;
     @UriParam
     private String proxyHost;
     @UriParam
@@ -82,20 +85,24 @@ public class S3Configuration implements Cloneable {
     private boolean payloadSigningEnabled;
     @UriParam(label = "common, advanced", defaultValue = "false")
     private boolean forceGlobalBucketAccessEnabled;
+    @UriParam(label = "common", defaultValue = "true")
+    private boolean autoCreateBucket = true;
     @UriParam(label = "producer,advanced", defaultValue = "false")
     private boolean useAwsKMS;
     @UriParam(label = "producer,advanced")
     private String awsKMSKeyId;
     @UriParam(defaultValue = "false")
     private boolean useIAMCredentials;
+    @UriParam(label = "producer")
+    private String keyName;
 
     public long getPartSize() {
         return partSize;
     }
 
     /**
-     * Setup the partSize which is used in multi part upload,
-     * the default size is 25M.
+     * Setup the partSize which is used in multi part upload, the default size
+     * is 25M.
      */
     public void setPartSize(long partSize) {
         this.partSize = partSize;
@@ -106,8 +113,8 @@ public class S3Configuration implements Cloneable {
     }
 
     /**
-     * If it is true, camel will upload the file with multi part
-     * format, the part size is decided by the option of `partSize`
+     * If it is true, camel will upload the file with multi part format, the
+     * part size is decided by the option of `partSize`
      */
     public void setMultiPartUpload(boolean multiPartUpload) {
         this.multiPartUpload = multiPartUpload;
@@ -140,8 +147,7 @@ public class S3Configuration implements Cloneable {
     }
 
     /**
-     * Reference to a `com.amazonaws.services.s3.AmazonS3` in the
-     * link:registry.html[Registry].
+     * Reference to a `com.amazonaws.services.s3.AmazonS3` in the registry.
      */
     public void setAmazonS3Client(AmazonS3 amazonS3Client) {
         this.amazonS3Client = amazonS3Client;
@@ -150,7 +156,7 @@ public class S3Configuration implements Cloneable {
     public String getPrefix() {
         return prefix;
     }
-    
+
     /**
      * The prefix which is used in the
      * com.amazonaws.services.s3.model.ListObjectsRequest to only consume
@@ -159,7 +165,7 @@ public class S3Configuration implements Cloneable {
     public void setPrefix(String prefix) {
         this.prefix = prefix;
     }
-    
+
     public String getDelimiter() {
         return delimiter;
     }
@@ -201,7 +207,9 @@ public class S3Configuration implements Cloneable {
     }
 
     /**
-     * The region in which S3 client needs to work
+     * The region in which S3 client needs to work. When using this parameter,
+     * the configuration will expect the capitalized name of the region (for
+     * example AP_EAST_1) You'll need to use the name Regions.EU_WEST_1.name()
      */
     public void setRegion(String region) {
         this.region = region;
@@ -283,11 +291,22 @@ public class S3Configuration implements Cloneable {
     }
 
     /**
-     * Sets the server-side encryption algorithm when encrypting
-     * the object using AWS-managed keys. For example use <tt>AES256</tt>.
+     * Sets the server-side encryption algorithm when encrypting the object
+     * using AWS-managed keys. For example use <tt>AES256</tt>.
      */
     public void setServerSideEncryption(String serverSideEncryption) {
         this.serverSideEncryption = serverSideEncryption;
+    }
+
+    public Protocol getProxyProtocol() {
+        return proxyProtocol;
+    }
+
+    /**
+     * To define a proxy protocol when instantiating the S3 client
+     */
+    public void setProxyProtocol(Protocol proxyProtocol) {
+        this.proxyProtocol = proxyProtocol;
     }
 
     public String getProxyHost() {
@@ -451,8 +470,8 @@ public class S3Configuration implements Cloneable {
     }
 
     /**
-     * Set whether the S3 client should expect to load credentials on an EC2 instance or to
-     * expect static credentials to be passed in.
+     * Set whether the S3 client should expect to load credentials on an EC2
+     * instance or to expect static credentials to be passed in.
      */
     public void setUseIAMCredentials(Boolean useIAMCredentials) {
         this.useIAMCredentials = useIAMCredentials;
@@ -462,10 +481,33 @@ public class S3Configuration implements Cloneable {
         return useIAMCredentials;
     }
 
+    public boolean isAutoCreateBucket() {
+        return autoCreateBucket;
+    }
+
+    /**
+     * Setting the autocreation of the bucket
+     */
+    public void setAutoCreateBucket(boolean autoCreateBucket) {
+        this.autoCreateBucket = autoCreateBucket;
+    }
+
+    public String getKeyName() {
+        return keyName;
+    }
+
+    /**
+     * Setting the key name for an element in the bucket through endpoint
+     * parameter
+     */
+    public void setKeyName(String keyName) {
+        this.keyName = keyName;
+    }
+
     public boolean hasProxyConfiguration() {
         return ObjectHelper.isNotEmpty(getProxyHost()) && ObjectHelper.isNotEmpty(getProxyPort());
     }
-    
+
     // *************************************************
     //
     // *************************************************

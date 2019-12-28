@@ -97,11 +97,16 @@ public class PrepareCatalogSpringBootMojo extends AbstractMojo {
     protected File componentsDir;
 
     /**
-     * The camel-core directory where camel-core components are
-     *
+     * The camel-core directory
      */
-    @Parameter(defaultValue = "${project.build.directory}/../../../core/camel-core")
+    @Parameter(defaultValue = "${project.build.directory}/../../../core/camel-core-engine")
     protected File coreDir;
+
+    /**
+     * The camel-base directory
+     */
+    @Parameter(defaultValue = "${project.build.directory}/../../../core/camel-base")
+    protected File baseDir;
 
     /**
      * Maven ProjectHelper.
@@ -116,6 +121,7 @@ public class PrepareCatalogSpringBootMojo extends AbstractMojo {
      *                                                        threads it generated failed.
      * @throws MojoFailureException   something bad happened...
      */
+    @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         Set<String> starters = findSpringBootStarters();
         executeComponents(starters);
@@ -151,10 +157,15 @@ public class PrepareCatalogSpringBootMojo extends AbstractMojo {
                             target = new File(dir, "camel-box-component/target/classes");
                         } else if ("camel-salesforce".equals(dir.getName())) {
                             target = new File(dir, "camel-salesforce-component/target/classes");
-                        } else if ("camel-linkedin".equals(dir.getName())) {
-                            target = new File(dir, "camel-linkedin-component/target/classes");
                         } else if ("camel-servicenow".equals(dir.getName())) {
                             target = new File(dir, "camel-servicenow-component/target/classes");
+                        } else {
+                            // this module must be active with a source folder
+                            File src = new File(dir, "src");
+                            boolean active = src.isDirectory() && src.exists();
+                            if (!active) {
+                                continue;
+                            }
                         }
 
 
@@ -239,6 +250,12 @@ public class PrepareCatalogSpringBootMojo extends AbstractMojo {
                         if (!starters.contains(dir.getName())) {
                             continue;
                         }
+                        // this module must be active with a source folder
+                        File src = new File(dir, "src");
+                        boolean active = src.isDirectory() && src.exists();
+                        if (!active) {
+                            continue;
+                        }
                         File target = new File(dir, "target/classes");
                         findDataFormatFilesRecursive(target, jsonFiles, dataFormatFiles, new CamelDataFormatsFileFilter());
                     }
@@ -320,6 +337,12 @@ public class PrepareCatalogSpringBootMojo extends AbstractMojo {
                     if (!starters.contains(dir.getName())) {
                         continue;
                     }
+                    // this module must be active with a source folder
+                    File src = new File(dir, "src");
+                    boolean active = src.isDirectory() && src.exists();
+                    if (!active) {
+                        continue;
+                    }
                     if (dir.isDirectory() && !"target".equals(dir.getName())) {
                         File target = new File(dir, "target/classes");
                         findLanguageFilesRecursive(target, jsonFiles, languageFiles, new CamelLanguagesFileFilter());
@@ -327,8 +350,11 @@ public class PrepareCatalogSpringBootMojo extends AbstractMojo {
                 }
             }
         }
-        if (coreDir != null && coreDir.isDirectory()) {
-            File target = new File(coreDir, "target/classes");
+        if (baseDir != null && baseDir.isDirectory()) {
+            File target = new File(baseDir, "target/classes");
+            findLanguageFilesRecursive(target, jsonFiles, languageFiles, new CamelLanguagesFileFilter());
+            // also look in camel-jaxp
+            target = new File(coreDir, "../camel-jaxp/target/classes");
             findLanguageFilesRecursive(target, jsonFiles, languageFiles, new CamelLanguagesFileFilter());
         }
 
@@ -410,12 +436,19 @@ public class PrepareCatalogSpringBootMojo extends AbstractMojo {
                         || "camel-jetty-common".equals(dir.getName());
                     boolean special2 = "camel-as2".equals(dir.getName())
                         || "camel-box".equals(dir.getName())
-                        || "camel-linkedin".equals(dir.getName())
                         || "camel-olingo2".equals(dir.getName())
                         || "camel-olingo4".equals(dir.getName())
                         || "camel-servicenow".equals(dir.getName())
                         || "camel-salesforce".equals(dir.getName());
-                    if (special || special2) {
+                    boolean special3 = "camel-debezium-common".equals(dir.getName());
+                    if (special || special2 || special3) {
+                        continue;
+                    }
+
+                    // this module must be active with a source folder
+                    File src = new File(dir, "src");
+                    boolean active = src.isDirectory() && src.exists();
+                    if (!active) {
                         continue;
                     }
 

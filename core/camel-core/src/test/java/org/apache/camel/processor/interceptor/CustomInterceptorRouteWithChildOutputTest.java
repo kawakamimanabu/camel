@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.ContextTestSupport;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.NamedNode;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
@@ -62,14 +63,9 @@ public class CustomInterceptorRouteWithChildOutputTest extends ContextTestSuppor
             @Override
             public void configure() throws Exception {
                 // add our custom interceptor
-                context.addInterceptStrategy(myInterceptor);
+                context.adapt(ExtendedCamelContext.class).addInterceptStrategy(myInterceptor);
 
-                from("direct:start")
-                    .split(body().tokenize(","))
-                        .log("Spltted ${body}")
-                        .to("mock:child")
-                    .end()
-                    .to("mock:result");
+                from("direct:start").split(body().tokenize(",")).log("Spltted ${body}").to("mock:child").end().to("mock:result");
             }
         };
     }
@@ -80,9 +76,8 @@ public class CustomInterceptorRouteWithChildOutputTest extends ContextTestSuppor
         private final List<ProcessorDefinition> defs = new ArrayList<>();
 
         @Override
-        public Processor wrapProcessorInInterceptors(CamelContext context, NamedNode definition,
-                                                     Processor target, Processor nextTarget) throws Exception {
-            defs.add((ProcessorDefinition<?>) definition);
+        public Processor wrapProcessorInInterceptors(CamelContext context, NamedNode definition, Processor target, Processor nextTarget) throws Exception {
+            defs.add((ProcessorDefinition<?>)definition);
             return target;
         }
 

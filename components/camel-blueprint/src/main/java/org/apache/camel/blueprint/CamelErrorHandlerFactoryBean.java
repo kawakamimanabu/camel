@@ -17,6 +17,7 @@
 package org.apache.camel.blueprint;
 
 import java.util.Set;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -30,8 +31,8 @@ import org.apache.camel.builder.DefaultErrorHandlerBuilder;
 import org.apache.camel.builder.ErrorHandlerBuilder;
 import org.apache.camel.core.xml.AbstractCamelFactoryBean;
 import org.apache.camel.model.RedeliveryPolicyDefinition;
-import org.apache.camel.processor.RedeliveryPolicy;
-import org.apache.camel.reifier.ErrorHandlerReifier;
+import org.apache.camel.processor.errorhandler.RedeliveryPolicy;
+import org.apache.camel.reifier.errorhandler.ErrorHandlerReifier;
 import org.osgi.service.blueprint.container.BlueprintContainer;
 
 @XmlRootElement(name = "errorHandler")
@@ -46,6 +47,8 @@ public class CamelErrorHandlerFactoryBean extends AbstractCamelFactoryBean<Error
     private Boolean deadLetterHandleNewException;
     @XmlAttribute
     private Boolean useOriginalMessage;
+    @XmlAttribute
+    private Boolean useOriginalBody;
     @XmlAttribute
     private String onRedeliveryRef;
     @XmlAttribute
@@ -76,6 +79,9 @@ public class CamelErrorHandlerFactoryBean extends AbstractCamelFactoryBean<Error
             }
             if (useOriginalMessage != null) {
                 handler.setUseOriginalMessage(useOriginalMessage);
+            }
+            if (useOriginalBody != null) {
+                handler.setUseOriginalBody(useOriginalBody);
             }
             if (redeliveryPolicy != null) {
                 handler.setRedeliveryPolicy(ErrorHandlerReifier.createRedeliveryPolicy(redeliveryPolicy, getCamelContext(), null));
@@ -111,6 +117,7 @@ public class CamelErrorHandlerFactoryBean extends AbstractCamelFactoryBean<Error
         this.blueprintContainer = blueprintContainer;
     }
 
+    @Override
     protected CamelContext getCamelContextWithId(String camelContextId) {
         if (blueprintContainer != null) {
             return (CamelContext) blueprintContainer.getComponentInstance(camelContextId);

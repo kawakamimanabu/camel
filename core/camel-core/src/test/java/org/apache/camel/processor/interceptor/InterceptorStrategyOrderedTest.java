@@ -19,6 +19,7 @@ package org.apache.camel.processor.interceptor;
 import org.apache.camel.CamelContext;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.NamedNode;
 import org.apache.camel.Ordered;
 import org.apache.camel.Processor;
@@ -43,9 +44,10 @@ public class InterceptorStrategyOrderedTest extends ContextTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                // interceptors should be invoked according to how they are ordered
-                context.addInterceptStrategy(new BarInterceptStrategy());
-                context.addInterceptStrategy(new FooInterceptStrategy());
+                // interceptors should be invoked according to how they are
+                // ordered
+                context.adapt(ExtendedCamelContext.class).addInterceptStrategy(new BarInterceptStrategy());
+                context.adapt(ExtendedCamelContext.class).addInterceptStrategy(new FooInterceptStrategy());
 
                 from("direct:start").to("mock:result");
             }
@@ -54,6 +56,7 @@ public class InterceptorStrategyOrderedTest extends ContextTestSupport {
 
     public static class FooInterceptStrategy implements InterceptStrategy, Ordered {
 
+        @Override
         public Processor wrapProcessorInInterceptors(CamelContext context, NamedNode definition, final Processor target, Processor nextTarget) throws Exception {
             Processor answer = new Processor() {
                 public void process(Exchange exchange) throws Exception {
@@ -67,6 +70,7 @@ public class InterceptorStrategyOrderedTest extends ContextTestSupport {
             return answer;
         }
 
+        @Override
         public int getOrder() {
             return 1;
         }
@@ -74,6 +78,7 @@ public class InterceptorStrategyOrderedTest extends ContextTestSupport {
 
     public static class BarInterceptStrategy implements InterceptStrategy, Ordered {
 
+        @Override
         public Processor wrapProcessorInInterceptors(CamelContext context, NamedNode definition, final Processor target, Processor nextTarget) throws Exception {
             Processor answer = new Processor() {
                 public void process(Exchange exchange) throws Exception {
@@ -87,6 +92,7 @@ public class InterceptorStrategyOrderedTest extends ContextTestSupport {
             return answer;
         }
 
+        @Override
         public int getOrder() {
             return 2;
         }

@@ -26,11 +26,10 @@ import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.spi.UriEndpoint;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.support.ScheduledPollEndpoint;
-import org.apache.camel.util.ObjectHelper;
 import org.jooq.Query;
 import org.jooq.ResultQuery;
 
-@UriEndpoint(firstVersion = "3.0.0", scheme = "jooq", syntax = "jooq:entityType/operation", title = "JOOQ", label = "jooq")
+@UriEndpoint(firstVersion = "3.0.0", scheme = "jooq", syntax = "jooq:entityType", title = "JOOQ", label = "database")
 public class JooqEndpoint extends ScheduledPollEndpoint {
 
     private Expression producerExpression;
@@ -41,33 +40,6 @@ public class JooqEndpoint extends ScheduledPollEndpoint {
     public JooqEndpoint(String uri, String remaining, JooqComponent component, JooqConfiguration configuration) {
         super(uri, component);
         this.configuration = configuration;
-
-        initConfiguration(remaining);
-    }
-
-    private void initConfiguration(String remaining) {
-        if (remaining == null) {
-            return;
-        }
-
-        String[] parts = remaining.split("/");
-        if (parts.length == 0 || parts.length > 2) {
-            throw new IllegalArgumentException("Unexpected URI format. Expected ... , found '" + remaining + "'");
-        }
-
-        Class<?> type = ObjectHelper.loadClass(parts[0]);
-        if (type != null) {
-            configuration.setEntityType(type);
-        }
-
-        if (parts.length > 1) {
-            JooqOperation operation = JooqOperation.getByValue(parts[1]);
-            if (operation != null) {
-                configuration.setOperation(operation);
-            } else {
-                throw new IllegalArgumentException("Wrong operation: " + parts[1]);
-            }
-        }
     }
 
     @Override
@@ -77,6 +49,10 @@ public class JooqEndpoint extends ScheduledPollEndpoint {
 
     public JooqConfiguration getConfiguration() {
         return configuration;
+    }
+
+    public void setConfiguration(JooqConfiguration configuration) {
+        this.configuration = configuration;
     }
 
     public Expression getProducerExpression() {
@@ -100,45 +76,30 @@ public class JooqEndpoint extends ScheduledPollEndpoint {
             type = ResultQuery.class;
             break;
         default:
-            type = null;
+            throw new UnsupportedOperationException("Operation: " + configuration.getOperation());
         }
 
-        if (type == null) {
-            return new Expression() {
-                @Override
-                public <T> T evaluate(Exchange exchange, Class<T> type) {
-                    return exchange.getMessage().getBody(type);
-                };
-            };
-        } else {
-            return new Expression() {
-                public Object evaluate(Exchange exchange, Class asType) {
-                    Object answer = exchange.getIn().getBody(type);
-                    if (answer == null) {
-                        Object defaultValue = exchange.getIn().getBody();
-                        if (defaultValue != null) {
-                            throw RuntimeCamelException.wrapRuntimeCamelException(new NoTypeConversionAvailableException(defaultValue, type));
-                        }
-
-                        answer = exchange.getContext().getInjector().newInstance(type);
+        return new Expression() {
+            public Object evaluate(Exchange exchange, Class asType) {
+                Object answer = exchange.getIn().getBody(type);
+                if (answer == null) {
+                    Object defaultValue = exchange.getIn().getBody();
+                    if (defaultValue != null) {
+                        throw RuntimeCamelException.wrapRuntimeCamelException(new NoTypeConversionAvailableException(defaultValue, type));
                     }
-                    return answer;
+
+                    answer = exchange.getContext().getInjector().newInstance(type);
                 }
-            };
-        }
+                return answer;
+            }
+        };
     }
 
     @Override
-    public Consumer createConsumer(Processor processor) {
-        return new JooqConsumer(this, processor);
+    public Consumer createConsumer(Processor processor) throws Exception {
+        JooqConsumer consumer = new JooqConsumer(this, processor);
+        configureConsumer(consumer);
+        return consumer;
     }
 
-    @Override
-    public boolean isSingleton() {
-        return false;
-    }
-
-    public void setConfiguration(JooqConfiguration configuration) {
-        this.configuration = configuration;
-    }
 }

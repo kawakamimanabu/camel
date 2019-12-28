@@ -17,7 +17,6 @@
 package org.apache.camel.component.rest;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -25,12 +24,14 @@ import java.util.function.Supplier;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.component.extension.ComponentVerifierExtension;
+import org.apache.camel.spi.BeanIntrospection;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.RestConfiguration;
 import org.apache.camel.support.CamelContextHelper;
 import org.apache.camel.support.DefaultComponent;
-import org.apache.camel.support.IntrospectionSupport;
+import org.apache.camel.support.PropertyBindingSupport;
 import org.apache.camel.util.FileUtil;
 import org.apache.camel.util.StringHelper;
 import org.apache.camel.util.URISupport;
@@ -44,8 +45,13 @@ public class RestComponent extends DefaultComponent {
 
     public static final String DEFAULT_REST_CONFIGURATION_ID = "rest-configuration";
 
-    @Metadata(label = "common")
+    @Deprecated
+    @Metadata(label = "producer")
     private String componentName;
+    @Metadata(label = "consumer")
+    private String consumerComponentName;
+    @Metadata(label = "producer")
+    private String producerComponentName;
     @Metadata(label = "producer")
     private String apiDoc;
     @Metadata(label = "producer")
@@ -57,15 +63,18 @@ public class RestComponent extends DefaultComponent {
 
     @Override
     protected Endpoint createEndpoint(String uri, String remaining, Map<String, Object> parameters) throws Exception {
-        String restConfigurationName = getAndRemoveParameter(parameters, "componentName", String.class, componentName);
+        String cname = getAndRemoveParameter(parameters, "consumerComponentName", String.class, consumerComponentName);
+        String pname = getAndRemoveParameter(parameters, "producerComponentName", String.class, producerComponentName);
 
         RestEndpoint answer = new RestEndpoint(uri, this);
-        answer.setComponentName(restConfigurationName);
+        answer.setConsumerComponentName(cname);
+        answer.setProducerComponentName(pname);
         answer.setApiDoc(apiDoc);
 
         RestConfiguration config = new RestConfiguration();
-        mergeConfigurations(config, findGlobalRestConfiguration());
-        mergeConfigurations(config, getCamelContext().getRestConfiguration(restConfigurationName, true));
+        mergeConfigurations(getCamelContext(), config, findGlobalRestConfiguration());
+        mergeConfigurations(getCamelContext(), config, getCamelContext().getRestConfiguration(cname, false));
+        mergeConfigurations(getCamelContext(), config, getCamelContext().getRestConfiguration(pname, false));
 
         // if no explicit host was given, then fallback and use default configured host
         String h = getAndRemoveOrResolveReferenceParameter(parameters, "host", String.class, host);
@@ -123,13 +132,13 @@ public class RestComponent extends DefaultComponent {
         answer.setUriTemplate(uriTemplate);
 
         // if no explicit component name was given, then fallback and use default configured component name
-        if (answer.getComponentName() == null) {
+        if (answer.getProducerComponentName() == null) {
             String name = config.getProducerComponent();
-            if (name == null) {
-                // fallback and use the consumer name
-                name = config.getComponent();
-            }
-            answer.setComponentName(name);
+            answer.setProducerComponentName(name);
+        }
+        if (answer.getConsumerComponentName() == null) {
+            String name = config.getComponent();
+            answer.setConsumerComponentName(name);
         }
         // if no explicit producer api was given, then fallback and use default configured
         if (answer.getApiDoc() == null) {
@@ -139,19 +148,50 @@ public class RestComponent extends DefaultComponent {
         return answer;
     }
 
-    public String getComponentName() {
-        return componentName;
+    public String getConsumerComponentName() {
+        return consumerComponentName;
     }
 
     /**
-     * The Camel Rest component to use for the REST transport, such as restlet, spark-rest.
+     * The Camel Rest component to use for (consumer) the REST transport, such as jetty, servlet, undertow.
      * If no component has been explicit configured, then Camel will lookup if there is a Camel component
-     * that integrates with the Rest DSL, or if a org.apache.camel.spi.RestConsumerFactory (consumer)
-     * or org.apache.camel.spi.RestProducerFactory (producer) is registered in the registry.
+     * that integrates with the Rest DSL, or if a org.apache.camel.spi.RestConsumerFactory is registered in the registry.
      * If either one is found, then that is being used.
      */
+    public void setConsumerComponentName(String consumerComponentName) {
+        this.consumerComponentName = consumerComponentName;
+    }
+
+    public String getProducerComponentName() {
+        return producerComponentName;
+    }
+
+    /**
+     * The Camel Rest component to use for (producer) the REST transport, such as http, undertow.
+     * If no component has been explicit configured, then Camel will lookup if there is a Camel component
+     * that integrates with the Rest DSL, or if a org.apache.camel.spi.RestProducerFactory is registered in the registry.
+     * If either one is found, then that is being used.
+     */
+    public void setProducerComponentName(String producerComponentName) {
+        this.producerComponentName = producerComponentName;
+    }
+
+    @Deprecated
+    public String getComponentName() {
+        return producerComponentName;
+    }
+
+    /**
+     * The Camel Rest component to use for (producer) the REST transport, such as http, undertow.
+     * If no component has been explicit configured, then Camel will lookup if there is a Camel component
+     * that integrates with the Rest DSL, or if a org.apache.camel.spi.RestProducerFactory is registered in the registry.
+     * If either one is found, then that is being used.
+     *
+     * @deprecated use producerComponentName instead
+     */
+    @Deprecated
     public void setComponentName(String componentName) {
-        this.componentName = componentName;
+        this.producerComponentName = componentName;
     }
 
     public String getApiDoc() {
@@ -192,24 +232,20 @@ public class RestComponent extends DefaultComponent {
         return conf;
     }
 
-    private RestConfiguration mergeConfigurations(RestConfiguration conf, RestConfiguration from) throws Exception {
+    private RestConfiguration mergeConfigurations(CamelContext camelContext, RestConfiguration conf, RestConfiguration from) throws Exception {
         if (conf == from) {
             return conf;
         }
         if (from != null) {
-            Map<String, Object> map = IntrospectionSupport.getNonNullProperties(from);
+            BeanIntrospection beanIntrospection = camelContext.adapt(ExtendedCamelContext.class).getBeanIntrospection();
+            Map<String, Object> map = new HashMap<>();
+            beanIntrospection.getProperties(from, map, null, false);
 
             // Remove properties as they need to be manually managed
-            Iterator<Map.Entry<String, Object>> it = map.entrySet().iterator();
-            while (it.hasNext()) {
-                Map.Entry<String, Object> entry = it.next();
-                if (entry.getValue() instanceof Map) {
-                    it.remove();
-                }
-            }
+            map.entrySet().removeIf(entry -> entry.getValue() instanceof Map);
 
             // Copy common options, will override those in conf
-            IntrospectionSupport.setProperties(getCamelContext(), getCamelContext().getTypeConverter(), conf, map);
+            PropertyBindingSupport.bindProperties(getCamelContext(), conf, map);
 
             // Merge properties
             mergeProperties(conf::getComponentProperties, from::getComponentProperties, conf::setComponentProperties);

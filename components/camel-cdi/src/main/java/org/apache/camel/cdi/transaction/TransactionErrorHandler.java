@@ -31,8 +31,8 @@ import org.apache.camel.LoggingLevel;
 import org.apache.camel.Navigate;
 import org.apache.camel.Processor;
 import org.apache.camel.RuntimeCamelException;
-import org.apache.camel.processor.ErrorHandlerSupport;
-import org.apache.camel.processor.exceptionpolicy.ExceptionPolicyStrategy;
+import org.apache.camel.processor.errorhandler.ErrorHandlerSupport;
+import org.apache.camel.processor.errorhandler.ExceptionPolicyStrategy;
 import org.apache.camel.spi.ShutdownPrepared;
 import org.apache.camel.support.AsyncCallbackToCompletableFutureAdapter;
 import org.apache.camel.support.ExchangeHelper;
@@ -89,6 +89,7 @@ public class TransactionErrorHandler extends ErrorHandlerSupport
         setExceptionPolicy(exceptionPolicyStrategy);
     }
 
+    @Override
     public void process(Exchange exchange) throws Exception {
         // we have to run this synchronously as a JTA Transaction does *not*
         // support using multiple threads to span a transaction
@@ -104,6 +105,7 @@ public class TransactionErrorHandler extends ErrorHandlerSupport
         }
     }
 
+    @Override
     public boolean process(Exchange exchange, AsyncCallback callback) {
         // invoke this synchronous method as JTA Transaction does *not*
         // support using multiple threads to span a transaction
@@ -321,6 +323,7 @@ public class TransactionErrorHandler extends ErrorHandlerSupport
         }
     }
 
+    @Override
     public void setExceptionPolicy(ExceptionPolicyStrategy exceptionPolicy) {
         this.exceptionPolicy = exceptionPolicy;
     }
@@ -357,6 +360,7 @@ public class TransactionErrorHandler extends ErrorHandlerSupport
         return true;
     }
 
+    @Override
     public boolean hasNext() {
         return output != null;
     }

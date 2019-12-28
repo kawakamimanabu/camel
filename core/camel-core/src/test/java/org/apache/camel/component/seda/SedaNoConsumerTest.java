@@ -32,7 +32,6 @@ public class SedaNoConsumerTest extends ContextTestSupport {
         return false;
     }
 
-
     public void testInOnly() throws Exception {
         context.addRoutes(new RouteBuilder() {
             @Override
@@ -42,12 +41,12 @@ public class SedaNoConsumerTest extends ContextTestSupport {
         });
 
         context.start();
-        NotifyBuilder notify = new NotifyBuilder(context).whenDone(1).create();
+        NotifyBuilder notify = new NotifyBuilder(context).whenDone(1).waitTime(2000).create();
 
         // no problem for in only as we do not expect a reply
         template.sendBody("direct:start", "Hello World");
-        notify.matches(2, TimeUnit.SECONDS);
 
+        assertTrue(notify.matchesWaitTime());
     }
 
     public void testInOut() throws Exception {
@@ -68,7 +67,6 @@ public class SedaNoConsumerTest extends ContextTestSupport {
         }
     }
 
-
     @Test
     public void testFailIfNoConsumer() throws Exception {
         context.addRoutes(new RouteBuilder() {
@@ -86,7 +84,6 @@ public class SedaNoConsumerTest extends ContextTestSupport {
         } catch (CamelExecutionException e) {
             assertIsInstanceOf(SedaConsumerNotAvailableException.class, e.getCause());
         }
-
 
     }
 
@@ -108,7 +105,6 @@ public class SedaNoConsumerTest extends ContextTestSupport {
         template.sendBody("seda:foo", "Hello World");
 
         assertMockEndpointsSatisfied();
-
 
     }
 

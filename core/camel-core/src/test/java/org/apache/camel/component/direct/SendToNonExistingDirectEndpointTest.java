@@ -30,14 +30,18 @@ public class SendToNonExistingDirectEndpointTest extends ContextTestSupport {
 
     @Test
     public void testDirect() throws Exception {
+        context.start();
+
         context.getComponent("direct", DirectComponent.class).setBlock(false);
-        
+
         try {
             template.sendBody("direct:foo", "Hello World");
             fail("Should have thrown exception");
         } catch (CamelExecutionException e) {
             DirectConsumerNotAvailableException cause = assertIsInstanceOf(DirectConsumerNotAvailableException.class, e.getCause());
-            assertIsInstanceOf(CamelExchangeException.class, cause); // ensure backwards compatibility
+            assertIsInstanceOf(CamelExchangeException.class, cause); // ensure
+                                                                     // backwards
+                                                                     // compatibility
             assertNotNull(cause.getExchange());
         }
     }

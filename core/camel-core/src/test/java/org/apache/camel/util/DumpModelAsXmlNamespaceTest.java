@@ -22,6 +22,7 @@ import org.w3c.dom.Element;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.ModelHelper;
+import org.apache.camel.support.builder.Namespaces;
 import org.junit.Test;
 
 public class DumpModelAsXmlNamespaceTest extends ContextTestSupport {
@@ -52,10 +53,10 @@ public class DumpModelAsXmlNamespaceTest extends ContextTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:start").routeId("myRoute")
-                    .choice()
-                        .when(xpath("/foo:customer").namespace("foo", URL_FOO)).to("mock:foo")
-                        .when(xpath("/bar:customer").namespace("bar", URL_BAR)).to("mock:bar");
+                Namespaces foo = new Namespaces("foo", URL_FOO);
+                Namespaces bar = new Namespaces("bar", URL_BAR);
+
+                from("direct:start").routeId("myRoute").choice().when(xpath("/foo:customer", foo)).to("mock:foo").when(xpath("/bar:customer", bar)).to("mock:bar");
             }
         };
     }

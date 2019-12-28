@@ -20,19 +20,22 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import org.apache.camel.ContextTestSupport;
+import org.apache.camel.language.xpath.DefaultNamespaceContext;
+import org.apache.camel.language.xpath.XPathBuilder;
+import org.apache.camel.support.builder.Namespaces;
+import org.apache.camel.support.builder.xml.NamespacesHelper;
 import org.junit.Test;
 
 public class XPathWithNamespacesFromDomTest extends ContextTestSupport {
 
     @Test
     public void testXPathUsingDomForNamespaces() throws Exception {
-        Document document = context.getTypeConverter()
-            .convertTo(Document.class, "<x:foo xmlns:x='n1' xmlns:y='n2'><bar id='a' xmlns:y='n3'/></x:foo>");
+        Document document = context.getTypeConverter().convertTo(Document.class, "<x:foo xmlns:x='n1' xmlns:y='n2'><bar id='a' xmlns:y='n3'/></x:foo>");
         Element element = (Element)document.getElementsByTagName("bar").item(0);
         assertNotNull("Could not find element for id 'a'", element);
 
         XPathBuilder builder = XPathBuilder.xpath("//y:foo[@id='z']");
-        Namespaces ns = new Namespaces(element);
+        Namespaces ns = NamespacesHelper.namespaces(element);
         ns.configure(builder);
         builder.start();
         DefaultNamespaceContext namespaceContext = builder.getNamespaceContext();

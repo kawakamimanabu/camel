@@ -169,10 +169,10 @@ public final class PackageHelper {
                 || "camel-jetty-common".equals(name);
             boolean special2 = "camel-as2".equals(name)
                 || "camel-box".equals(name)
-                || "camel-linkedin".equals(name)
                 || "camel-olingo2".equals(name)
                 || "camel-olingo4".equals(name)
-                || "camel-salesforce".equals(name);
+                || "camel-salesforce".equals(name)
+                || "camel-debezium-common".equals(name);
             if (special || special2) {
                 return false;
             }
@@ -182,15 +182,19 @@ public final class PackageHelper {
     }
 
     public static File findCamelCoreDirectory(File dir) {
+        return findCamelDirectory(dir, "core/camel-core-engine");
+    }
+
+    public static File findCamelDirectory(File dir, String path) {
         if (dir == null) {
             return null;
         }
-        Path p = dir.toPath().resolve("core/camel-core");
+        Path p = dir.toPath().resolve(path);
         if (Files.isDirectory(p)) {
             return p.toFile();
         } else {
             // okay walk up the parent dir
-            return findCamelCoreDirectory(dir.getParentFile());
+            return findCamelDirectory(dir.getParentFile(), path);
         }
     }
 

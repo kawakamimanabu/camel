@@ -16,7 +16,7 @@
  */
 package org.apache.camel.processor.exceptionpolicy;
 
-import java.util.Map;
+import java.util.Set;
 
 import org.apache.camel.CamelException;
 import org.apache.camel.CamelExchangeException;
@@ -25,7 +25,8 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.model.OnExceptionDefinition;
+import org.apache.camel.processor.errorhandler.ExceptionPolicyKey;
+import org.apache.camel.processor.errorhandler.ExceptionPolicyStrategy;
 import org.junit.Test;
 
 /**
@@ -43,12 +44,12 @@ public class CustomExceptionPolicyStrategyTest extends ContextTestSupport {
     // START SNIPPET e2
     public static class MyPolicy implements ExceptionPolicyStrategy {
 
-        public OnExceptionDefinition getExceptionPolicy(Map<ExceptionPolicyKey, OnExceptionDefinition> exceptionPolicices,
-                                                Exchange exchange,
-                                                Throwable exception) {
-            // This is just an example that always forces the exception type configured
+        @Override
+        public ExceptionPolicyKey getExceptionPolicy(Set<ExceptionPolicyKey> exceptionPolicices, Exchange exchange, Throwable exception) {
+            // This is just an example that always forces the exception type
+            // configured
             // with MyPolicyException to win.
-            return exceptionPolicices.get(new ExceptionPolicyKey(null, MyPolicyException.class, null));
+            return new ExceptionPolicyKey(null, MyPolicyException.class, null);
         }
     }
     // END SNIPPET e2
@@ -69,24 +70,18 @@ public class CustomExceptionPolicyStrategyTest extends ContextTestSupport {
         mock.assertIsSatisfied();
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             // START SNIPPET e1
             public void configure() throws Exception {
-                // configure the error handler to use my policy instead of the default from Camel
+                // configure the error handler to use my policy instead of the
+                // default from Camel
                 errorHandler(deadLetterChannel("mock:error").exceptionPolicyStrategy(new MyPolicy()));
 
-                onException(MyPolicyException.class)
-                    .maximumRedeliveries(1)
-                    .redeliveryDelay(0)
-                    .setHeader(MESSAGE_INFO, constant("Damm my policy exception"))
-                    .to(ERROR_QUEUE);
+                onException(MyPolicyException.class).maximumRedeliveries(1).redeliveryDelay(0).setHeader(MESSAGE_INFO, constant("Damm my policy exception")).to(ERROR_QUEUE);
 
-                onException(CamelException.class)
-                    .maximumRedeliveries(3)
-                    .redeliveryDelay(0)
-                    .setHeader(MESSAGE_INFO, constant("Damm a Camel exception"))
-                    .to(ERROR_QUEUE);
+                onException(CamelException.class).maximumRedeliveries(3).redeliveryDelay(0).setHeader(MESSAGE_INFO, constant("Damm a Camel exception")).to(ERROR_QUEUE);
                 // END SNIPPET e1
 
                 from("direct:a").process(new Processor() {
@@ -95,7 +90,7 @@ public class CustomExceptionPolicyStrategyTest extends ContextTestSupport {
                         if ("Hello Camel".equals(s)) {
                             throw new CamelExchangeException("Forced for testing", exchange);
                         }
-                        exchange.getOut().setBody("Hello World");
+                        exchange.getMessage().setBody("Hello World");
                     }
                 }).to("mock:result");
             }

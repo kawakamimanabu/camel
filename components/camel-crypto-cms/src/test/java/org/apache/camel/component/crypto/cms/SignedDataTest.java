@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.crypto.cms;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -128,7 +129,7 @@ public class SignedDataTest {
 
         SignedDataCreatorConfiguration config = new SignedDataCreatorConfiguration(new DefaultCamelContext());
         for (SignerInfo signer : signers) {
-            config.setSigner(signer);
+            config.addSigner(signer);
         }
         // config.setBlockSize(blockSize); // optional
         config.setIncludeContent(includeContent); // optional default value is
@@ -350,7 +351,7 @@ public class SignedDataTest {
         signerInfo.setKeyStoreParameters(keystore);
 
         SignedDataCreatorConfiguration config = new SignedDataCreatorConfiguration(new DefaultCamelContext());
-        config.setSigner(signerInfo);
+        config.addSigner(signerInfo);
         config.setIncludeContent(false); // optional default value is true
         config.setToBase64(Boolean.TRUE);
         config.init();

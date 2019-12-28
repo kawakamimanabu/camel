@@ -26,15 +26,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Stream;
 
-import javax.xml.transform.Source;
-
-import org.apache.camel.BytesSource;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.MessageHistory;
 import org.apache.camel.StreamCache;
-import org.apache.camel.StringSource;
 import org.apache.camel.WrappedFile;
 import org.apache.camel.spi.ExchangeFormatter;
 import org.apache.camel.spi.HeaderFilterStrategy;
@@ -50,6 +47,9 @@ public final class MessageHelper {
 
     private static final String MESSAGE_HISTORY_HEADER = "%-20s %-20s %-80s %-12s";
     private static final String MESSAGE_HISTORY_OUTPUT = "[%-18.18s] [%-18.18s] [%-78.78s] [%10.10s]";
+
+    private static final String TRACING_HEADER = "%-8s %-20s %-20s %-40s %-12s";
+    private static final String TRACING_OUTPUT = "[%-6.6s] [%-18.18s] [%-18.18s] [%-38.38s] [%10.10s]";
 
     /**
      * Utility classes should not have a public constructor.
@@ -126,7 +126,12 @@ public final class MessageHelper {
         if (message == null) {
             return;
         }
-        Object body = message.getBody();
+        Object body = null;
+        try {
+            body = message.getBody();
+        } catch (Throwable e) {
+            // ignore
+        }
         if (body instanceof StreamCache) {
             ((StreamCache) body).reset();
         }
@@ -286,9 +291,7 @@ public final class MessageHelper {
         }
 
         if (!allowStreams) {
-            if (obj instanceof Source && !(obj instanceof StringSource || obj instanceof BytesSource)) {
-                // for Source its only StringSource or BytesSource that is okay as they are memory based
-                // all other kinds we should not touch the body
+            if (instanceOf(obj, "java.xml.transform.Source")) {
                 return prepend + "[Body is instance of java.xml.transform.Source]";
             } else if (obj instanceof StreamCache) {
                 return prepend + "[Body is instance of org.apache.camel.StreamCache]";
@@ -362,6 +365,16 @@ public final class MessageHelper {
         }
 
         return prepend + body;
+    }
+
+    private static boolean instanceOf(Object obj, String interfaceName) {
+        return interfaces(obj.getClass()).anyMatch(cl -> cl.getName().equals(interfaceName));
+    }
+
+    private static Stream<Class<?>> interfaces(Class<?> clazz) {
+        return clazz == null ? Stream.empty() : Stream.concat(
+                Stream.concat(Stream.of(clazz), interfaces(clazz.getSuperclass())),
+                Stream.of(clazz.getInterfaces()).flatMap(MessageHelper::interfaces));
     }
 
     /**
@@ -538,7 +551,7 @@ public final class MessageHelper {
     }
 
     @SuppressWarnings("unchecked")
-    public static String doDumpMessageHistoryStacktrace(Exchange exchange, ExchangeFormatter exchangeFormatter, boolean logStackTrace) {
+    private static String doDumpMessageHistoryStacktrace(Exchange exchange, ExchangeFormatter exchangeFormatter, boolean logStackTrace) {
         List<MessageHistory> list = exchange.getProperty(Exchange.MESSAGE_HISTORY, List.class);
         if (list == null || list.isEmpty()) {
             return null;
@@ -548,9 +561,9 @@ public final class MessageHelper {
         sb.append("\n");
         sb.append("Message History\n");
         sb.append("---------------------------------------------------------------------------------------------------------------------------------------\n");
-        String goMessageHistoryHeaeder = exchange.getContext().getGlobalOption(Exchange.MESSAGE_HISTORY_HEADER_FORMAT);
+        String goMessageHistoryHeader = exchange.getContext().getGlobalOption(Exchange.MESSAGE_HISTORY_HEADER_FORMAT);
         sb.append(String.format(
-                         goMessageHistoryHeaeder == null ? MESSAGE_HISTORY_HEADER : goMessageHistoryHeaeder,
+                         goMessageHistoryHeader == null ? MESSAGE_HISTORY_HEADER : goMessageHistoryHeader,
                          "RouteId", "ProcessorId", "Processor", "Elapsed (ms)"));
         sb.append("\n");
 
@@ -559,7 +572,7 @@ public final class MessageHelper {
         String id = routeId;
         String label = "";
         if (exchange.getFromEndpoint() != null) {
-            label = URISupport.sanitizeUri(exchange.getFromEndpoint().getEndpointUri());
+            label = "from[" + URISupport.sanitizeUri(exchange.getFromEndpoint().getEndpointUri() + "]");
         }
         long elapsed = 0;
         Date created = exchange.getCreated();

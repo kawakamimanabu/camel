@@ -16,26 +16,27 @@
  */
 package org.apache.camel;
 
+import static org.apache.camel.util.URISupport.sanitizeUri;
+
 /**
  * A runtime exception thrown if an {@link Endpoint} cannot be resolved via URI
  */
 public class ResolveEndpointFailedException extends RuntimeCamelException {
-    private static final long serialVersionUID = -9121465713858552263L;
 
     private final String uri;
 
     public ResolveEndpointFailedException(String uri, Throwable cause) {
-        super("Failed to resolve endpoint: " + uri + " due to: " + cause.getMessage(), cause);
+        super("Failed to resolve endpoint: " + sanitizeUri(uri) + " due to: " + cause.getMessage(), cause);
         this.uri = uri;
     }
 
     public ResolveEndpointFailedException(String uri, String message) {
-        super("Failed to resolve endpoint: " + uri + " due to: " + message);
+        super("Failed to resolve endpoint: " + sanitizeUri(uri) + " due to: " + message);
         this.uri = uri;
     }
 
     public ResolveEndpointFailedException(String uri) {
-        super("Failed to resolve endpoint: " + uri);
+        super("Failed to resolve endpoint: " + sanitizeUri(uri));
         this.uri = uri;
     }
 

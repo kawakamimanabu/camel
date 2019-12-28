@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import javax.management.AttributeNotFoundException;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -47,7 +48,7 @@ import io.swagger.util.Json;
 import io.swagger.util.Yaml;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
-import org.apache.camel.model.ModelCamelContext;
+import org.apache.camel.model.Model;
 import org.apache.camel.model.ModelHelper;
 import org.apache.camel.model.rest.RestDefinition;
 import org.apache.camel.model.rest.RestsDefinition;
@@ -57,7 +58,7 @@ import org.apache.camel.support.PatternHelper;
 import org.apache.camel.util.CamelVersionHelper;
 import org.apache.camel.util.ObjectHelper;
 import org.apache.camel.util.URISupport;
-import org.apache.camel.util.XmlLineNumberParser;
+import org.apache.camel.util.xml.XmlLineNumberParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +67,7 @@ import static org.apache.camel.swagger.SwaggerHelper.clearVendorExtensions;
 /**
  * A support class for that allows SPI to plugin
  * and offer Swagger API service listings as part of the Camel component. This allows rest-dsl components
- * such as servlet/jetty/netty4-http to offer Swagger API listings with minimal effort.
+ * such as servlet/jetty/netty-http to offer Swagger API listings with minimal effort.
  */
 public class RestSwaggerSupport {
 
@@ -145,8 +146,8 @@ public class RestSwaggerSupport {
     }
 
     public List<RestDefinition> getRestDefinitions(CamelContext camelContext) throws Exception {
-        ModelCamelContext context = camelContext.adapt(ModelCamelContext.class);
-        List<RestDefinition> rests = context.getRestDefinitions();
+        Model model = camelContext.getExtension(Model.class);
+        List<RestDefinition> rests = model.getRestDefinitions();
         if (rests.isEmpty()) {
             return null;
         }
@@ -154,7 +155,7 @@ public class RestSwaggerSupport {
         // use a routes definition to dump the rests
         RestsDefinition def = new RestsDefinition();
         def.setRests(rests);
-        String xml = ModelHelper.dumpModelAsXml(context, def);
+        String xml = ModelHelper.dumpModelAsXml(camelContext, def);
 
         // if resolving placeholders we parse the xml, and resolve the property placeholders during parsing
         final AtomicBoolean changed = new AtomicBoolean();
@@ -163,7 +164,7 @@ public class RestSwaggerSupport {
             @Override
             public String transform(String text) {
                 try {
-                    String after = context.resolvePropertyPlaceholders(text);
+                    String after = camelContext.resolvePropertyPlaceholders(text);
                     if (!changed.get()) {
                         changed.set(!text.equals(after));
                     }
@@ -176,10 +177,10 @@ public class RestSwaggerSupport {
         });
         // okay there were some property placeholder replaced so re-create the model
         if (changed.get()) {
-            xml = context.getTypeConverter().mandatoryConvertTo(String.class, dom);
-            RestsDefinition model = ModelHelper.createModelFromXml(context, xml, RestsDefinition.class);
-            if (model != null) {
-                return model.getRests();
+            xml = camelContext.getTypeConverter().mandatoryConvertTo(String.class, dom);
+            def = ModelHelper.createModelFromXml(camelContext, xml, RestsDefinition.class);
+            if (def != null) {
+                return def.getRests();
             }
         }
 

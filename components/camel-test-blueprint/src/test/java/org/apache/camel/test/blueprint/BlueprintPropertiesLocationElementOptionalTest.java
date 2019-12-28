@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.component.properties.PropertiesComponent;
-import org.apache.camel.component.properties.PropertiesLocation;
 import org.junit.Test;
 
 public class BlueprintPropertiesLocationElementOptionalTest extends CamelBlueprintTestSupport {
@@ -36,10 +35,10 @@ public class BlueprintPropertiesLocationElementOptionalTest extends CamelBluepri
         mock.expectedHeaderReceived("property-2", "property-value-2");
         mock.expectedHeaderReceived("cm", "cm-value");
 
-        PropertiesComponent pc = context.getComponent("properties", PropertiesComponent.class);
+        PropertiesComponent pc = (PropertiesComponent) context.getPropertiesComponent();
         assertNotNull("Properties component not defined", pc);
 
-        List<PropertiesLocation> locations = pc.getLocations();
+        List<String> locations = pc.getLocations();
 
         assertNotNull(locations);
         assertEquals("Properties locations", 3, locations.size());

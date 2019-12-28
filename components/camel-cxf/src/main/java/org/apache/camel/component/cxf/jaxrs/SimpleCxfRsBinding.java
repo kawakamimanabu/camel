@@ -43,8 +43,9 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.camel.Message;
+import org.apache.camel.attachment.AttachmentMessage;
+import org.apache.camel.attachment.DefaultAttachment;
 import org.apache.camel.spi.HeaderFilterStrategy;
-import org.apache.camel.support.DefaultAttachment;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.ext.multipart.InputStreamDataSource;
 import org.apache.cxf.jaxrs.ext.multipart.Multipart;
@@ -163,7 +164,7 @@ public class SimpleCxfRsBinding extends DefaultCxfRsBinding {
      * @return
      */
     protected Object buildResponse(org.apache.camel.Exchange camelExchange, Object base) {
-        Message m = camelExchange.hasOut() ? camelExchange.getOut() : camelExchange.getIn();
+        Message m = camelExchange.getMessage();
         ResponseBuilder response;
 
         // if the body is different to Response, it's an entity; therefore, check 
@@ -280,7 +281,7 @@ public class SimpleCxfRsBinding extends DefaultCxfRsBinding {
     }
 
     private void transferBinaryMultipartParameter(Object toMap, String parameterName, String multipartType, Message in) {
-        org.apache.camel.Attachment dh = null;
+        org.apache.camel.attachment.Attachment dh = null;
         if (toMap instanceof Attachment) {
             dh = createCamelAttachment((Attachment) toMap);
         } else if (toMap instanceof DataSource) {
@@ -291,7 +292,7 @@ public class SimpleCxfRsBinding extends DefaultCxfRsBinding {
             dh = new DefaultAttachment(new InputStreamDataSource((InputStream) toMap, multipartType == null ? "application/octet-stream" : multipartType));
         }
         if (dh != null) {
-            in.addAttachmentObject(parameterName, dh);
+            in.getExchange().getMessage(AttachmentMessage.class).addAttachmentObject(parameterName, dh);
         }
     }
 

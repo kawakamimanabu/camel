@@ -60,14 +60,12 @@ public abstract class FeedEndpoint extends DefaultPollingEndpoint {
         this.feedUri = feedUri;
     }
 
-    public boolean isSingleton() {
-        return true;
-    }
-
+    @Override
     public Producer createProducer() throws Exception {
         throw new UnsupportedOperationException("FeedProducer is not implemented");
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         ObjectHelper.notNull(feedUri, "feedUri");
 
@@ -196,6 +194,7 @@ public abstract class FeedEndpoint extends DefaultPollingEndpoint {
         return sortEntries;
     }      
 
+    @Override
     public boolean isLenientProperties() {
         // true to allow dynamic URI options to be configured and passed to external system for eg. the HttpProducer
         return true;

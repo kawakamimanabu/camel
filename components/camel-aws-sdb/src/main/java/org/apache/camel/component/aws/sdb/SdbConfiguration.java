@@ -16,8 +16,8 @@
  */
 package org.apache.camel.component.aws.sdb;
 
+import com.amazonaws.Protocol;
 import com.amazonaws.services.simpledb.AmazonSimpleDB;
-
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriParams;
@@ -40,6 +40,8 @@ public class SdbConfiguration {
     private boolean consistentRead;
     @UriParam(defaultValue = "PutAttributes")
     private SdbOperations operation = SdbOperations.PutAttributes;
+    @UriParam(enums = "HTTP,HTTPS", defaultValue = "HTTPS")
+    private Protocol proxyProtocol = Protocol.HTTPS;
     @UriParam
     private String proxyHost;
     @UriParam
@@ -124,6 +126,18 @@ public class SdbConfiguration {
         this.consistentRead = consistentRead;
     }
     
+    
+    public Protocol getProxyProtocol() {
+        return proxyProtocol;
+    }
+
+    /**
+     * To define a proxy protocol when instantiating the SDB client
+     */
+    public void setProxyProtocol(Protocol proxyProtocol) {
+        this.proxyProtocol = proxyProtocol;
+    }
+    
     public String getProxyHost() {
         return proxyHost;
     }
@@ -151,7 +165,8 @@ public class SdbConfiguration {
     }
 
     /**
-     * The region in which SDB client needs to work
+     * The region in which SDB client needs to work. When using this parameter, the configuration will expect the capitalized name of the region (for example AP_EAST_1)
+     * You'll need to use the name Regions.EU_WEST_1.name()
      */
     public void setRegion(String region) {
         this.region = region;

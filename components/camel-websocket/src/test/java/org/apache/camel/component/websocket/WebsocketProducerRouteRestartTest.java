@@ -41,13 +41,13 @@ public class WebsocketProducerRouteRestartTest extends CamelTestSupport {
     private static CountDownLatch latch;
     protected int port;
 
-    @Produce(uri = "direct:shop")
+    @Produce("direct:shop")
     private ProducerTemplate producer;
 
     @Override
     @Before
     public void setUp() throws Exception {
-        port = AvailablePortFinder.getNextAvailable(16200);
+        port = AvailablePortFinder.getNextAvailable();
         super.setUp();
         received.clear();
         latch =  new CountDownLatch(1);

@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 package org.apache.camel.spring;
+
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.camel.impl.DefaultModelJAXBContextFactory;
-import org.apache.camel.impl.DefaultUuidGenerator;
+import org.apache.camel.impl.engine.DefaultUuidGenerator;
 import org.apache.camel.spi.ModelJAXBContextFactory;
 import org.apache.camel.spi.UuidGenerator;
 import org.apache.camel.support.SimpleUuidGenerator;
@@ -38,8 +39,6 @@ public class CamelContextFactoryBeanTest extends Assert {
 
     @Before
     public void setUp() throws Exception {
-
-        
         factory = new CamelContextFactoryBean();
         factory.setId("camelContext");
     }

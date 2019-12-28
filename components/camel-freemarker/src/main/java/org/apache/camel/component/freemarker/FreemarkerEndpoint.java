@@ -22,7 +22,6 @@ import java.io.StringWriter;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
-
 import org.apache.camel.Component;
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
@@ -51,11 +50,6 @@ public class FreemarkerEndpoint extends ResourceEndpoint {
 
     public FreemarkerEndpoint(String uri, Component component, String resourceUri) {
         super(uri, component, resourceUri);
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     @Override
@@ -162,6 +156,5 @@ public class FreemarkerEndpoint extends ResourceEndpoint {
         Message out = exchange.getOut();
         out.setBody(buffer.toString());
         out.setHeaders(exchange.getIn().getHeaders());
-        out.setAttachments(exchange.getIn().getAttachments());
     }
 }

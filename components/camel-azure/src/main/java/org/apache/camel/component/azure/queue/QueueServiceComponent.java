@@ -17,28 +17,25 @@
 package org.apache.camel.component.azure.queue;
 
 import java.util.Map;
+import java.util.Set;
 
 import com.microsoft.azure.storage.StorageCredentials;
 import com.microsoft.azure.storage.queue.CloudQueue;
-
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
+import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.annotations.Component;
 import org.apache.camel.support.DefaultComponent;
 
 @Component("azure-queue")
 public class QueueServiceComponent extends DefaultComponent {
+    
+    @Metadata(label = "advanced")
+    private QueueServiceConfiguration configuration;
 
-    public QueueServiceComponent() {
-    }
-
-    public QueueServiceComponent(CamelContext context) {
-        super(context);
-    }
-
+    @Override
     protected Endpoint createEndpoint(String uri, String remaining, Map<String, Object> parameters) throws Exception {
-        QueueServiceConfiguration configuration = new QueueServiceConfiguration();
-        setProperties(configuration, parameters);
+        final QueueServiceConfiguration configuration = this.configuration != null ? this.configuration.copy() : new QueueServiceConfiguration();
 
         String[] parts = null;
         if (remaining != null) {
@@ -47,27 +44,35 @@ public class QueueServiceComponent extends DefaultComponent {
         if (parts == null || parts.length < 1) {
             throw new IllegalArgumentException("The account name must be specified.");
         }
-
-        QueueServiceOperations operation = configuration.getOperation();
-        if (operation != null && operation != QueueServiceOperations.listQueues && parts.length < 2) {
-            throw new IllegalArgumentException("The queue name must be specified.");
+        configuration.setAccountName(parts[0]);
+        if (parts.length > 1) {
+            configuration.setQueueName(parts[1]);
         }
-
         if (parts.length > 2) {
             throw new IllegalArgumentException("Only the account and queue names must be specified.");
         }
 
-        configuration.setAccountName(parts[0]);
-
-        if (parts.length > 1) {
-            configuration.setQueueName(parts[1]);
-        }
-
-        checkCredentials(configuration);
-
         QueueServiceEndpoint endpoint = new QueueServiceEndpoint(uri, this, configuration);
         setProperties(endpoint, parameters);
+
+        checkAndSetRegistryClient(configuration);
+        checkCredentials(configuration);
+        QueueServiceOperations operation = configuration.getOperation();
+        if (operation != null && operation != QueueServiceOperations.listQueues && parts.length < 2) {
+            throw new IllegalArgumentException("The queue name must be specified.");
+        }
         return endpoint;
+    }
+
+    public QueueServiceConfiguration getConfiguration() {
+        return configuration;
+    }
+
+    /**
+     * The Queue Service configuration
+     */
+    public void setConfiguration(QueueServiceConfiguration configuration) {
+        this.configuration = configuration;
     }
 
     private void checkCredentials(QueueServiceConfiguration cfg) {
@@ -75,6 +80,13 @@ public class QueueServiceComponent extends DefaultComponent {
         StorageCredentials creds = client == null ? cfg.getCredentials() : client.getServiceClient().getCredentials();
         if (creds == null) {
             throw new IllegalArgumentException("Credentials must be specified.");
+        }
+    }
+    
+    private void checkAndSetRegistryClient(QueueServiceConfiguration configuration) {
+        Set<CloudQueue> clients = getCamelContext().getRegistry().findByType(CloudQueue.class);
+        if (clients.size() == 1) {
+            configuration.setAzureQueueClient(clients.stream().findFirst().get());
         }
     }
 }

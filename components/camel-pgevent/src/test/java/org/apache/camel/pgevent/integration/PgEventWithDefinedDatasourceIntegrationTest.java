@@ -19,45 +19,42 @@ package org.apache.camel.pgevent.integration;
 import java.util.Properties;
 
 import com.impossibl.postgres.jdbc.PGDataSource;
-
+import org.apache.camel.BindToRegistry;
 import org.apache.camel.Endpoint;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.RoutesBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.impl.JndiRegistry;
 import org.junit.Test;
 
 public class PgEventWithDefinedDatasourceIntegrationTest extends AbstractPgEventIntegrationTest {
 
-    @EndpointInject(uri = "pgevent:///{{database}}/testchannel?datasource=#pgDataSource")
+    @EndpointInject("pgevent:///{{database}}/testchannel?datasource=#pgDataSource")
     private Endpoint subscribeEndpoint;
 
-    @EndpointInject(uri = "pgevent:///{{database}}/testchannel?datasource=#pgDataSource")
+    @EndpointInject("pgevent:///{{database}}/testchannel?datasource=#pgDataSource")
     private Endpoint notifyEndpoint;
 
-    @EndpointInject(uri = "timer://test?repeatCount=1&period=1")
+    @EndpointInject("timer://test?repeatCount=1&period=1")
     private Endpoint timerEndpoint;
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint mockEndpoint;
 
-    @Override
-    protected JndiRegistry createRegistry() throws Exception {
+    @BindToRegistry("pgDataSource")
+    public PGDataSource loadDataSource() throws Exception {
         Properties properties = new Properties();
         properties.load(getClass().getResourceAsStream("/test-options.properties"));
 
         PGDataSource dataSource = new PGDataSource();
         dataSource.setHost(properties.getProperty("host"));
         dataSource.setPort(Integer.parseInt(properties.getProperty("port")));
-        dataSource.setDatabase(properties.getProperty("database"));
+        dataSource.setDatabaseName(properties.getProperty("database"));
         dataSource.setUser(properties.getProperty("userName"));
         dataSource.setPassword(properties.getProperty("password"));
 
-        JndiRegistry registry = super.createRegistry();
-        registry.bind("pgDataSource", dataSource);
 
-        return registry;
+        return dataSource;
     }
 
     @Test

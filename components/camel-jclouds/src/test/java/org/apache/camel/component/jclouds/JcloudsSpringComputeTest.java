@@ -36,12 +36,13 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class JcloudsSpringComputeTest extends CamelSpringTestSupport {
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     protected MockEndpoint result;
     
-    @EndpointInject(uri = "mock:resultlist")
+    @EndpointInject("mock:resultlist")
     protected MockEndpoint resultlist;
 
+    @Override
     @After
     public void tearDown() throws Exception {
         template.sendBodyAndHeaders("direct:start", null, destroyHeaders(null, null));

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.crypto.cms;
+
 import java.security.Security;
 
 import org.apache.camel.CamelContext;
@@ -59,6 +60,7 @@ public class ProcessorsTest extends CamelTestSupport {
         assertMockEndpointsSatisfied();
     }
 
+    @Override
     protected CamelContext createCamelContext() throws Exception {
         simpleReg = new SimpleRegistry();
         CamelContext context = new DefaultCamelContext(simpleReg);
@@ -99,7 +101,7 @@ public class ProcessorsTest extends CamelTestSupport {
                 signerInfo.setKeyStoreParameters(keystore);
 
                 SignedDataCreatorConfiguration config = new SignedDataCreatorConfiguration(new DefaultCamelContext());
-                config.setSigner(signerInfo);
+                config.addSigner(signerInfo);
                 config.setIncludeContent(true); // optional default value is
                                                 // true
                 config.init();

@@ -16,66 +16,71 @@
  */
 package org.apache.camel.spi;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Predicate;
 
-import org.apache.camel.Component;
+import org.apache.camel.StaticService;
 
-public interface PropertiesComponent extends Component {
+/**
+ * Component for property placeholders and loading properties from sources
+ * (such as .properties file from classpath or file system)
+ */
+public interface PropertiesComponent extends StaticService {
 
     /**
-     * The default prefix token.
+     * The prefix token.
      */
-    String DEFAULT_PREFIX_TOKEN = "{{";
+    String PREFIX_TOKEN = "{{";
 
     /**
-     * The default suffix token.
+     * The suffix token.
      */
-    String DEFAULT_SUFFIX_TOKEN = "}}";
+    String SUFFIX_TOKEN = "}}";
 
     /**
-     * Has the component been created as a default by {@link org.apache.camel.CamelContext} during starting up Camel.
-     */
-    String DEFAULT_CREATED = "PropertiesComponentDefaultCreated";
-
-    String getPrefixToken();
-
-    String getSuffixToken();
-
-    /**
-     * Parses the input text and resolve all property placeholders.
+     * Parses the input text and resolve all property placeholders from within the text.
      *
      * @param uri  input text
      * @return text with resolved property placeholders
-     * @throws Exception is thrown if error during parsing
+     * @throws IllegalArgumentException is thrown if error during parsing
      */
-    String parseUri(String uri) throws Exception;
+    String parseUri(String uri);
 
     /**
-     * Parses the input text and resolve all property placeholders.
+     * Looks up the property with the given key
      *
-     * @param uri  input text
-     * @param locations locations to load as properties (will not use the default locations)
-     * @return text with resolved property placeholders
-     * @throws Exception is thrown if error during parsing
+     * @param key  the name of the property
+     * @return the property value if present
      */
-    String parseUri(String uri, String... locations) throws Exception;
+    Optional<String> resolveProperty(String key);
 
     /**
-     * Loads the properties from the default locations.
+     * Loads the properties from the default locations and sources.
      *
      * @return the properties loaded.
-     * @throws Exception is thrown if error loading properties
      */
-    Properties loadProperties() throws Exception;
+    Properties loadProperties();
 
     /**
-     * Loads the properties from the given locations
+     * Loads the properties from the default locations and sources filtering them out according to a predicate.
+     * </p>
+     * <pre>{@code
+     *     PropertiesComponent pc = getPropertiesComponent();
+     *     Properties props = pc.loadProperties(key -> key.startsWith("camel.component.seda"));
+     * }</pre>
      *
-     * @param locations locations to load as properties (will not use the default locations)
+     * @param filter the predicate used to filter out properties based on the key.
      * @return the properties loaded.
-     * @throws Exception is thrown if error loading properties
      */
-    Properties loadProperties(String... locations) throws Exception;
+    Properties loadProperties(Predicate<String> filter);
+
+    /**
+     * Gets the configured properties locations.
+     * This may be empty if the properties component has only been configured with {@link PropertiesSource}.
+     */
+    List<String> getLocations();
 
     /**
      * A list of locations to load properties. You can use comma to separate multiple locations.
@@ -86,9 +91,13 @@ public interface PropertiesComponent extends Component {
     /**
      * Adds the list of locations to the current locations, where to load properties.
      * You can use comma to separate multiple locations.
-     * This option will override any default locations and only use the locations from this option.
      */
     void addLocation(String location);
+
+    /**
+     * Adds a custom {@link PropertiesSource} to use as source for loading and/or looking up property values.
+     */
+    void addPropertiesSource(PropertiesSource propertiesSource);
 
     /**
      * Whether to silently ignore if a location cannot be located, such as a properties file not found.
@@ -105,5 +114,15 @@ public interface PropertiesComponent extends Component {
      * and will use first, if a property exist.
      */
     void setOverrideProperties(Properties overrideProperties);
+
+    /**
+     * Encoding to use when loading properties file from the file system or classpath.
+     * <p/>
+     * If no encoding has been set, then the properties files is loaded using ISO-8859-1 encoding (latin-1)
+     * as documented by {@link java.util.Properties#load(java.io.InputStream)}
+     * <p/>
+     * Important you must set encoding before setting locations.
+     */
+    void setEncoding(String encoding);
 
 }

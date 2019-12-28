@@ -17,6 +17,7 @@
 package org.apache.camel.component.xmlsecurity;
 
 import java.util.Map;
+
 import javax.xml.crypto.URIDereferencer;
 
 import org.apache.camel.Consumer;
@@ -51,6 +52,14 @@ public abstract class XmlSignatureEndpoint extends DefaultEndpoint {
         super(uri, component);
     }
 
+    public XmlSignerConfiguration getSignerConfiguration() {
+        return signerConfiguration;
+    }
+
+    public XmlVerifierConfiguration getVerifierConfiguration() {
+        return verifierConfiguration;
+    }
+
     public XmlCommand getCommand() {
         return command;
     }
@@ -83,11 +92,6 @@ public abstract class XmlSignatureEndpoint extends DefaultEndpoint {
     @Override
     public Consumer createConsumer(Processor processor) {
         throw new UnsupportedOperationException("XML Signature endpoints are not meant to be consumed from.");
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     public Object getManagedObject(XmlSignatureEndpoint endpoint) {

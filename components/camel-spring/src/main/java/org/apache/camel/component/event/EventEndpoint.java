@@ -50,6 +50,7 @@ public class EventEndpoint extends DefaultEndpoint implements ApplicationContext
         this.name = name;
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
@@ -66,10 +67,7 @@ public class EventEndpoint extends DefaultEndpoint implements ApplicationContext
         this.name = name;
     }
 
-    public boolean isSingleton() {
-        return true;
-    }
-
+    @Override
     public Producer createProducer() throws Exception {
         ObjectHelper.notNull(applicationContext, "applicationContext");
         return new DefaultProducer(this) {
@@ -80,6 +78,7 @@ public class EventEndpoint extends DefaultEndpoint implements ApplicationContext
         };
     }
 
+    @Override
     public EventConsumer createConsumer(Processor processor) throws Exception {
         ObjectHelper.notNull(applicationContext, "applicationContext");
         EventConsumer answer = new EventConsumer(this, processor);

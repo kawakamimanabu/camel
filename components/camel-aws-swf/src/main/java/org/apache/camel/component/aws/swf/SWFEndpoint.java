@@ -34,8 +34,8 @@ import org.apache.camel.Producer;
 import org.apache.camel.spi.UriEndpoint;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.support.DefaultEndpoint;
-import org.apache.camel.support.EndpointHelper;
 import org.apache.camel.support.ExchangeHelper;
+import org.apache.camel.support.PropertyBindingSupport;
 import org.apache.camel.util.ObjectHelper;
 
 /**
@@ -58,20 +58,18 @@ public class SWFEndpoint extends DefaultEndpoint {
         this.configuration = configuration;
     }
 
+    @Override
     public Producer createProducer() throws Exception {
         return isWorkflow()
                 ? new SWFWorkflowProducer(this, new CamelSWFWorkflowClient(this, configuration)) : new SWFActivityProducer(this, new CamelSWFActivityClient(configuration));
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         Consumer consumer = isWorkflow()
                 ? new SWFWorkflowConsumer(this, processor, configuration) : new SWFActivityConsumer(this, processor, configuration);
         configureConsumer(consumer);
         return consumer;
-    }
-
-    public boolean isSingleton() {
-        return true;
     }
 
     @Override
@@ -93,7 +91,7 @@ public class SWFEndpoint extends DefaultEndpoint {
         super.doStop();
     }
 
-    public AmazonSimpleWorkflowClient getSWClient() {
+    public AmazonSimpleWorkflow getSWClient() {
         return configuration.getAmazonSWClient() != null ? configuration.getAmazonSWClient() : amazonSWClient;
     }
 
@@ -120,8 +118,8 @@ public class SWFEndpoint extends DefaultEndpoint {
     public StartWorkflowOptions getStartWorkflowOptions() {
         StartWorkflowOptions startWorkflowOptions = new StartWorkflowOptions();
         try {
-            EndpointHelper.setReferenceProperties(getCamelContext(), startWorkflowOptions, configuration.getStartWorkflowOptionsParameters());
-            EndpointHelper.setProperties(getCamelContext(), startWorkflowOptions, configuration.getStartWorkflowOptionsParameters());
+            PropertyBindingSupport.bindProperties(getCamelContext(), startWorkflowOptions, configuration.getStartWorkflowOptionsParameters());
+            PropertyBindingSupport.bindProperties(getCamelContext(), startWorkflowOptions, configuration.getStartWorkflowOptionsParameters());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

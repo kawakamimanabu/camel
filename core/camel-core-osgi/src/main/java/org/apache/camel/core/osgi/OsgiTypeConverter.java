@@ -16,23 +16,17 @@
  */
 package org.apache.camel.core.osgi;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -45,12 +39,14 @@ import org.apache.camel.TypeConverter;
 import org.apache.camel.TypeConverterExists;
 import org.apache.camel.TypeConverters;
 import org.apache.camel.impl.DefaultCamelContext;
-import org.apache.camel.impl.DefaultPackageScanClassResolver;
 import org.apache.camel.impl.converter.DefaultTypeConverter;
+import org.apache.camel.impl.engine.DefaultPackageScanClassResolver;
 import org.apache.camel.spi.FactoryFinder;
 import org.apache.camel.spi.Injector;
+import org.apache.camel.spi.PackageScanClassResolver;
 import org.apache.camel.spi.TypeConverterLoader;
 import org.apache.camel.spi.TypeConverterRegistry;
+import org.apache.camel.support.SimpleTypeConverter;
 import org.apache.camel.support.service.ServiceHelper;
 import org.apache.camel.support.service.ServiceSupport;
 import org.osgi.framework.BundleContext;
@@ -79,12 +75,14 @@ public class OsgiTypeConverter extends ServiceSupport implements TypeConverter, 
         this.tracker = new ServiceTracker<>(bundleContext, TypeConverterLoader.class.getName(), this);
     }
 
+    @Override
     public Object addingService(ServiceReference<TypeConverterLoader> serviceReference) {
         LOG.trace("AddingService: {}, Bundle: {}", serviceReference, serviceReference.getBundle());        
         TypeConverterLoader loader = bundleContext.getService(serviceReference);
         try {
             LOG.debug("loading type converter from bundle: {}", serviceReference.getBundle().getSymbolicName());
             if (delegate != null) {
+                ServiceHelper.startService(this.delegate);
                 loader.load(delegate);
             }
         } catch (Throwable t) {
@@ -94,9 +92,11 @@ public class OsgiTypeConverter extends ServiceSupport implements TypeConverter, 
         return loader;
     }
 
+    @Override
     public void modifiedService(ServiceReference<TypeConverterLoader> serviceReference, Object o) {
     }
 
+    @Override
     public void removedService(ServiceReference<TypeConverterLoader> serviceReference, Object o) {
         LOG.trace("RemovedService: {}, Bundle: {}", serviceReference, serviceReference.getBundle());  
         try {
@@ -131,86 +131,107 @@ public class OsgiTypeConverter extends ServiceSupport implements TypeConverter, 
         this.camelContext = camelContext;
     }
 
+    @Override
     public boolean allowNull() {
         return getDelegate().allowNull();
     }
 
+    @Override
     public <T> T convertTo(Class<T> type, Object value) {
         return getDelegate().convertTo(type, value);
     }
 
+    @Override
     public <T> T convertTo(Class<T> type, Exchange exchange, Object value) {
         return getDelegate().convertTo(type, exchange, value);
     }
 
+    @Override
     public <T> T mandatoryConvertTo(Class<T> type, Object value) throws NoTypeConversionAvailableException {
         return getDelegate().mandatoryConvertTo(type, value);
     }
 
+    @Override
     public <T> T mandatoryConvertTo(Class<T> type, Exchange exchange, Object value) throws NoTypeConversionAvailableException {
         return getDelegate().mandatoryConvertTo(type, exchange, value);
     }
 
+    @Override
     public <T> T tryConvertTo(Class<T> type, Exchange exchange, Object value) {
         return getDelegate().tryConvertTo(type, exchange, value);
     }
 
+    @Override
     public <T> T tryConvertTo(Class<T> type, Object value) {
         return getDelegate().tryConvertTo(type, value);
     }
 
+    @Override
     public void addTypeConverter(Class<?> toType, Class<?> fromType, TypeConverter typeConverter) {
         getDelegate().addTypeConverter(toType, fromType, typeConverter);
     }
 
+    @Override
     public void addTypeConverters(TypeConverters typeConverters) {
         getDelegate().addTypeConverters(typeConverters);
     }
 
+    @Override
     public boolean removeTypeConverter(Class<?> toType, Class<?> fromType) {
         return getDelegate().removeTypeConverter(toType, fromType);
     }
 
+    @Override
     public void addFallbackTypeConverter(TypeConverter typeConverter, boolean canPromote) {
         getDelegate().addFallbackTypeConverter(typeConverter, canPromote);
     }
 
+    @Override
     public TypeConverter lookup(Class<?> toType, Class<?> fromType) {
         return getDelegate().lookup(toType, fromType);
     }
 
+    @Override
     public List<Class<?>[]> listAllTypeConvertersFromTo() {
         return getDelegate().listAllTypeConvertersFromTo();
     }
 
+    @Override
     public void setInjector(Injector injector) {
         getDelegate().setInjector(injector);
     }
 
+    @Override
     public Injector getInjector() {
         return getDelegate().getInjector();
     }
 
+    @Override
     public Statistics getStatistics() {
         return getDelegate().getStatistics();
     }
 
+    @Override
     public int size() {
         return getDelegate().size();
     }
 
+    @Override
     public LoggingLevel getTypeConverterExistsLoggingLevel() {
         return getDelegate().getTypeConverterExistsLoggingLevel();
     }
 
+    @Override
     public void setTypeConverterExistsLoggingLevel(LoggingLevel loggingLevel) {
         getDelegate().setTypeConverterExistsLoggingLevel(loggingLevel);
     }
 
+    @Override
     public TypeConverterExists getTypeConverterExists() {
         return getDelegate().getTypeConverterExists();
     }
 
+    @Override
     public void setTypeConverterExists(TypeConverterExists typeConverterExists) {
         getDelegate().setTypeConverterExists(typeConverterExists);
     }
@@ -224,7 +245,7 @@ public class OsgiTypeConverter extends ServiceSupport implements TypeConverter, 
 
     protected DefaultTypeConverter createRegistry() {
         // base the osgi type converter on the default type converter
-        DefaultTypeConverter answer = new DefaultTypeConverter(new DefaultPackageScanClassResolver() {
+        DefaultTypeConverter answer = new OsgiDefaultTypeConverter(new DefaultPackageScanClassResolver() {
             @Override
             public Set<ClassLoader> getClassLoaders() {
                 // we only need classloaders for loading core TypeConverterLoaders
@@ -237,10 +258,13 @@ public class OsgiTypeConverter extends ServiceSupport implements TypeConverter, 
         // inject CamelContext
         answer.setCamelContext(camelContext);
 
+
         try {
+            // init before loading core converters
+            answer.init();
             // only load the core type converters, as OSGi activator will keep track on bundles
             // being installed/uninstalled and load type converters as part of that process
-            answer.loadCoreTypeConverters();
+            answer.loadCoreAndFastTypeConverters();
         } catch (Exception e) {
             throw new RuntimeCamelException("Error loading CoreTypeConverter due: " + e.getMessage(), e);
         }
@@ -284,6 +308,29 @@ public class OsgiTypeConverter extends ServiceSupport implements TypeConverter, 
                             }
                         },
                         Spliterator.ORDERED), false);
+    }
+
+    private class OsgiDefaultTypeConverter extends DefaultTypeConverter {
+
+        public OsgiDefaultTypeConverter(PackageScanClassResolver resolver, Injector injector, FactoryFinder factoryFinder, boolean loadTypeConverters) {
+            super(resolver, injector, factoryFinder, loadTypeConverters);
+        }
+
+        @Override
+        public void addTypeConverter(Class<?> toType, Class<?> fromType, TypeConverter typeConverter) {
+            // favour keeping the converter that was loaded via TypeConverterLoader META-INF file
+            // as OSGi loads these first and then gets triggered again later when there is both a META-INF/TypeConverter and META-INF/TypeConverterLoaded file
+            // for the same set of type converters and we get duplicates (so this is a way of filtering out duplicates)
+            TypeConverter converter = typeMappings.get(toType, fromType);
+            if (converter != null && converter != typeConverter) {
+                // the converter is already there which we want to keep (optimized via SimpleTypeConverter)
+                if (converter instanceof SimpleTypeConverter) {
+                    // okay keep this one
+                    return;
+                }
+            }
+            super.addTypeConverter(toType, fromType, typeConverter);
+        }
     }
 
 }

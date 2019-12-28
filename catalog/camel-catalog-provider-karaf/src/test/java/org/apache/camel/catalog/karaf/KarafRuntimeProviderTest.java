@@ -62,8 +62,6 @@ public class KarafRuntimeProviderTest {
 
         assertTrue(names.contains("ftp"));
         assertTrue(names.contains("paxlogging"));
-        // camel-ejb does not work in Karaf
-        assertFalse(names.contains("ejb"));
     }
 
     @Test
@@ -74,7 +72,7 @@ public class KarafRuntimeProviderTest {
         assertFalse(names.isEmpty());
 
         assertTrue(names.contains("bindy-csv"));
-        assertTrue(names.contains("zip"));
+        assertTrue(names.contains("zipdeflater"));
         assertTrue(names.contains("zipfile"));
     }
 
@@ -85,6 +83,7 @@ public class KarafRuntimeProviderTest {
         assertNotNull(names);
         assertFalse(names.isEmpty());
 
+        assertTrue(names.contains("bean"));
         assertTrue(names.contains("simple"));
         assertTrue(names.contains("spel"));
         assertTrue(names.contains("xpath"));

@@ -55,11 +55,11 @@ import org.xnio.channels.StreamSinkChannel;
  * Undertow {@link ClientCallback} that will get notified when the HTTP
  * connection is ready or when the client failed to connect. It will also handle
  * writing the request and reading the response in
- * {@link #writeRequest(ClientExchange, ByteBuffer)} and
+ * {@link #writeRequest(ClientExchange)} and
  * {@link #setupResponseListener(ClientExchange)}. The main entry point is
  * {@link #completed(ClientConnection)} or {@link #failed(IOException)} in case
  * of errors, every error condition that should terminate Camel {@link Exchange}
- * should go to {@link #hasFailedWith(Exception)} and successful execution of
+ * should go to {@link #hasFailedWith(Throwable)} and successful execution of
  * the exchange should end with {@link #finish(Message)}. Any
  * {@link ClientCallback}s that are added here should extend
  * {@link ErrorHandlingClientCallback}, best way to do that is to use the
@@ -94,21 +94,21 @@ class UndertowClientCallback implements ClientCallback<ClientConnection> {
 
     private static final Logger LOG = LoggerFactory.getLogger(UndertowClientCallback.class);
 
-    private final ByteBuffer body;
+    protected final UndertowEndpoint endpoint;
 
-    private final AsyncCallback callback;
+    protected final Exchange exchange;
+
+    protected final ClientRequest request;
+
+    protected final AsyncCallback callback;
 
     /**
      * A queue of resources that will be closed when the exchange ends, add more
      * resources via {@link #deferClose(Closeable)}.
      */
-    private final BlockingDeque<Closeable> closables = new LinkedBlockingDeque<>();
+    protected final BlockingDeque<Closeable> closables = new LinkedBlockingDeque<>();
 
-    private final UndertowEndpoint endpoint;
-
-    private final Exchange exchange;
-
-    private final ClientRequest request;
+    private final ByteBuffer body;
 
     private final Boolean throwExceptionOnFailure;
 
@@ -119,7 +119,7 @@ class UndertowClientCallback implements ClientCallback<ClientConnection> {
         this.endpoint = endpoint;
         this.request = request;
         this.body = body;
-        throwExceptionOnFailure = endpoint.getThrowExceptionOnFailure();
+        this.throwExceptionOnFailure = endpoint.getThrowExceptionOnFailure();
     }
 
     @Override
@@ -161,9 +161,13 @@ class UndertowClientCallback implements ClientCallback<ClientConnection> {
         }
     }
 
-    void finish(final Message result) {
-        for (final Closeable closeable : closables) {
-            IoUtils.safeClose(closeable);
+    protected void finish(final Message result) {
+        finish(result, true);
+    }
+
+    protected void finish(final Message result, boolean close) {
+        if (close) {
+            closables.forEach(IoUtils::safeClose);
         }
 
         if (result != null) {
@@ -186,7 +190,7 @@ class UndertowClientCallback implements ClientCallback<ClientConnection> {
         finish(null);
     }
 
-    <T> ClientCallback<T> on(final Consumer<T> consumer) {
+    protected <T> ClientCallback<T> on(final Consumer<T> consumer) {
         return new ErrorHandlingClientCallback<>(consumer);
     }
 
@@ -196,7 +200,7 @@ class UndertowClientCallback implements ClientCallback<ClientConnection> {
         setupResponseListener(clientExchange);
 
         // write the request
-        writeRequest(clientExchange, body);
+        writeRequest(clientExchange);
     }
 
     void setupResponseListener(final ClientExchange clientExchange) {
@@ -223,7 +227,7 @@ class UndertowClientCallback implements ClientCallback<ClientConnection> {
                     // using Message versus clientExchange as its header values have extra formatting
                     final Map<String, String> headers = result.getHeaders().entrySet()
                             .stream()
-                            .collect(Collectors.toMap(Map.Entry::getKey, (entry) -> entry.getValue().toString()));
+                            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().toString()));
 
                     // Since result (Message) isn't associated with an Exchange yet, you can not use result.getBody(String.class)
                     final String bodyText = ExchangeHelper.convertToType(exchange, String.class, result.getBody());
@@ -266,7 +270,7 @@ class UndertowClientCallback implements ClientCallback<ClientConnection> {
         }
     }
 
-    void writeRequest(final ClientExchange clientExchange, final ByteBuffer body) {
+    protected void writeRequest(final ClientExchange clientExchange) {
         final StreamSinkChannel requestChannel = clientExchange.getRequestChannel();
         if (body != null) {
             try {

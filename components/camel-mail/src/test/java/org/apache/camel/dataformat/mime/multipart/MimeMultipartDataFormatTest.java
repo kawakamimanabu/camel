@@ -29,11 +29,11 @@ import javax.activation.DataHandler;
 import javax.activation.DataSource;
 import javax.mail.util.ByteArrayDataSource;
 
-import org.apache.camel.Attachment;
 import org.apache.camel.Exchange;
-import org.apache.camel.Message;
+import org.apache.camel.attachment.Attachment;
+import org.apache.camel.attachment.AttachmentMessage;
+import org.apache.camel.attachment.DefaultAttachment;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.support.DefaultAttachment;
 import org.apache.camel.support.DefaultExchange;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.apache.camel.util.IOHelper;
@@ -48,13 +48,14 @@ import static org.hamcrest.core.StringStartsWith.startsWith;
 
 public class MimeMultipartDataFormatTest extends CamelTestSupport {
     private Exchange exchange;
-    private Message in;
+    private AttachmentMessage in;
 
+    @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
         exchange = new DefaultExchange(context);
-        in = exchange.getIn();
+        in = exchange.getIn(AttachmentMessage.class);
     }
 
     @Test
@@ -70,7 +71,7 @@ public class MimeMultipartDataFormatTest extends CamelTestSupport {
         headers.put("X-AdditionalData", "additional data");
         addAttachment(attContentType, attText, attFileName, headers);
         Exchange result = template.send("direct:roundtrip", exchange);
-        Message out = result.getOut();
+        AttachmentMessage out = result.getOut(AttachmentMessage.class);
         assertEquals("Body text", out.getBody(String.class));
         assertThat(out.getHeader(Exchange.CONTENT_TYPE, String.class), startsWith("text/plain"));
         assertEquals("UTF8", out.getHeader(Exchange.CONTENT_ENCODING));
@@ -99,7 +100,7 @@ public class MimeMultipartDataFormatTest extends CamelTestSupport {
         in.setHeader(Exchange.CONTENT_ENCODING, "UTF8");
         addAttachment(attContentType, attText, attFileName);
         Exchange result = template.send("direct:roundtripinlineheaders", exchange);
-        Message out = result.getOut();
+        AttachmentMessage out = result.getOut(AttachmentMessage.class);
         assertEquals("Body text", out.getBody(String.class));
         assertThat(out.getHeader(Exchange.CONTENT_TYPE, String.class), startsWith("text/plain"));
         assertEquals("UTF8", out.getHeader(Exchange.CONTENT_ENCODING));
@@ -126,7 +127,7 @@ public class MimeMultipartDataFormatTest extends CamelTestSupport {
         in.setHeader(Exchange.CONTENT_ENCODING, "UTF8");
         addAttachment(attContentType, attText, attFileName);
         Exchange result = template.send("direct:roundtrip", exchange);
-        Message out = result.getOut();
+        AttachmentMessage out = result.getOut(AttachmentMessage.class);
         assertEquals("Body text with special characters: \u00A9", out.getBody(String.class));
         assertThat(out.getHeader(Exchange.CONTENT_TYPE, String.class), startsWith("text/plain"));
         assertEquals("UTF8", out.getHeader(Exchange.CONTENT_ENCODING));
@@ -151,7 +152,7 @@ public class MimeMultipartDataFormatTest extends CamelTestSupport {
         in.setHeader(Exchange.CONTENT_TYPE, "text/plain;charset=iso8859-1;other-parameter=true");
         addAttachment(attContentType, attText, attFileName);
         Exchange result = template.send("direct:roundtripbinarycontent", exchange);
-        Message out = result.getOut();
+        AttachmentMessage out = result.getOut(AttachmentMessage.class);
         assertEquals("Body text", out.getBody(String.class));
         assertThat(out.getHeader(Exchange.CONTENT_TYPE, String.class), startsWith("text/plain"));
         assertEquals("iso8859-1", out.getHeader(Exchange.CONTENT_ENCODING));
@@ -176,7 +177,7 @@ public class MimeMultipartDataFormatTest extends CamelTestSupport {
         DataSource ds = new ByteArrayDataSource(attText, attContentType);
         in.addAttachment(attFileName, new DataHandler(ds));
         Exchange result = template.send("direct:roundtrip", exchange);
-        Message out = result.getOut();
+        AttachmentMessage out = result.getOut(AttachmentMessage.class);
         assertEquals("Body text", out.getBody(String.class));
         assertTrue(out.hasAttachments());
         assertEquals(1, out.getAttachmentNames().size());
@@ -199,7 +200,7 @@ public class MimeMultipartDataFormatTest extends CamelTestSupport {
         DataSource ds = new ByteArrayDataSource(attText, attContentType);
         in.addAttachment(attFileName, new DataHandler(ds));
         Exchange result = template.send("direct:roundtripbinarycontent", exchange);
-        Message out = result.getOut();
+        AttachmentMessage out = result.getOut(AttachmentMessage.class);
         assertEquals("Body text", out.getBody(String.class));
         assertTrue(out.hasAttachments());
         assertEquals(1, out.getAttachmentNames().size());
@@ -217,7 +218,7 @@ public class MimeMultipartDataFormatTest extends CamelTestSupport {
     public void roundtripWithoutAttachments() throws IOException {
         in.setBody("Body text");
         Exchange result = template.send("direct:roundtrip", exchange);
-        Message out = result.getOut();
+        AttachmentMessage out = result.getOut(AttachmentMessage.class);
         assertEquals("Body text", out.getBody(String.class));
         assertFalse(out.hasAttachments());
     }
@@ -226,7 +227,7 @@ public class MimeMultipartDataFormatTest extends CamelTestSupport {
     public void roundtripWithoutAttachmentsToMultipart() throws IOException {
         in.setBody("Body text");
         Exchange result = template.send("direct:roundtripmultipart", exchange);
-        Message out = result.getOut();
+        AttachmentMessage out = result.getOut(AttachmentMessage.class);
         assertEquals("Body text", out.getBody(String.class));
         assertFalse(out.hasAttachments());
     }
@@ -236,7 +237,7 @@ public class MimeMultipartDataFormatTest extends CamelTestSupport {
         in.setBody("Body text");
         in.setHeader("Content-Type", "text/plain");
         Exchange result = template.send("direct:roundtrip", exchange);
-        Message out = result.getOut();
+        AttachmentMessage out = result.getOut(AttachmentMessage.class);
         assertEquals("Body text", out.getBody(String.class));
         assertFalse(out.hasAttachments());
     }
@@ -246,7 +247,7 @@ public class MimeMultipartDataFormatTest extends CamelTestSupport {
         in.setBody("Body text");
         in.setHeader("Content-Type", "text?plain");
         Exchange result = template.send("direct:roundtrip", exchange);
-        Message out = result.getOut();
+        AttachmentMessage out = result.getOut(AttachmentMessage.class);
         assertEquals("Body text", out.getBody(String.class));
         assertFalse(out.hasAttachments());
     }
@@ -357,9 +358,9 @@ public class MimeMultipartDataFormatTest extends CamelTestSupport {
         String bodyStr = intermediate.getOut().getBody(String.class);
         assertNotNull(bodyStr);
         assertThat(bodyStr, startsWith("25"));
-        assertEquals(1, intermediate.getOut().getAttachmentNames().size());
-        assertThat(intermediate.getOut().getAttachmentNames().iterator().next(), containsString(matcher));
-        Attachment att = intermediate.getOut().getAttachmentObject(intermediate.getOut().getAttachmentNames().iterator().next());
+        assertEquals(1, intermediate.getOut(AttachmentMessage.class).getAttachmentNames().size());
+        assertThat(intermediate.getOut(AttachmentMessage.class).getAttachmentNames().iterator().next(), containsString(matcher));
+        Attachment att = intermediate.getOut(AttachmentMessage.class).getAttachmentObject(intermediate.getOut(AttachmentMessage.class).getAttachmentNames().iterator().next());
         DataHandler dh = att.getDataHandler();
         assertNotNull(dh);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();

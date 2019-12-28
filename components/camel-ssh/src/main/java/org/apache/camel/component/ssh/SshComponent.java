@@ -176,25 +176,6 @@ public class SshComponent extends DefaultComponent {
         getConfiguration().setTimeout(timeout);
     }
 
-    /**
-     * @deprecated As of version 2.11, replaced by {@link #getCertResource()}
-     */
-    @Deprecated
-    public String getCertFilename() {
-        return getConfiguration().getCertFilename();
-    }
-
-    /**
-     * Sets the resource path of the certificate to use for Authentication.
-     *
-     * @deprecated As of version 2.11, replaced by {@link #setCertResource(String)}
-     */
-    @Deprecated
-    @Metadata(label = "security", deprecationNote = "As of version 2.11, replaced by certResource.")
-    public void setCertFilename(String certFilename) {
-        getConfiguration().setCertFilename(certFilename);
-    }
-
     public String getCertResource() {
         return getConfiguration().getCertResource();
     }
@@ -209,7 +190,22 @@ public class SshComponent extends DefaultComponent {
     public void setCertResource(String certResource) {
         getConfiguration().setCertResource(certResource);
     }
-    
+
+    public String getCertResourcePassword() {
+        return getConfiguration().getCertResourcePassword();
+    }
+
+    /**
+     * Sets the password to use in loading certResource, if certResource is an encrypted key.
+     *
+     * @param certResourcePassword
+     *            String representing password use to load the certResource key
+     */
+    @Metadata(label = "security", secret = true)
+    public void setCertResourcePassword(String certResourcePassword) {
+        getConfiguration().setCertResourcePassword(certResourcePassword);
+    }
+
     /**
      * Sets the channel type to pass to the Channel as part of command execution.
      * Defaults to "exec".
@@ -223,19 +219,19 @@ public class SshComponent extends DefaultComponent {
     public void setChannelType(String channelType) {
         getConfiguration().setChannelType(channelType);
     }
-    
+
     /**
      * Sets the shellPrompt to be dropped when response is read after command execution
      *
      * @param shellPrompt
-     *            String defining ending string of command line which has to be dropped when response is 
+     *            String defining ending string of command line which has to be dropped when response is
      *            read after command execution.
      */
     @Metadata(label = "advanced")
     public void setShellPrompt(String shellPrompt) {
         getConfiguration().setShellPrompt(shellPrompt);
     }
-    
+
     /**
      * Sets the sleep period in milliseconds to wait reading response from shell prompt.
      * Defaults to 100 milliseconds.

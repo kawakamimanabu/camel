@@ -46,11 +46,13 @@ public class DnsActivationPolicy extends RoutePolicySupport {
         dnsActivation = new DnsActivation();
     }
 
+    @Override
     public void onInit(Route route) {
         LOG.debug("onInit {}", route.getId());
         routes.put(route.getId(), route);
     }
 
+    @Override
     public void onRemove(Route route) {
         LOG.debug("onRemove {}", route.getId());
         // noop
@@ -80,11 +82,13 @@ public class DnsActivationPolicy extends RoutePolicySupport {
         // noop
     }
 
+    @Override
     public void onExchangeBegin(Route route, Exchange exchange) {
         LOG.debug("onExchange start " + route.getId() + "/" + exchange.getExchangeId());
         // noop
     }
 
+    @Override
     public void onExchangeDone(Route route, Exchange exchange) {
         LOG.debug("onExchange end " + route.getId() + "/" + exchange.getExchangeId());
         // noop
@@ -106,6 +110,7 @@ public class DnsActivationPolicy extends RoutePolicySupport {
         }
     }
 
+    @Override
     public ExceptionHandler getExceptionHandler() {
         if (exceptionHandler == null) {
             exceptionHandler = new LoggingExceptionHandler(null, getClass());
@@ -113,6 +118,7 @@ public class DnsActivationPolicy extends RoutePolicySupport {
         return exceptionHandler;
     }
 
+    @Override
     public void setExceptionHandler(ExceptionHandler exceptionHandler) {
         this.exceptionHandler = exceptionHandler;
     }
@@ -154,7 +160,7 @@ public class DnsActivationPolicy extends RoutePolicySupport {
     }
 
     private void startRouteImpl(Route route) throws Exception {
-        ServiceStatus routeStatus = route.getRouteContext().getCamelContext().getRouteController().getRouteStatus(route.getId());
+        ServiceStatus routeStatus = controller(route).getRouteStatus(route.getId());
 
         if (routeStatus == ServiceStatus.Stopped) {
             LOG.info("Starting {}", route.getId());
@@ -179,7 +185,7 @@ public class DnsActivationPolicy extends RoutePolicySupport {
     }
 
     private void stopRouteImpl(Route route) throws Exception {
-        ServiceStatus routeStatus = route.getRouteContext().getCamelContext().getRouteController().getRouteStatus(route.getId());
+        ServiceStatus routeStatus = controller(route).getRouteStatus(route.getId());
 
         if (routeStatus == ServiceStatus.Started) {
             LOG.info("Stopping {}", route.getId());
@@ -205,6 +211,7 @@ public class DnsActivationPolicy extends RoutePolicySupport {
     }
 
     class DnsActivationTask extends TimerTask {
+        @Override
         public void run() {
             try {
                 if (isActive()) {

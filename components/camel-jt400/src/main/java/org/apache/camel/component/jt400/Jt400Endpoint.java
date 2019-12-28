@@ -70,6 +70,10 @@ public class Jt400Endpoint extends ScheduledPollEndpoint implements MultipleCons
         }
     }
 
+    public Jt400Configuration getConfiguration() {
+        return configuration;
+    }
+
     @Override
     public Producer createProducer() throws Exception {
         if (Jt400Type.DTAQ == configuration.getType()) {
@@ -88,11 +92,6 @@ public class Jt400Endpoint extends ScheduledPollEndpoint implements MultipleCons
         } else {
             throw new OperationNotSupportedException();
         }
-    }
-
-    public boolean isSingleton() {
-        // cannot be singleton as we store an AS400 instance on the configuration
-        return false;
     }
 
     /**

@@ -40,10 +40,10 @@ public class BindySimpleCsvNullMarshallTest extends AbstractJUnit4SpringContextT
     private List<Map<String, Object>> models = new ArrayList<>();
     private String result = "1,B2,Keira,Knightley,ISIN,XX23456789,BUY,,450.45,EUR,14-01-2009,\r\n";
 
-    @Produce(uri = "direct:start")
+    @Produce("direct:start")
     private ProducerTemplate template;
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint resultEndpoint;
 
     @Test
@@ -83,6 +83,7 @@ public class BindySimpleCsvNullMarshallTest extends AbstractJUnit4SpringContextT
 
     public static class ContextConfig extends RouteBuilder {
 
+        @Override
         public void configure() {
             BindyCsvDataFormat camelDataFormat = new BindyCsvDataFormat(org.apache.camel.dataformat.bindy.model.simple.oneclass.Order.class);
             camelDataFormat.setLocale("en");

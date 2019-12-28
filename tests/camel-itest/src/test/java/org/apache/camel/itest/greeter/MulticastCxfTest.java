@@ -26,20 +26,20 @@ import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class MulticastCxfTest extends CamelSpringTestSupport {
-    private static int port = AvailablePortFinder.getNextAvailable(20006);
+    private static int port = AvailablePortFinder.getNextAvailable();
     static {
         //set them as system properties so Spring can use the property placeholder
         //things to set them into the URL's in the spring contexts 
         System.setProperty("MulticastCxfTest.port", Integer.toString(port));
     }
 
-    @EndpointInject(uri = "mock:reply")
+    @EndpointInject("mock:reply")
     protected MockEndpoint replyEndpoint;
 
-    @EndpointInject(uri = "mock:reply2")
+    @EndpointInject("mock:reply2")
     protected MockEndpoint reply2Endpoint;
 
-    @EndpointInject(uri = "mock:output")
+    @EndpointInject("mock:output")
     protected MockEndpoint outputEndpoint;
     
     

@@ -20,7 +20,6 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder;
 import com.amazonaws.services.kinesis.model.Record;
-
 import org.apache.camel.BindToRegistry;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.Exchange;
@@ -79,15 +78,14 @@ public class KinesisComponentIntegrationTest extends CamelTestSupport {
         assertNotNull(resultExchange.getIn().getHeader(KinesisConstants.SEQUENCE_NUMBER));
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                String kinesisEndpointUri = "aws-kinesis://etl?amazonKinesisClient=#amazonKinesisClient";
+                String kinesisEndpointUri = "aws-kinesis://kinesis1?amazonKinesisClient=#amazonKinesisClient";
 
                 from("direct:start").to(kinesisEndpointUri);
-
-                from(kinesisEndpointUri).to("mock:result");
             }
         };
     }

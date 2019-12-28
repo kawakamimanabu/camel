@@ -17,21 +17,20 @@
 package org.apache.camel.impl;
 
 import org.apache.camel.CamelContext;
+import org.apache.camel.impl.engine.DefaultUnitOfWork;
 import org.apache.camel.support.DefaultExchange;
 import org.apache.camel.support.SimpleUuidGenerator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-
 public class DefaultUnitOfWorkTest extends Assert {
-    
+
     private DefaultUnitOfWork unitOfWork;
 
     @Before
     public void setUp() throws Exception {
 
-        
         CamelContext context = new DefaultCamelContext();
         context.setUuidGenerator(new SimpleUuidGenerator());
         unitOfWork = new DefaultUnitOfWork(new DefaultExchange(context));

@@ -16,56 +16,37 @@
  */
 package org.apache.camel;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.*;
 
-import org.apache.camel.spi.AsyncProcessorAwaitManager;
-import org.apache.camel.spi.CamelBeanPostProcessor;
 import org.apache.camel.spi.CamelContextNameStrategy;
 import org.apache.camel.spi.ClassResolver;
 import org.apache.camel.spi.DataFormat;
-import org.apache.camel.spi.DataFormatResolver;
 import org.apache.camel.spi.DataType;
 import org.apache.camel.spi.Debugger;
 import org.apache.camel.spi.EndpointRegistry;
-import org.apache.camel.spi.EndpointStrategy;
 import org.apache.camel.spi.ExecutorServiceManager;
-import org.apache.camel.spi.FactoryFinder;
-import org.apache.camel.spi.FactoryFinderResolver;
 import org.apache.camel.spi.HeadersMapFactory;
 import org.apache.camel.spi.InflightRepository;
 import org.apache.camel.spi.Injector;
-import org.apache.camel.spi.InterceptStrategy;
 import org.apache.camel.spi.Language;
 import org.apache.camel.spi.LifecycleStrategy;
-import org.apache.camel.spi.LogListener;
-import org.apache.camel.spi.ManagementMBeanAssembler;
 import org.apache.camel.spi.ManagementNameStrategy;
 import org.apache.camel.spi.ManagementStrategy;
 import org.apache.camel.spi.MessageHistoryFactory;
-import org.apache.camel.spi.ModelJAXBContextFactory;
-import org.apache.camel.spi.NodeIdFactory;
-import org.apache.camel.spi.PackageScanClassResolver;
-import org.apache.camel.spi.ProcessorFactory;
 import org.apache.camel.spi.PropertiesComponent;
+import org.apache.camel.spi.ReactiveExecutor;
 import org.apache.camel.spi.Registry;
-import org.apache.camel.spi.ReloadStrategy;
 import org.apache.camel.spi.RestConfiguration;
 import org.apache.camel.spi.RestRegistry;
 import org.apache.camel.spi.RouteController;
 import org.apache.camel.spi.RoutePolicyFactory;
-import org.apache.camel.spi.RouteStartupOrder;
 import org.apache.camel.spi.RuntimeEndpointRegistry;
 import org.apache.camel.spi.ShutdownStrategy;
 import org.apache.camel.spi.StreamCachingStrategy;
+import org.apache.camel.spi.Tracer;
 import org.apache.camel.spi.Transformer;
 import org.apache.camel.spi.TransformerRegistry;
 import org.apache.camel.spi.TypeConverterRegistry;
-import org.apache.camel.spi.UnitOfWorkFactory;
 import org.apache.camel.spi.UuidGenerator;
 import org.apache.camel.spi.Validator;
 import org.apache.camel.spi.ValidatorRegistry;
@@ -93,8 +74,10 @@ import org.apache.camel.support.jsse.SSLContextParameters;
  * <p/>
  * End users are advised to use suspend/resume. Using stop is for shutting down Camel and it's not guaranteed that
  * when it's being started again using the start method that Camel will operate consistently.
+ * <p/>
+ * For more advanced APIs with {@link CamelContext} see {@link ExtendedCamelContext}, which you can obtain via the adapt method.
  */
-public interface CamelContext extends SuspendableService, RuntimeConfiguration {
+public interface CamelContext extends StatefulService, RuntimeConfiguration {
 
     /**
      * Adapts this {@link org.apache.camel.CamelContext} to the specialized type.
@@ -134,18 +117,20 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
      * <p/>
      * See more details at the class-level javadoc of this class.
      *
-     * @throws Exception is thrown if starting failed
+     * @throws RuntimeCamelException is thrown if starting failed
      */
-    void start() throws Exception;
+    @Override
+    void start();
 
     /**
      * Stop and shutdown the {@link CamelContext} (will stop all routes/components/endpoints etc and clear internal state/cache).
      * <p/>
      * See more details at the class-level javadoc of this class.
      *
-     * @throws Exception is thrown if stopping failed
+     * @throws RuntimeCamelException is thrown if stopping failed
      */
-    void stop() throws Exception;
+    @Override
+    void stop();
 
     /**
      * Gets the name (id) of the this CamelContext.
@@ -210,6 +195,7 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
      *
      * @return the status
      */
+    @Override
     ServiceStatus getStatus();
 
     /**
@@ -225,6 +211,11 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
      * @return the uptime in millis seconds
      */
     long getUptimeMillis();
+
+    /**
+     * Gets the date and time Camel was started up.
+     */
+    Date getStartDate();
 
     // Service Methods
     //-----------------------------------------------------------------------
@@ -442,6 +433,17 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
      * If the name has a singleton endpoint registered, then the singleton is returned.
      * Otherwise, a new {@link Endpoint} is created and registered in the {@link org.apache.camel.spi.EndpointRegistry}.
      *
+     * @param uri the URI of the endpoint
+     * @param parameters the parameters to customize the endpoint
+     * @return the endpoint
+     */
+    Endpoint getEndpoint(String uri, Map<String, Object> parameters);
+
+    /**
+     * Resolves the given name to an {@link Endpoint} of the specified type.
+     * If the name has a singleton endpoint registered, then the singleton is returned.
+     * Otherwise, a new {@link Endpoint} is created and registered in the {@link org.apache.camel.spi.EndpointRegistry}.
+     *
      * @param name         the name of the endpoint
      * @param endpointType the expected type
      * @return the endpoint
@@ -459,7 +461,9 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
      * Returns a new {@link Map} containing all of the endpoints from the {@link org.apache.camel.spi.EndpointRegistry}
      *
      * @return map of endpoints
+     * @deprecated use {@link #getEndpointRegistry()}
      */
+    @Deprecated
     Map<String, Endpoint> getEndpointMap();
 
     /**
@@ -471,10 +475,10 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
     Endpoint hasEndpoint(String uri);
 
     /**
-     * Adds the endpoint to the {@link org.apache.camel.spi.EndpointRegistry} using the given URI.
+     * Adds and starts the endpoint to the {@link org.apache.camel.spi.EndpointRegistry} using the given URI.
      *
      * @param uri      the URI to be used to resolve this endpoint
-     * @param endpoint the endpoint to be added to the registry
+     * @param endpoint the endpoint to be started and added to the registry
      * @return the old endpoint that was previously registered or <tt>null</tt> if none was registered
      * @throws Exception if the new endpoint could not be started or the old endpoint could not be stopped
      */
@@ -503,85 +507,26 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
     Collection<Endpoint> removeEndpoints(String pattern) throws Exception;
 
     /**
-     * Registers a {@link org.apache.camel.spi.EndpointStrategy callback} to allow you to do custom
-     * logic when an {@link Endpoint} is about to be registered to the {@link org.apache.camel.spi.EndpointRegistry}.
-     * <p/>
-     * When a callback is added it will be executed on the already registered endpoints allowing you to catch-up
-     *
-     * @param strategy callback to be invoked
+     * Gets the global endpoint configuration, where you can configure common endpoint options.
      */
-    void addRegisterEndpointCallback(EndpointStrategy strategy);
+    GlobalEndpointConfiguration getGlobalEndpointConfiguration();
 
     // Route Management Methods
     //-----------------------------------------------------------------------
 
     /**
-     * NOTE: experimental api
+     * Sets a custom {@link RouteController} to use
      *
      * @param routeController the route controller
      */
     void setRouteController(RouteController routeController);
 
     /**
-     * NOTE: experimental api
+     * Gets the {@link RouteController}
      *
-     * @return the route controller or null if not set.
+     * @return the route controller.
      */
     RouteController getRouteController();
-
-    /**
-     * Method to signal to {@link CamelContext} that the process to initialize setup routes is in progress.
-     *
-     * @param done <tt>false</tt> to start the process, call again with <tt>true</tt> to signal its done.
-     * @see #isSetupRoutes()
-     */
-    void setupRoutes(boolean done);
-
-    /**
-     * Sets a custom {@link org.apache.camel.spi.RestConfiguration}
-     *
-     * @param restConfiguration the REST configuration
-     */
-    void setRestConfiguration(RestConfiguration restConfiguration);
-
-    /**
-     * Gets the default REST configuration
-     *
-     * @return the configuration, or <tt>null</tt> if none has been configured.
-     */
-    RestConfiguration getRestConfiguration();
-    
-    /**
-     * Sets a custom {@link org.apache.camel.spi.RestConfiguration}
-     *
-     * @param restConfiguration the REST configuration
-     */
-    void addRestConfiguration(RestConfiguration restConfiguration);
-
-    /**
-     * Gets the REST configuration for the given component
-     *
-     * @param component the component name to get the configuration
-     * @param defaultIfNotFound determine if the default configuration is returned if there isn't a 
-     *        specific configuration for the given component  
-     * @return the configuration, or <tt>null</tt> if none has been configured.
-     */
-    RestConfiguration getRestConfiguration(String component, boolean defaultIfNotFound);
-    
-    /**
-     * Gets all the RestConfiguration's
-     */
-    Collection<RestConfiguration> getRestConfigurations();
-
-    /**
-     * Returns the order in which the route inputs was started.
-     * <p/>
-     * The order may not be according to the startupOrder defined on the route.
-     * For example a route could be started manually later, or new routes added at runtime.
-     *
-     * @return a list in the order how routes was started
-     */
-    List<RouteStartupOrder> getRouteStartupOrder();
 
     /**
      * Returns the current routes in this CamelContext
@@ -657,19 +602,69 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
     boolean removeRoute(String routeId) throws Exception;
 
     /**
-     * Indicates whether current thread is setting up route(s) as part of starting Camel from spring/blueprint.
-     * <p/>
-     * This can be useful to know by {@link LifecycleStrategy} or the likes, in case
-     * they need to react differently.
-     * <p/>
-     * As the startup procedure of {@link CamelContext} is slightly different when using plain Java versus
-     * Spring or Blueprint, then we need to know when Spring/Blueprint is setting up the routes, which
-     * can happen after the {@link CamelContext} itself is in started state, due the asynchronous event nature
-     * of especially Blueprint.
+     * Adds the given route policy factory
      *
-     * @return <tt>true</tt> if current thread is setting up route(s), or <tt>false</tt> if not.
+     * @param routePolicyFactory the factory
      */
-    boolean isSetupRoutes();
+    void addRoutePolicyFactory(RoutePolicyFactory routePolicyFactory);
+
+    /**
+     * Gets the route policy factories
+     *
+     * @return the list of current route policy factories
+     */
+    List<RoutePolicyFactory> getRoutePolicyFactories();
+
+    // Rest Methods
+    //-----------------------------------------------------------------------
+
+    /**
+     * Sets a custom {@link org.apache.camel.spi.RestConfiguration}
+     *
+     * @param restConfiguration the REST configuration
+     */
+    void setRestConfiguration(RestConfiguration restConfiguration);
+
+    /**
+     * Gets the default REST configuration
+     *
+     * @return the configuration, or <tt>null</tt> if none has been configured.
+     */
+    RestConfiguration getRestConfiguration();
+
+    /**
+     * Sets a custom {@link org.apache.camel.spi.RestConfiguration}
+     *
+     * @param restConfiguration the REST configuration
+     */
+    @Deprecated
+    void addRestConfiguration(RestConfiguration restConfiguration);
+
+    /**
+     * Gets the REST configuration for the given component
+     *
+     * @param component the component name to get the configuration
+     * @param defaultIfNotFound determine if the default configuration is returned if there isn't a
+     *        specific configuration for the given component
+     * @return the configuration, or <tt>null</tt> if none has been configured.
+     */
+    RestConfiguration getRestConfiguration(String component, boolean defaultIfNotFound);
+
+    /**
+     * Gets all the RestConfiguration's
+     */
+    @Deprecated
+    Collection<RestConfiguration> getRestConfigurations();
+
+    /**
+     * Gets the {@link org.apache.camel.spi.RestRegistry} to use
+     */
+    RestRegistry getRestRegistry();
+
+    /**
+     * Sets a custom {@link org.apache.camel.spi.RestRegistry} to use.
+     */
+    void setRestRegistry(RestRegistry restRegistry);
 
     // Properties
     //-----------------------------------------------------------------------
@@ -719,18 +714,9 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
     Injector getInjector();
 
     /**
-     * Returns the bean post processor used to do any bean customization.
-     *
-     * @return the bean post processor.
+     * Sets the injector to use
      */
-    CamelBeanPostProcessor getBeanPostProcessor();
-
-    /**
-     * Returns the management mbean assembler
-     *
-     * @return the mbean assembler
-     */
-    ManagementMBeanAssembler getManagementMBeanAssembler();
+    void setInjector(Injector injector);
 
     /**
      * Returns the lifecycle strategies used to handle lifecycle notifications
@@ -751,34 +737,19 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
      *
      * @param language name of the language
      * @return the resolved language
+     * @throws NoSuchLanguageException is thrown if language could not be resolved
      */
-    Language resolveLanguage(String language);
+    Language resolveLanguage(String language) throws NoSuchLanguageException;
 
     /**
      * Parses the given text and resolve any property placeholders - using {{key}}.
      *
      * @param text the text such as an endpoint uri or the likes
      * @return the text with resolved property placeholders
-     * @throws Exception is thrown if property placeholders was used and there was an error resolving them
+     * @throws IllegalArgumentException is thrown if property placeholders was used and there was an error resolving them
      */
-    String resolvePropertyPlaceholders(String text) throws Exception;
+    String resolvePropertyPlaceholders(String text);
     
-    /**
-     * Returns the configured property placeholder prefix token if and only if the CamelContext has
-     * property placeholder abilities, otherwise returns {@code null}.
-     * 
-     * @return the prefix token or {@code null}
-     */
-    String getPropertyPrefixToken();
-    
-    /**
-     * Returns the configured property placeholder suffix token if and only if the CamelContext has
-     * property placeholder abilities, otherwise returns {@code null}.
-     * 
-     * @return the suffix token or {@code null}
-     */
-    String getPropertySuffixToken();
-
     /**
      * Returns the configured properties component or create one if none has been configured.
      *
@@ -787,18 +758,17 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
     PropertiesComponent getPropertiesComponent();
 
     /**
-     * Returns the configured properties component or create one if none has been configured.
-     *
-     * @param autoCreate whether the component should be created if none is configured
-     * @return the properties component
+     * Sets a custom properties component to be used.
      */
-    PropertiesComponent getPropertiesComponent(boolean autoCreate);
+    void setPropertiesComponent(PropertiesComponent propertiesComponent);
 
     /**
      * Gets a readonly list with the names of the languages currently registered.
      *
      * @return a readonly list with the names of the languages
+     * @deprecated not in use
      */
+    @Deprecated
     List<String> getLanguageNames();
 
     /**
@@ -904,50 +874,6 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
     ConsumerTemplate createConsumerTemplate(int maximumCacheSize);
 
     /**
-     * Creates a new multicast processor which sends an exchange to all the processors.
-     *
-     * @param processors the list of processors to send to
-     * @param executor the executor to use
-     * @return a multicasting processor
-     */
-    AsyncProcessor createMulticast(Collection<Processor> processors,
-                                   ExecutorService executor, boolean shutdownExecutorService);
-
-    /**
-     * Adds the given interceptor strategy
-     *
-     * @param interceptStrategy the strategy
-     */
-    void addInterceptStrategy(InterceptStrategy interceptStrategy);
-
-    /**
-     * Gets the interceptor strategies
-     *
-     * @return the list of current interceptor strategies
-     */
-    List<InterceptStrategy> getInterceptStrategies();
-
-    /**
-     * Gets the default error handler builder which is inherited by the routes
-     *
-     * @return the builder
-     */
-    ErrorHandlerFactory getErrorHandlerFactory();
-
-    /**
-     * Sets the default error handler builder which is inherited by the routes
-     *
-     * @param errorHandlerFactory the builder
-     */
-    void setErrorHandlerFactory(ErrorHandlerFactory errorHandlerFactory);
-
-    /**
-     * Gets the default shared thread pool for error handlers which
-     * leverages this for asynchronous redelivery tasks.
-     */
-    ScheduledExecutorService getErrorHandlerExecutorService();
-
-    /**
      * Resolve a data format given its name
      *
      * @param name the data format name or a reference to it in the {@link Registry}
@@ -962,20 +888,6 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
      * @return the resolved data format, or <tt>null</tt> if not found
      */
     DataFormat createDataFormat(String name);
-
-    /**
-     * Gets the current data format resolver
-     *
-     * @return the resolver
-     */
-    DataFormatResolver getDataFormatResolver();
-
-    /**
-     * Sets a custom data format resolver
-     *
-     * @param dataFormatResolver the resolver
-     */
-    void setDataFormatResolver(DataFormatResolver dataFormatResolver);
 
     /**
      * Resolve a transformer given a scheme
@@ -1051,29 +963,6 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
     String getGlobalOption(String key);
 
     /**
-     * Gets the default FactoryFinder which will be used for the loading the factory class from META-INF
-     *
-     * @return the default factory finder
-     */
-    FactoryFinder getDefaultFactoryFinder();
-
-    /**
-     * Sets the factory finder resolver to use.
-     *
-     * @param resolver the factory finder resolver
-     */
-    void setFactoryFinderResolver(FactoryFinderResolver resolver);
-
-    /**
-     * Gets the FactoryFinder which will be used for the loading the factory class from META-INF in the given path
-     *
-     * @param path the META-INF path
-     * @return the factory finder
-     * @throws NoFactoryAvailableException is thrown if a factory could not be found
-     */
-    FactoryFinder getFactoryFinder(String path) throws NoFactoryAvailableException;
-
-    /**
      * Returns the class resolver to be used for loading/lookup of classes.
      *
      * @return the resolver
@@ -1081,39 +970,11 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
     ClassResolver getClassResolver();
 
     /**
-     * Returns the package scanning class resolver
-     *
-     * @return the resolver
-     */
-    PackageScanClassResolver getPackageScanClassResolver();
-
-    /**
      * Sets the class resolver to be use
      *
      * @param resolver the resolver
      */
     void setClassResolver(ClassResolver resolver);
-
-    /**
-     * Sets the package scanning class resolver to use
-     *
-     * @param resolver the resolver
-     */
-    void setPackageScanClassResolver(PackageScanClassResolver resolver);
-
-    /**
-     * Uses a custom node id factory when generating auto assigned ids to the nodes in the route definitions
-     *
-     * @param factory custom factory to use
-     */
-    void setNodeIdFactory(NodeIdFactory factory);
-
-    /**
-     * Gets the node id factory
-     *
-     * @return the node id factory
-     */
-    NodeIdFactory getNodeIdFactory();
 
     /**
      * Gets the management strategy
@@ -1139,13 +1000,6 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
     void disableJMX() throws IllegalStateException;
 
     /**
-     * Setup management according to whether JMX is enabled or disabled.
-     *
-     * @param options optional parameters to configure {@link org.apache.camel.spi.ManagementAgent}.
-     */
-    void setupManagement(Map<String, Object> options);
-
-    /**
      * Gets the inflight repository
      *
      * @return the repository
@@ -1158,20 +1012,6 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
      * @param repository the repository
      */
     void setInflightRepository(InflightRepository repository);
-
-    /**
-     * Gets the {@link org.apache.camel.AsyncProcessor} await manager.
-     *
-     * @return the manager
-     */
-    AsyncProcessorAwaitManager getAsyncProcessorAwaitManager();
-
-    /**
-     * Sets a custom  {@link org.apache.camel.AsyncProcessor} await manager.
-     *
-     * @param manager the manager
-     */
-    void setAsyncProcessorAwaitManager(AsyncProcessorAwaitManager manager);
 
     /**
      * Gets the application CamelContext class loader which may be helpful for running camel in other containers
@@ -1216,20 +1056,6 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
     void setExecutorServiceManager(ExecutorServiceManager executorServiceManager);
 
     /**
-     * Gets the current {@link org.apache.camel.spi.ProcessorFactory}
-     *
-     * @return the factory, can be <tt>null</tt> if no custom factory has been set
-     */
-    ProcessorFactory getProcessorFactory();
-
-    /**
-     * Sets a custom {@link org.apache.camel.spi.ProcessorFactory}
-     *
-     * @param processorFactory the custom factory
-     */
-    void setProcessorFactory(ProcessorFactory processorFactory);
-
-    /**
      * Gets the current {@link org.apache.camel.spi.MessageHistoryFactory}
      *
      * @return the factory
@@ -1256,6 +1082,18 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
      * @param debugger the debugger
      */
     void setDebugger(Debugger debugger);
+
+    /**
+     * Gets the current {@link Tracer}
+     *
+     * @return the tracer
+     */
+    Tracer getTracer();
+
+    /**
+     * Sets a custom {@link Tracer}
+     */
+    void setTracer(Tracer tracer);
 
     /**
      * Gets the current {@link UuidGenerator}
@@ -1330,6 +1168,42 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
     void setUseMDCLogging(Boolean useMDCLogging);
 
     /**
+     * Gets the pattern used for determine which custom MDC keys to propagate during message routing when
+     * the routing engine continues routing asynchronously for the given message. Setting this pattern to <tt>*</tt> will
+     * propagate all custom keys. Or setting the pattern to <tt>foo*,bar*</tt> will propagate any keys starting with
+     * either foo or bar.
+     * Notice that a set of standard Camel MDC keys are always propagated which starts with <tt>camel.</tt> as key name.
+     * <p/>
+     * The match rules are applied in this order (case insensitive):
+     * <ul>
+     *   <li>exact match, returns true</li>
+     *   <li>wildcard match (pattern ends with a * and the name starts with the pattern), returns true</li>
+     *   <li>regular expression match, returns true</li>
+     *   <li>otherwise returns false</li>
+     * </ul>
+     */
+    String getMDCLoggingKeysPattern();
+
+    /**
+     * Sets the pattern used for determine which custom MDC keys to propagate during message routing when
+     * the routing engine continues routing asynchronously for the given message. Setting this pattern to <tt>*</tt> will
+     * propagate all custom keys. Or setting the pattern to <tt>foo*,bar*</tt> will propagate any keys starting with
+     * either foo or bar.
+     * Notice that a set of standard Camel MDC keys are always propagated which starts with <tt>camel.</tt> as key name.
+     * <p/>
+     * The match rules are applied in this order (case insensitive):
+     * <ul>
+     *   <li>exact match, returns true</li>
+     *   <li>wildcard match (pattern ends with a * and the name starts with the pattern), returns true</li>
+     *   <li>regular expression match, returns true</li>
+     *   <li>otherwise returns false</li>
+     * </ul>
+     *
+     * @param pattern  the pattern
+     */
+    void setMDCLoggingKeysPattern(String pattern);
+
+    /**
      * Whether to enable using data type on Camel messages.
      * <p/>
      * Data type are automatic turned on if one ore more routes has been explicit configured with input and output types.
@@ -1374,16 +1248,6 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
     void setStreamCachingStrategy(StreamCachingStrategy streamCachingStrategy);
 
     /**
-     * Gets the {@link UnitOfWorkFactory} to use.
-     */
-    UnitOfWorkFactory getUnitOfWorkFactory();
-
-    /**
-     * Sets a custom {@link UnitOfWorkFactory} to use.
-     */
-    void setUnitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory);
-
-    /**
      * Gets the {@link org.apache.camel.spi.RuntimeEndpointRegistry} to use, or <tt>null</tt> if none is in use.
      */
     RuntimeEndpointRegistry getRuntimeEndpointRegistry();
@@ -1392,66 +1256,6 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
      * Sets a custom {@link org.apache.camel.spi.RuntimeEndpointRegistry} to use.
      */
     void setRuntimeEndpointRegistry(RuntimeEndpointRegistry runtimeEndpointRegistry);
-
-    /**
-     * Gets the {@link org.apache.camel.spi.RestRegistry} to use
-     */
-    RestRegistry getRestRegistry();
-
-    /**
-     * Sets a custom {@link org.apache.camel.spi.RestRegistry} to use.
-     */
-    void setRestRegistry(RestRegistry restRegistry);
-
-    /**
-     * Adds the given route policy factory
-     *
-     * @param routePolicyFactory the factory
-     */
-    void addRoutePolicyFactory(RoutePolicyFactory routePolicyFactory);
-
-    /**
-     * Gets the route policy factories
-     *
-     * @return the list of current route policy factories
-     */
-    List<RoutePolicyFactory> getRoutePolicyFactories();
-
-    /**
-     * Returns the JAXB Context factory used to create Models.
-     *
-     * @return the JAXB Context factory used to create Models.
-     */
-    ModelJAXBContextFactory getModelJAXBContextFactory();
-
-    /**
-     * Sets a custom JAXB Context factory to be used
-     *
-     * @param modelJAXBContextFactory a JAXB Context factory
-     */
-    void setModelJAXBContextFactory(ModelJAXBContextFactory modelJAXBContextFactory);
-
-    /**
-     * Returns the {@link ReloadStrategy} if in use.
-     *
-     * @return the strategy, or <tt>null</tt> if none has been configured.
-     */
-    ReloadStrategy getReloadStrategy();
-
-    /**
-     * Sets a custom {@link ReloadStrategy} to be used
-     */
-    void setReloadStrategy(ReloadStrategy reloadStrategy);
-
-    /**
-     * Gets a list of {@link LogListener}.
-     */
-    Set<LogListener> getLogListeners();
-
-    /**
-     * Adds a {@link LogListener}.
-     */
-    void addLogListener(LogListener listener);
 
     /**
      * Sets the global SSL context parameters.
@@ -1472,5 +1276,12 @@ public interface CamelContext extends SuspendableService, RuntimeConfiguration {
      * Sets a custom {@link HeadersMapFactory} to be used.
      */
     void setHeadersMapFactory(HeadersMapFactory factory);
+
+    ReactiveExecutor getReactiveExecutor();
+
+    /**
+     * Sets a custom {@link ReactiveExecutor} to be used.
+     */
+    void setReactiveExecutor(ReactiveExecutor reactiveExecutor);
 
 }

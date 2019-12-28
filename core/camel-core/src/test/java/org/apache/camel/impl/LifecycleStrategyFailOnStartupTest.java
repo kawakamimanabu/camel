@@ -38,7 +38,7 @@ public class LifecycleStrategyFailOnStartupTest extends TestSupport {
         try {
             context.start();
             fail("Should have thrown exception");
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             assertEquals("Forced", e.getMessage());
         }
     }

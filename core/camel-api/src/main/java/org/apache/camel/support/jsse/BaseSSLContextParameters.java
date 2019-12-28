@@ -60,7 +60,7 @@ public abstract class BaseSSLContextParameters extends JsseParameters {
         Collections.unmodifiableList(Arrays.asList(".*"));
     
     protected static final List<String> DEFAULT_CIPHER_SUITES_FILTER_EXCLUDE =
-        Collections.unmodifiableList(Arrays.asList(".*_NULL_.*", ".*_anon_.*", ".*_EXPORT_.*", ".*_DES_.*"));
+        Collections.unmodifiableList(Arrays.asList(".*_NULL_.*", ".*_anon_.*", ".*_EXPORT_.*", ".*_DES_.*", ".*MD5", ".*RC4.*"));
     
     protected static final List<String> DEFAULT_SECURE_SOCKET_PROTOCOLS_FILTER_INCLUDE =
         Collections.unmodifiableList(Arrays.asList(".*"));
@@ -828,7 +828,7 @@ public abstract class BaseSSLContextParameters extends JsseParameters {
         @Override
         public String toString() {
             return String.format("SSLContext[hash=%h, provider=%s, protocol=%s, needClientAuth=%s, " 
-                + "wantClientAuth=%s\n\tdefaultProtocols=%s\n\tdefaultChiperSuites=%s\n\tsupportedProtocols=%s\n\tsupportedChiperSuites=%s\n]",
+                + "wantClientAuth=%s\n\tdefaultProtocols=%s\n\tdefaultCipherSuites=%s\n\tsupportedProtocols=%s\n\tsupportedCipherSuites=%s\n]",
                 hashCode(), getProvider(), getProtocol(), getDefaultSSLParameters().getNeedClientAuth(), getDefaultSSLParameters().getWantClientAuth(),
                 collectionAsCommaDelimitedString(getDefaultSSLParameters().getProtocols()),
                 collectionAsCommaDelimitedString(getDefaultSSLParameters().getCipherSuites()),

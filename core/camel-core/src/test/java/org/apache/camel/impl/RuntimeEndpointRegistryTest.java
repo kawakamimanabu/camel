@@ -20,6 +20,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.apache.camel.impl.engine.DefaultRuntimeEndpointRegistry;
 import org.apache.camel.spi.RuntimeEndpointRegistry;
 import org.junit.Test;
 
@@ -37,7 +38,8 @@ public class RuntimeEndpointRegistryTest extends ContextTestSupport {
         RuntimeEndpointRegistry registry = context.getRuntimeEndpointRegistry();
 
         assertEquals(0, registry.getAllEndpoints(false).size());
-        // we have 2 at the start as we have all endpoints for the route consumers
+        // we have 2 at the start as we have all endpoints for the route
+        // consumers
         assertEquals(2, registry.getAllEndpoints(true).size());
 
         MockEndpoint mock = getMockEndpoint("mock:foo2");
@@ -64,13 +66,9 @@ public class RuntimeEndpointRegistryTest extends ContextTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("seda:foo").routeId("foo")
-                    .to("mock:foo")
-                    .recipientList(header("slip"));
+                from("seda:foo").routeId("foo").to("mock:foo").recipientList(header("slip"));
 
-                from("seda:bar").routeId("bar")
-                    .to("mock:bar")
-                    .recipientList(header("slip"));
+                from("seda:bar").routeId("bar").to("mock:bar").recipientList(header("slip"));
             }
         };
     }

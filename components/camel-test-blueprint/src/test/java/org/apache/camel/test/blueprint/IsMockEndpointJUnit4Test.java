@@ -22,13 +22,13 @@ import org.junit.Test;
 
 public class IsMockEndpointJUnit4Test extends CamelBlueprintTestSupport {
    
-    @EndpointInject (uri = "mock:seda:result", context = "IsMockEndpoints")
+    @EndpointInject (value = "mock:seda:result")
     private MockEndpoint mockSeda;
 
-    @EndpointInject (uri = "mock:bar", context = "IsMockEndpoints")
+    @EndpointInject (value = "mock:bar")
     private MockEndpoint mockBar;
 
-    @EndpointInject (uri = "mock:baz", context = "IsMockEndpoints")
+    @EndpointInject (value = "mock:baz")
     private MockEndpoint mockBaz;
     
     @Override

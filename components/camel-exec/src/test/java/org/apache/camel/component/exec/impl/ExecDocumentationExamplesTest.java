@@ -28,7 +28,6 @@ import org.apache.camel.component.exec.ExecResult;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -49,19 +48,19 @@ public class ExecDocumentationExamplesTest extends CamelTestSupport {
 
     private static final String TEST_MSG = "Hello Camel Exec!";
 
-    @Produce(uri = "direct:javaVersion")
+    @Produce("direct:javaVersion")
     protected ProducerTemplate templateJavaVersion;
 
-    @Produce(uri = "direct:javaVersionWorkingDir")
+    @Produce("direct:javaVersionWorkingDir")
     protected ProducerTemplate templateJavaVersionWorkingDir;
 
-    @Produce(uri = "direct:execAnt")
+    @Produce("direct:execAnt")
     protected ProducerTemplate templateExecAnt;
 
-    @Produce(uri = "direct:execAntWithOutFile")
+    @Produce("direct:execAntWithOutFile")
     protected ProducerTemplate templateExecAntWithOutFile;
 
-    @Produce(uri = "direct:wordCount")
+    @Produce("direct:wordCount")
     protected ProducerTemplate templateWordCount;
 
     @Test

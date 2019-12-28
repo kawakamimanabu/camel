@@ -37,6 +37,7 @@ public class SipEndpoint extends DefaultEndpoint {
         this.configuration = configuration;
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         if (configuration.isPresenceAgent()) {
             SipPresenceAgent answer = new SipPresenceAgent(this, processor, configuration);
@@ -49,14 +50,11 @@ public class SipEndpoint extends DefaultEndpoint {
         }
     }
 
+    @Override
     public Producer createProducer() throws Exception {
         return new SipPublisher(this, configuration);
     }
     
-    public boolean isSingleton() {
-        return true;
-    }
-
     public SipConfiguration getConfiguration() {
         return configuration;
     }

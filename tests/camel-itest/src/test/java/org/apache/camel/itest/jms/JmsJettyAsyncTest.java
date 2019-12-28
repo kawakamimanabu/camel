@@ -17,6 +17,7 @@
 package org.apache.camel.itest.jms;
 
 import java.util.concurrent.TimeUnit;
+
 import javax.jms.ConnectionFactory;
 
 import org.apache.camel.builder.RouteBuilder;
@@ -51,14 +52,14 @@ public class JmsJettyAsyncTest extends CamelTestSupport {
 
     @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
-        port = AvailablePortFinder.getNextAvailable(8000);
+        port = AvailablePortFinder.getNextAvailable();
 
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
                 // enable async consumer to process messages faster
                 from("activemq:queue:inbox?asyncConsumer=false")
-                    .to("jetty:http://0.0.0.0:" + port + "/myapp")
+                    .to("http://0.0.0.0:" + port + "/myapp")
                     .to("log:result?groupSize=10", "mock:result");
 
                 from("jetty:http://0.0.0.0:" + port + "/myapp")

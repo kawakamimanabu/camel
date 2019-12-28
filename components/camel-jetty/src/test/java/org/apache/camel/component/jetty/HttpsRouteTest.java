@@ -26,12 +26,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+
+import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import org.apache.camel.RuntimeCamelException;
+import org.apache.camel.SSLContextParametersAware;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.apache.camel.support.jsse.SSLContextParameters;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.After;
@@ -51,18 +57,21 @@ public class HttpsRouteTest extends BaseJettyTest {
     public String getHttpProducerScheme() {
         return "https://";
     }
-    
+
     @Override
     @Before
     public void setUp() throws Exception {
         port1 = getNextPort();
-        port2 = getNextPort(port1 + 1);
-        
+        port2 = getNextPort();
+
         super.setUp();
-        // ensure jsse clients can validate the self signed dummy localhost cert, 
+        // ensure jsse clients can validate the self signed dummy localhost
+        // cert,
         // use the server keystore as the trust store for these tests
-        URL trustStoreUrl = this.getClass().getClassLoader().getResource("jsse/localhost.ks");
+        URL trustStoreUrl = this.getClass().getClassLoader().getResource("jsse/localhost.p12");
         setSystemProp("javax.net.ssl.trustStore", trustStoreUrl.toURI().getPath());
+        setSystemProp("javax.net.ssl.trustStorePassword", "changeit");
+        setSystemProp("javax.net.ssl.trustStoreType", "PKCS12");
     }
 
     @Override
@@ -70,6 +79,16 @@ public class HttpsRouteTest extends BaseJettyTest {
     public void tearDown() throws Exception {
         restoreSystemProperties();
         super.tearDown();
+    }
+
+    @Override
+    protected CamelContext createCamelContext() throws Exception {
+        CamelContext context = super.createCamelContext();
+        SSLContextParameters sslContextParameters = new SSLContextParameters();
+        sslContextParameters.setSecureSocketProtocol("TLSv1.2");
+        context.setSSLContextParameters(sslContextParameters);
+        ((SSLContextParametersAware)context.getComponent("https")).setUseGlobalSslContextParameters(true);
+        return context;
     }
 
     protected void setSystemProp(String key, String value) {
@@ -81,7 +100,7 @@ public class HttpsRouteTest extends BaseJettyTest {
         for (Object key : originalValues.keySet()) {
             Object value = originalValues.get(key);
             if (NULL_VALUE_MARKER.equals(value)) {
-                System.clearProperty((String) key);
+                System.clearProperty((String)key);
             } else {
                 System.setProperty((String)key, (String)value);
             }
@@ -117,7 +136,7 @@ public class HttpsRouteTest extends BaseJettyTest {
 
         assertTrue("Should be more than one header but was: " + headers, headers.size() > 0);
     }
-    
+
     @Test
     public void testEndpointWithoutHttps() throws Exception {
         // these tests does not run well on Windows
@@ -142,7 +161,12 @@ public class HttpsRouteTest extends BaseJettyTest {
         }
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        InputStream is = new URL("https://localhost:" + port1 + "/hello").openStream();
+        URL url = new URL("https://localhost:" + port1 + "/hello");
+        HttpsURLConnection connection = (HttpsURLConnection)url.openConnection();
+        SSLContext ssl = SSLContext.getInstance("TLSv1.2");
+        ssl.init(null, null, null);
+        connection.setSSLSocketFactory(ssl.getSocketFactory());
+        InputStream is = connection.getInputStream();
         int c;
         while ((c = is.read()) >= 0) {
             os.write(c);
@@ -151,7 +175,7 @@ public class HttpsRouteTest extends BaseJettyTest {
         String data = new String(os.toByteArray());
         assertEquals("<b>Hello World</b>", data);
     }
-    
+
     @Test
     public void testHelloEndpointWithoutHttps() throws Exception {
         // these tests does not run well on Windows
@@ -165,34 +189,35 @@ public class HttpsRouteTest extends BaseJettyTest {
         } catch (SocketException expected) {
         }
     }
-    
+
     protected void invokeHttpEndpoint() throws IOException {
         template.sendBodyAndHeader(getHttpProducerScheme() + "localhost:" + port1 + "/test", expectedBody, "Content-Type", "application/xml");
         template.sendBodyAndHeader(getHttpProducerScheme() + "localhost:" + port2 + "/test", expectedBody, "Content-Type", "application/xml");
     }
-    
+
     protected void configureSslContextFactory(SslContextFactory sslContextFactory) {
         sslContextFactory.setKeyManagerPassword(pwd);
         sslContextFactory.setKeyStorePassword(pwd);
-        URL keyStoreUrl = this.getClass().getClassLoader().getResource("jsse/localhost.ks");
+        URL keyStoreUrl = this.getClass().getClassLoader().getResource("jsse/localhost.p12");
         try {
             sslContextFactory.setKeyStorePath(keyStoreUrl.toURI().getPath());
         } catch (URISyntaxException e) {
             throw new RuntimeException(e.getMessage(), e);
         }
-        sslContextFactory.setTrustStoreType("JKS");
+        sslContextFactory.setTrustStoreType("PKCS12");
+        sslContextFactory.setProtocol("TLSv1.2");
     }
-    
+
     @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             public void configure() throws URISyntaxException {
-                JettyHttpComponent componentJetty = (JettyHttpComponent) context.getComponent("jetty");
+                JettyHttpComponent componentJetty = (JettyHttpComponent)context.getComponent("jetty");
                 componentJetty.setSslPassword(pwd);
                 componentJetty.setSslKeyPassword(pwd);
-                URL keyStoreUrl = this.getClass().getClassLoader().getResource("jsse/localhost.ks");
+                URL keyStoreUrl = this.getClass().getClassLoader().getResource("jsse/localhost.p12");
                 componentJetty.setKeystore(keyStoreUrl.toURI().getPath());
-                
+
                 from("jetty:https://localhost:" + port1 + "/test").to("mock:a");
 
                 Processor proc = new Processor() {
@@ -201,10 +226,9 @@ public class HttpsRouteTest extends BaseJettyTest {
                     }
                 };
                 from("jetty:https://localhost:" + port1 + "/hello").process(proc);
-                
+
                 from("jetty:https://localhost:" + port2 + "/test").to("mock:b");
             }
         };
     }
 }
-

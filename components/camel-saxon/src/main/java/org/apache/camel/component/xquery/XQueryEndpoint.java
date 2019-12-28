@@ -16,7 +16,7 @@
  */
 package org.apache.camel.component.xquery;
 
-import java.net.URL;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -220,9 +220,9 @@ public class XQueryEndpoint extends ProcessorEndpoint {
         super.doStart();
 
         log.debug("{} using schema resource: {}", this, resourceUri);
-        URL url = ResourceHelper.resolveMandatoryResourceAsUrl(getCamelContext().getClassResolver(), resourceUri);
+        InputStream is = ResourceHelper.resolveMandatoryResourceAsInputStream(getCamelContext(), resourceUri);
 
-        this.xquery = XQueryBuilder.xquery(url);
+        this.xquery = XQueryBuilder.xquery(is);
         this.xquery.setConfiguration(getConfiguration());
         this.xquery.setConfigurationProperties(getConfigurationProperties());
         this.xquery.setStaticQueryContext(getStaticQueryContext());

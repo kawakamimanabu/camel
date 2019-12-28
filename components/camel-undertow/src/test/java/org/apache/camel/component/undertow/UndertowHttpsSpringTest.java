@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.undertow;
+
 import java.net.URL;
 
 import javax.annotation.Resource;
@@ -41,7 +42,7 @@ public class UndertowHttpsSpringTest {
     @Produce
     private ProducerTemplate template;
 
-    @EndpointInject(uri = "mock:input")
+    @EndpointInject("mock:input")
     private MockEndpoint mockEndpoint;
 
     @BeforeClass

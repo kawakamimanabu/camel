@@ -19,6 +19,7 @@ package org.apache.camel.converter;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.stream.Stream;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,6 +31,15 @@ public class ObjectConverterTest extends Assert {
         Iterator<?> it = ObjectConverter.iterator("Claus,Jonathan");
         assertEquals("Claus", it.next());
         assertEquals("Jonathan", it.next());
+        assertEquals(false, it.hasNext());
+    }
+
+    @Test
+    public void testStreamIterator() {
+        Iterator<?> it = ObjectConverter.iterator(Stream.of("Claus", "Jonathan", "Andrea"));
+        assertEquals("Claus", it.next());
+        assertEquals("Jonathan", it.next());
+        assertEquals("Andrea", it.next());
         assertEquals(false, it.hasNext());
     }
 
@@ -53,7 +63,7 @@ public class ObjectConverterTest extends Assert {
         assertEquals(Byte.valueOf("4"), ObjectConverter.toByte(Integer.valueOf("4")));
         assertEquals(Byte.valueOf("4"), ObjectConverter.toByte("4"));
     }
-    
+
     @Test
     public void testToClass() {
         assertEquals(String.class, ObjectConverter.toClass("java.lang.String", null));
@@ -95,8 +105,8 @@ public class ObjectConverterTest extends Assert {
         assertEquals(Float.valueOf("4"), ObjectConverter.toFloat(Float.valueOf("4")));
         assertEquals(Float.valueOf("4"), ObjectConverter.toFloat(Integer.valueOf("4")));
         assertEquals(Float.valueOf("4"), ObjectConverter.toFloat("4"));
-        assertEquals((Float) Float.NaN, ObjectConverter.toFloat(Double.NaN));
-        assertEquals((Float) Float.NaN, ObjectConverter.toFloat(Float.NaN));
+        assertEquals((Float)Float.NaN, ObjectConverter.toFloat(Double.NaN));
+        assertEquals((Float)Float.NaN, ObjectConverter.toFloat(Float.NaN));
         assertEquals(Float.valueOf("4"), ObjectConverter.toFloat(Float.valueOf("4")));
     }
 
@@ -105,8 +115,8 @@ public class ObjectConverterTest extends Assert {
         assertEquals(Double.valueOf("4"), ObjectConverter.toDouble(Double.valueOf("4")));
         assertEquals(Double.valueOf("4"), ObjectConverter.toDouble(Integer.valueOf("4")));
         assertEquals(Double.valueOf("4"), ObjectConverter.toDouble("4"));
-        assertEquals((Double) Double.NaN, ObjectConverter.toDouble(Double.NaN));
-        assertEquals((Double) Double.NaN, ObjectConverter.toDouble(Float.NaN));
+        assertEquals((Double)Double.NaN, ObjectConverter.toDouble(Double.NaN));
+        assertEquals((Double)Double.NaN, ObjectConverter.toDouble(Float.NaN));
         assertEquals(Double.valueOf("4"), ObjectConverter.toDouble(Double.valueOf("4")));
     }
 
@@ -139,10 +149,45 @@ public class ObjectConverterTest extends Assert {
 
     @Test
     public void testNaN() throws Exception {
-        assertEquals((Double) Double.NaN, ObjectConverter.toDouble(Double.NaN));
-        assertEquals((Double) Double.NaN, ObjectConverter.toDouble(Float.NaN));
-        assertEquals((Float) Float.NaN, ObjectConverter.toFloat(Double.NaN));
-        assertEquals((Float) Float.NaN, ObjectConverter.toFloat(Float.NaN));
+        assertEquals((Double)Double.NaN, ObjectConverter.toDouble(Double.NaN));
+        assertEquals((Double)Double.NaN, ObjectConverter.toDouble(Float.NaN));
+        assertEquals((Float)Float.NaN, ObjectConverter.toFloat(Double.NaN));
+        assertEquals((Float)Float.NaN, ObjectConverter.toFloat(Float.NaN));
+    }
+
+    @Test
+    public void testToBoolean() throws Exception {
+        assertTrue(ObjectConverter.toBoolean("true"));
+        assertTrue(ObjectConverter.toBoolean("TRUE"));
+        assertFalse(ObjectConverter.toBoolean("false"));
+        assertFalse(ObjectConverter.toBoolean("FALSE"));
+        assertNull(ObjectConverter.toBoolean("1"));
+        assertNull(ObjectConverter.toBoolean(""));
+        assertNull(ObjectConverter.toBoolean("yes"));
+
+        assertTrue(ObjectConverter.toBool("true"));
+        assertTrue(ObjectConverter.toBool("TRUE"));
+        assertFalse(ObjectConverter.toBool("false"));
+        assertFalse(ObjectConverter.toBool("FALSE"));
+        // primitive boolean is more strict
+        try {
+            ObjectConverter.toBool("1");
+            fail("Should throw exception");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+        try {
+            ObjectConverter.toBool("");
+            fail("Should throw exception");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+        try {
+            ObjectConverter.toBool("yes");
+            fail("Should throw exception");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
     }
 
 }

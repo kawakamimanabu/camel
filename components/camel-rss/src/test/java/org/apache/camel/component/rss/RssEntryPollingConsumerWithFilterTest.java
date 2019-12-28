@@ -20,8 +20,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
-import com.sun.syndication.feed.synd.SyndEntry;
-import com.sun.syndication.feed.synd.SyndFeed;
+import com.rometools.rome.feed.synd.SyndEntry;
+import com.rometools.rome.feed.synd.SyndFeed;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
@@ -49,10 +49,11 @@ public class RssEntryPollingConsumerWithFilterTest extends CamelTestSupport {
         registry.bind("myBean", new MyBean(cal.getTime()));
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             public void configure() throws Exception {
-                from("rss:file:src/test/data/rss20.xml?splitEntries=true&consumer.delay=100").
+                from("rss:file:src/test/data/rss20.xml?splitEntries=true&delay=100").
                         filter().method("myBean", "isAfterDate").to("mock:result");
             }
         };
@@ -68,7 +69,7 @@ public class RssEntryPollingConsumerWithFilterTest extends CamelTestSupport {
         public boolean isAfterDate(Exchange ex) {
             SyndFeed feed = ex.getIn().getBody(SyndFeed.class);
             assertTrue(feed.getEntries().size() == 1);
-            SyndEntry entry = (SyndEntry) feed.getEntries().get(0);
+            SyndEntry entry = feed.getEntries().get(0);
             return entry.getPublishedDate().after(time);
         }
     }

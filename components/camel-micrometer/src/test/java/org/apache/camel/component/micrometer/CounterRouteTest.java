@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
+
 import static org.apache.camel.component.micrometer.MicrometerConstants.HEADER_COUNTER_DECREMENT;
 import static org.apache.camel.component.micrometer.MicrometerConstants.HEADER_COUNTER_INCREMENT;
 import static org.apache.camel.component.micrometer.MicrometerConstants.HEADER_METRIC_NAME;
@@ -48,19 +49,19 @@ import static org.junit.Assert.assertEquals;
 @MockEndpoints
 public class CounterRouteTest {
 
-    @EndpointInject(uri = "mock:out")
+    @EndpointInject("mock:out")
     private MockEndpoint endpoint;
 
-    @Produce(uri = "direct:in-1")
+    @Produce("direct:in-1")
     private ProducerTemplate producer1;
 
-    @Produce(uri = "direct:in-2")
+    @Produce("direct:in-2")
     private ProducerTemplate producer2;
 
-    @Produce(uri = "direct:in-3")
+    @Produce("direct:in-3")
     private ProducerTemplate producer3;
 
-    @Produce(uri = "direct:in-4")
+    @Produce("direct:in-4")
     private ProducerTemplate producer4;
 
     private MeterRegistry registry;

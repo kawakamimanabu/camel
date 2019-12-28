@@ -55,21 +55,21 @@ public class PaxLoggingEndpoint extends DefaultEndpoint {
         return getAppender();
     }
 
+    @Override
     public PaxLoggingComponent getComponent() {
         return (PaxLoggingComponent) super.getComponent();
     }
 
+    @Override
     public Producer createProducer() throws Exception {
         throw new RuntimeCamelException("Cannot produce to a PaxLoggingEndpoint: " + getEndpointUri());
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         PaxLoggingConsumer answer = new PaxLoggingConsumer(this, processor);
         configureConsumer(answer);
         return answer;
     }
 
-    public boolean isSingleton() {
-        return true;
-    }
 }

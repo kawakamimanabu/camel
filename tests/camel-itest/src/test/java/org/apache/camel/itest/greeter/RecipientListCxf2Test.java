@@ -30,8 +30,8 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class RecipientListCxf2Test extends CamelSpringTestSupport {
     
-    private static int port1 = AvailablePortFinder.getNextAvailable(20012);
-    private static int port2 = AvailablePortFinder.getNextAvailable(20023);
+    private static int port1 = AvailablePortFinder.getNextAvailable();
+    private static int port2 = AvailablePortFinder.getNextAvailable();
     static {
         //set them as system properties so Spring can use the property placeholder
         //things to set them into the URL's in the spring contexts 
@@ -39,13 +39,13 @@ public class RecipientListCxf2Test extends CamelSpringTestSupport {
         System.setProperty("RecipientListCxf2Test.port2", Integer.toString(port2));
     }
 
-    @EndpointInject(uri = "mock:reply")
+    @EndpointInject("mock:reply")
     protected MockEndpoint replyEndpoint;
 
-    @EndpointInject(uri = "mock:reply2")
+    @EndpointInject("mock:reply2")
     protected MockEndpoint reply2Endpoint;
 
-    @EndpointInject(uri = "mock:output")
+    @EndpointInject("mock:output")
     protected MockEndpoint outputEndpoint;
 
     @Override

@@ -49,9 +49,7 @@ public class ExchangeIdempotentConsumerTest extends ContextTestSupport {
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:start").idempotentConsumer(
-                        header("messageId"), repo
-                ).to("mock:result");
+                from("direct:start").idempotentConsumer(header("messageId"), repo).to("mock:result");
             }
         });
         context.start();
@@ -128,10 +126,10 @@ public class ExchangeIdempotentConsumerTest extends ContextTestSupport {
             exchanges.add(exchange.getExchangeId());
             return delegate.confirm(key);
         }
-        
+
         @Override
         public void clear() {
-            delegate.clear();           
+            delegate.clear();
         }
 
         @Override
@@ -159,12 +157,12 @@ public class ExchangeIdempotentConsumerTest extends ContextTestSupport {
         }
 
         @Override
-        public void start() throws Exception {
+        public void start() {
             // noop
         }
 
         @Override
-        public void stop() throws Exception {
+        public void stop() {
             // noop
         }
     }

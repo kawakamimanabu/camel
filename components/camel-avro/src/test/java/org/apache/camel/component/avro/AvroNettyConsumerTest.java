@@ -19,7 +19,7 @@ package org.apache.camel.component.avro;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
-import org.apache.avro.ipc.NettyTransceiver;
+import org.apache.avro.ipc.netty.NettyTransceiver;
 import org.apache.avro.ipc.reflect.ReflectRequestor;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.camel.avro.generated.KeyValueProtocol;
@@ -47,6 +47,7 @@ public class AvroNettyConsumerTest extends AvroConsumerTestSupport {
         reflectRequestor = new ReflectRequestor(TestReflection.class, reflectTransceiver);
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             @Override

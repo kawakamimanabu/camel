@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+
 import com.dropbox.core.DbxDownloader;
 import com.dropbox.core.DbxException;
 import com.dropbox.core.DbxRequestConfig;
@@ -28,7 +29,6 @@ import com.dropbox.core.v2.DbxClientV2;
 import com.dropbox.core.v2.files.FileMetadata;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.junit.Before;
-
 
 public class DropboxTestSupport extends CamelTestSupport {
 
@@ -75,10 +75,13 @@ public class DropboxTestSupport extends CamelTestSupport {
     protected void createFile(String fileName, String content) throws IOException {
         try {
             client.files().uploadBuilder(workdir + "/" + fileName).uploadAndFinish(new ByteArrayInputStream(content.getBytes()));
+            //wait some time for synchronization
+            Thread.sleep(1000);
         } catch (DbxException e) {
             log.info("folder is already created");
+        } catch (InterruptedException e) {
+            log.debug("Waiting for synchronization interrupted.");
         }
-
     }
 
     protected String getFileContent(String path) throws DbxException, IOException {

@@ -24,15 +24,14 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import static java.util.Arrays.asList;
-import static java.util.Arrays.stream;
-
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.Service;
 import org.apache.camel.TypeConverter;
-import org.apache.camel.impl.DefaultClassResolver;
-import org.apache.camel.impl.DefaultFactoryFinder;
-import org.apache.camel.impl.DefaultPackageScanClassResolver;
+import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.camel.impl.converter.DefaultTypeConverter;
+import org.apache.camel.impl.engine.DefaultClassResolver;
+import org.apache.camel.impl.engine.DefaultFactoryFinder;
+import org.apache.camel.impl.engine.DefaultPackageScanClassResolver;
 import org.apache.camel.model.ModelCamelContext;
 import org.apache.camel.spi.ExecutorServiceManager;
 import org.apache.camel.spi.Injector;
@@ -43,6 +42,8 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.Invocation;
 
+import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
@@ -63,8 +64,19 @@ public class AbstractCamelContextFactoryBeanTest {
         new Injector() {
             @Override
             public <T> T newInstance(Class<T> type) {
+                return newInstance(type, false);
+            }
+
+            @Override
+            public <T> T newInstance(Class<T> type, String factoryMethod) {
+                return null;
+            }
+
+            @Override
+            public <T> T newInstance(Class<T> type, boolean postProcessBean) {
                 return ObjectHelper.newInstance(type);
             }
+
             @Override
             public boolean supportsAutoWiring() {
                 return false;
@@ -73,7 +85,7 @@ public class AbstractCamelContextFactoryBeanTest {
         new DefaultFactoryFinder(new DefaultClassResolver(), "META-INF/services/org/apache/camel/"), false);
 
     // properties that should return value that can be converted to boolean
-    Set<String> valuesThatReturnBoolean = new HashSet<>(asList("{{getStreamCache}}", "{{getTrace}}",
+    Set<String> valuesThatReturnBoolean = new HashSet<>(asList("{{getStreamCache}}", "{{getDebug}}", "{{getTrace}}", "{{getBacklogTrace}}",
         "{{getMessageHistory}}", "{{getLogMask}}", "{{getLogExhaustedMessageBody}}", "{{getHandleFault}}",
         "{{getAutoStartup}}", "{{getUseMDCLogging}}", "{{getUseDataType}}", "{{getUseBreadcrumb}}", "{{getAllowUseOriginalMessage}}"));
 
@@ -88,8 +100,10 @@ public class AbstractCamelContextFactoryBeanTest {
     public void shouldSupportPropertyPlaceholdersOnAllProperties() throws Exception {
         final Set<Invocation> invocations = new LinkedHashSet<>();
 
-        final ModelCamelContext context = mock(ModelCamelContext.class,
+        final DefaultCamelContext context = mock(DefaultCamelContext.class,
             withSettings().invocationListeners(i -> invocations.add((Invocation) i.getInvocation())));
+
+        when(context.adapt(ExtendedCamelContext.class)).thenReturn(context);
 
         // program the property resolution in context mock
         when(context.resolvePropertyPlaceholders(anyString())).thenAnswer(invocation -> {

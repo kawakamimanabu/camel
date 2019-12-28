@@ -18,6 +18,7 @@ package org.apache.camel.component.spring.ws;
 
 import java.util.Iterator;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.namespace.QName;
 import javax.xml.soap.MimeHeaders;
@@ -29,6 +30,8 @@ import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
 import org.apache.camel.Message;
 import org.apache.camel.Processor;
+import org.apache.camel.attachment.AttachmentMessage;
+import org.apache.camel.attachment.DefaultAttachmentMessage;
 import org.apache.camel.support.DefaultConsumer;
 import org.springframework.ws.WebServiceMessage;
 import org.springframework.ws.context.MessageContext;
@@ -56,6 +59,7 @@ public class SpringWebserviceConsumer extends DefaultConsumer implements Message
     /**
      * Invoked by Spring-WS when a {@link WebServiceMessage} is received
      */
+    @Override
     public void invoke(MessageContext messageContext) throws Exception {
         Exchange exchange = getEndpoint().createExchange(ExchangePattern.InOptionalOut);
         populateExchangeFromMessageContext(messageContext, exchange);
@@ -69,7 +73,7 @@ public class SpringWebserviceConsumer extends DefaultConsumer implements Message
         if (exchange.getException() != null) {
             throw exchange.getException();
         } else if (exchange.getPattern().isOutCapable()) {
-            Message responseMessage = exchange.hasOut() ? exchange.getOut(Message.class) : exchange.getIn(Message.class);
+            Message responseMessage = exchange.getMessage(Message.class);
             if (responseMessage != null) {
                 Source responseBody = responseMessage.getBody(Source.class);
                 WebServiceMessage response = messageContext.getResponse();
@@ -122,9 +126,9 @@ public class SpringWebserviceConsumer extends DefaultConsumer implements Message
         // create inbound message
         WebServiceMessage request = messageContext.getRequest();
         SpringWebserviceMessage inMessage = new SpringWebserviceMessage(exchange.getContext(), request);
-        extractSourceFromSoapHeader(inMessage.getHeaders(), request);
-        extractAttachmentsFromRequest(request, inMessage);
         exchange.setIn(inMessage);
+        extractSourceFromSoapHeader(inMessage.getHeaders(), request);
+        extractAttachmentsFromRequest(request, new DefaultAttachmentMessage(inMessage));
     }
 
     private void populateExchangeWithPropertiesFromMessageContext(MessageContext messageContext,
@@ -176,7 +180,7 @@ public class SpringWebserviceConsumer extends DefaultConsumer implements Message
     }
 
     private void extractAttachmentsFromRequest(final WebServiceMessage request,
-                                               final SpringWebserviceMessage inMessage) {
+                                               final AttachmentMessage inMessage) {
         if (request instanceof MimeMessage) {
             Iterator<Attachment> attachmentsIterator = ((MimeMessage)request).getAttachments();
             while (attachmentsIterator.hasNext()) {

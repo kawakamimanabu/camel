@@ -20,8 +20,10 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * An unit test based on Paddy having trouble with SFTP.
@@ -37,7 +39,7 @@ public class PaddyRouteTest extends FtpServerTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
 
-        sendFile(getFtpUrl() + "/?password=admin", "Hello World", "incoming/hello.txt");
+        sendFile(getFtpUrl(), "Hello World", "incoming/hello.txt");
 
         assertMockEndpointsSatisfied();
     }

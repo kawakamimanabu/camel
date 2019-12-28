@@ -47,6 +47,7 @@ public class DefaultCamelCatalog extends AbstractCamelCatalog implements CamelCa
     private static final String DOC_DIR = "org/apache/camel/catalog/docs";
     private static final String ARCHETYPES_CATALOG = "org/apache/camel/catalog/archetypes/archetype-catalog.xml";
     private static final String SCHEMAS_XML = "org/apache/camel/catalog/schemas";
+    private static final String MAIN_DIR = "org/apache/camel/catalog/main";
 
     private final VersionHelper version = new VersionHelper();
 
@@ -1166,6 +1167,32 @@ public class DefaultCamelCatalog extends AbstractCamelCatalog implements CamelCa
         return answer;
     }
 
+    @Override
+    public String mainJsonSchema() {
+        String file = MAIN_DIR + "/camel-main-configuration-metadata.json";
+
+        String answer = null;
+        if (caching) {
+            answer = (String) cache.get(file);
+        }
+
+        if (answer == null) {
+            InputStream is = versionManager.getResourceAsStream(file);
+            if (is != null) {
+                try {
+                    answer = CatalogHelper.loadText(is);
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
+            if (caching) {
+                cache.put(file, answer);
+            }
+        }
+
+        return answer;
+    }
+
     /**
      * Special logic for log endpoints to deal when showAll=true
      */
@@ -1384,6 +1411,7 @@ public class DefaultCamelCatalog extends AbstractCamelCatalog implements CamelCa
 
                 DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
                 dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
+                dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", Boolean.TRUE);
                 Document dom = dbf.newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes()));
                 Object val = XPathFactory.newInstance().newXPath().evaluate("count(/archetype-catalog/archetypes/archetype)", dom, XPathConstants.NUMBER);
                 double num = (double) val;

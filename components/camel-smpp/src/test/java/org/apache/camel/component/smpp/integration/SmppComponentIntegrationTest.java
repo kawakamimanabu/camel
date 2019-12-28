@@ -41,10 +41,10 @@ import org.junit.Test;
 @Ignore("Must be manually tested")
 public class SmppComponentIntegrationTest extends CamelTestSupport {
     
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint result;
     
-    @EndpointInject(uri = "direct:start")
+    @EndpointInject("direct:start")
     private Endpoint start;
     
     @Test
@@ -175,6 +175,7 @@ public class SmppComponentIntegrationTest extends CamelTestSupport {
         assertEquals(2, exchange.getOut().getHeader(SmppConstants.SENT_MESSAGE_COUNT));
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             @Override

@@ -17,16 +17,10 @@
 package org.apache.camel.processor;
 
 import org.apache.camel.ContextTestSupport;
-import org.apache.camel.FailedToCreateRouteException;
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.Test;
 
 public class ThreadsCoreAndMaxPoolInvalidTest extends ContextTestSupport {
-
-    @Override
-    public boolean isUseRouteBuilder() {
-        return super.isUseRouteBuilder();
-    }
 
     @Test
     public void testInvalidSyntax() throws Exception {
@@ -34,14 +28,12 @@ public class ThreadsCoreAndMaxPoolInvalidTest extends ContextTestSupport {
             context.addRoutes(new RouteBuilder() {
                 @Override
                 public void configure() throws Exception {
-                    from("direct:start")
-                        .threads(5, 2)
-                        .to("mock:result");
+                    from("direct:start").threads(5, 2).to("mock:result");
                 }
             });
 
             fail("Should have thrown an exception");
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             IllegalArgumentException iae = assertIsInstanceOf(IllegalArgumentException.class, e.getCause());
             assertEquals("MaxPoolSize must be >= corePoolSize, was 2 >= 5", iae.getMessage());
         }

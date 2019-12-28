@@ -17,23 +17,20 @@
 package org.apache.camel.builder.xml;
 
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.support.builder.Namespaces;
 
 /**
  * XPath with namespace test
  */
 public class XPathNamespaceResultTypeTest extends XPathNamespaceTest {
 
+    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             public void configure() throws Exception {
                 Namespaces ns = new Namespaces("c", "http://acme.com/cheese");
 
-                from("direct:in").choice()
-                    .when().xpath("/c:number = 55", Integer.class, ns)
-                        .to("mock:55")
-                    .otherwise()
-                        .to("mock:other")
-                    .end();
+                from("direct:in").choice().when().xpath("/c:number = 55", Integer.class, ns).to("mock:55").otherwise().to("mock:other").end();
             }
         };
     }

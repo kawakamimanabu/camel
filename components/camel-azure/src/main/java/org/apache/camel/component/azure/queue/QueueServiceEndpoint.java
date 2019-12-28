@@ -47,6 +47,7 @@ public class QueueServiceEndpoint extends DefaultEndpoint {
         this.configuration = configuration;
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         log.trace("Creating a consumer");
         QueueServiceConsumer consumer = new QueueServiceConsumer(this, processor);
@@ -54,13 +55,10 @@ public class QueueServiceEndpoint extends DefaultEndpoint {
         return consumer;
     }
 
+    @Override
     public Producer createProducer() throws Exception {
         log.trace("Creating a producer");
         return new QueueServiceProducer(this);
-    }
-
-    public boolean isSingleton() {
-        return true;
     }
 
     public QueueServiceConfiguration getConfiguration() {

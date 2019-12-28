@@ -26,19 +26,21 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.api.management.JmxSystemPropertyKeys;
-import org.apache.camel.component.properties.PropertiesComponent;
-import org.apache.camel.impl.DefaultDebugger;
-import org.apache.camel.impl.InterceptSendToMockEndpointStrategy;
+import org.apache.camel.impl.engine.InterceptSendToMockEndpointStrategy;
+import org.apache.camel.processor.interceptor.DefaultDebugger;
 import org.apache.camel.spi.Breakpoint;
 import org.apache.camel.spi.Debugger;
 import org.apache.camel.spi.EventNotifier;
+import org.apache.camel.spi.PropertiesComponent;
 import org.apache.camel.spring.SpringCamelContext;
 import org.apache.camel.test.ExcludingPackageScanClassResolver;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.apache.camel.test.spring.CamelSpringTestHelper.DoToSpringCamelContextsStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.ApplicationContext;
@@ -146,8 +148,9 @@ public class CamelSpringTestContextLoader extends AbstractContextLoader {
         AnnotationConfigUtils.registerAnnotationConfigProcessors(context);
         
         // Pre CamelContext(s) instantiation setup
-        handleDisableJmx(context, testClass);
-
+        handleDisableJmx(context, testClass);        
+        handleUseOverridePropertiesWithPropertiesComponent(context, testClass);
+        
         // Temporarily disable CamelContext start while the contexts are instantiated.
         SpringCamelContext.setNoStart(true);
         context.refresh();
@@ -161,7 +164,6 @@ public class CamelSpringTestContextLoader extends AbstractContextLoader {
         handleShutdownTimeout(context, testClass);
         handleMockEndpoints(context, testClass);
         handleMockEndpointsAndSkip(context, testClass);
-        handleUseOverridePropertiesWithPropertiesComponent(context, testClass);
 
         // CamelContext(s) startup
         handleCamelContextStartup(context, testClass);
@@ -405,7 +407,7 @@ public class CamelSpringTestContextLoader extends AbstractContextLoader {
                 public void execute(String contextName, SpringCamelContext camelContext)
                     throws Exception {
                     LOG.info("Enabling auto mocking of endpoints matching pattern [{}] on CamelContext with name [{}].", mockEndpoints, contextName);
-                    camelContext.addRegisterEndpointCallback(new InterceptSendToMockEndpointStrategy(mockEndpoints));
+                    camelContext.adapt(ExtendedCamelContext.class).registerEndpointCallback(new InterceptSendToMockEndpointStrategy(mockEndpoints));
                 }
             });
         }
@@ -429,16 +431,16 @@ public class CamelSpringTestContextLoader extends AbstractContextLoader {
                     // resovle the property place holders of the mockEndpoints 
                     String mockEndpointsValue = camelContext.resolvePropertyPlaceholders(mockEndpoints);
                     LOG.info("Enabling auto mocking and skipping of endpoints matching pattern [{}] on CamelContext with name [{}].", mockEndpointsValue, contextName);
-                    camelContext.addRegisterEndpointCallback(new InterceptSendToMockEndpointStrategy(mockEndpointsValue, true));
+                    camelContext.adapt(ExtendedCamelContext.class).registerEndpointCallback(new InterceptSendToMockEndpointStrategy(mockEndpointsValue, true));
                 }
             });
         }
     }
     
     /**
-     * Handles override this method to include and override properties with the Camel {@link org.apache.camel.component.properties.PropertiesComponent}.
+     * Sets property overrides for the Camel {@link org.apache.camel.component.properties.PropertiesComponent}.
      *
-     * @param context the initialized Spring context
+     * @param context the pre-refresh Spring context
      * @param testClass the test class being executed
      */
     protected void handleUseOverridePropertiesWithPropertiesComponent(ConfigurableApplicationContext context, Class<?> testClass) throws Exception {
@@ -470,21 +472,24 @@ public class CamelSpringTestContextLoader extends AbstractContextLoader {
                 }
             }
         }
+        
+        Properties extra = new Properties();
+        for (Properties prop : properties) {
+            extra.putAll(prop);
+        }
 
-        if (properties.size() != 0) {
-            CamelSpringTestHelper.doToSpringCamelContexts(context, new DoToSpringCamelContextsStrategy() {
-                public void execute(String contextName, SpringCamelContext camelContext) throws Exception {
-                    PropertiesComponent pc = camelContext.getComponent("properties", PropertiesComponent.class);
-                    Properties extra = new Properties();
-                    for (Properties prop : properties) {
-                        extra.putAll(prop);
-                    }
-                    if (!extra.isEmpty()) {
-                        LOG.info("Using {} properties to override any existing properties on the PropertiesComponent on CamelContext with name [{}].", extra.size(), contextName);
+        if (!extra.isEmpty()) {
+            context.addBeanFactoryPostProcessor(beanFactory -> beanFactory.addBeanPostProcessor(new BeanPostProcessor() {
+                @Override
+                public Object postProcessBeforeInitialization(Object bean, String beanName) {
+                    if (bean instanceof PropertiesComponent) {
+                        PropertiesComponent pc = (PropertiesComponent) bean;
+                        LOG.info("Using {} properties to override any existing properties on the PropertiesComponent", extra.size());
                         pc.setOverrideProperties(extra);
                     }
+                    return bean;
                 }
-            });
+            }));
         }
     }
 

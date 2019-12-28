@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.file;
+
 import java.io.File;
 
 import org.apache.camel.ContextTestSupport;
@@ -31,11 +32,6 @@ public class FileConsumerTemplateTest extends ContextTestSupport {
         super.setUp();
     }
 
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
-    }
-
     @Test
     public void testFileConsumerTemplate() throws Exception {
         template.sendBodyAndHeader("file:target/data/consumer", "Hello World", Exchange.FILE_NAME, "hello.txt");
@@ -43,7 +39,7 @@ public class FileConsumerTemplateTest extends ContextTestSupport {
         File file = new File("target/data/consumer/hello.txt");
 
         assertTrue("File should exist " + file, file.exists());
-        
+
         String body = consumer.receiveBody("file:target/data/consumer?delete=true", 5000, String.class);
         assertEquals("Hello World", body);
 

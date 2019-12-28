@@ -64,6 +64,22 @@ public class CryptoCmsEndpoint extends DefaultEndpoint {
         return name;
     }
 
+    public SignedDataCreatorConfiguration getSignConfig() {
+        return signConfig;
+    }
+
+    public DefaultSignedDataVerifierConfiguration getVerifyConfig() {
+        return verifyConfig;
+    }
+
+    public EnvelopedDataEncryptorConfiguration getEncryptConfig() {
+        return encryptConfig;
+    }
+
+    public DefaultEnvelopedDataDecryptorConfiguration getDecryptConfig() {
+        return decryptConfig;
+    }
+
     /**
      * Set the Crypto operation from that supplied after the crypto scheme in
      * the endpoint uri e.g. crypto-cms:sign sets sign as the operation.
@@ -102,11 +118,6 @@ public class CryptoCmsEndpoint extends DefaultEndpoint {
     @Override
     public Consumer createConsumer(Processor processor) {
         throw new UnsupportedOperationException("Crypto CMS endpoints are not meant to be consumed from. They are meant be used as intermediate endpoints");
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     public Object getManagedObject(CryptoCmsEndpoint endpoint) {

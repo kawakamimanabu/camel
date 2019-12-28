@@ -28,11 +28,10 @@ import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
 import static org.junit.Assert.assertEquals;
 
-
 @ContextConfiguration
 public class BindyCsvBigFileUnmarshallTest extends AbstractJUnit4SpringContextTests {
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint resultEndpoint;
 
     @Test
@@ -51,6 +50,7 @@ public class BindyCsvBigFileUnmarshallTest extends AbstractJUnit4SpringContextTe
     }
 
     public static class ContextConfig extends RouteBuilder {
+        @Override
         public void configure() {
             BindyCsvDataFormat camelDataFormat = 
                 new BindyCsvDataFormat(org.apache.camel.dataformat.bindy.model.simple.oneclass.Order.class);

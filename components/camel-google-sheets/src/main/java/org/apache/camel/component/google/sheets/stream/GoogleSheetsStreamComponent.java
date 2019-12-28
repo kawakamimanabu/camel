@@ -54,9 +54,11 @@ public class GoogleSheetsStreamComponent extends DefaultComponent {
 
     public Sheets getClient(GoogleSheetsStreamConfiguration endpointConfiguration) {
         if (client == null) {
-            client = getClientFactory().makeClient(endpointConfiguration.getClientId(), endpointConfiguration.getClientSecret(),
-                                                    endpointConfiguration.getApplicationName(), endpointConfiguration.getRefreshToken(),
-                                                    endpointConfiguration.getAccessToken());
+            client = getClientFactory().makeClient(endpointConfiguration.getClientId(),
+                                                endpointConfiguration.getClientSecret(),
+                                                endpointConfiguration.getApplicationName(),
+                                                endpointConfiguration.getRefreshToken(),
+                                                endpointConfiguration.getAccessToken());
         }
         return client;
     }
@@ -90,7 +92,6 @@ public class GoogleSheetsStreamComponent extends DefaultComponent {
     @Override
     protected Endpoint createEndpoint(String uri, String remaining, Map<String, Object> parameters) throws Exception {
         final GoogleSheetsStreamConfiguration configuration = this.configuration.copy();
-        setProperties(configuration, parameters);
         GoogleSheetsStreamEndpoint endpoint = new GoogleSheetsStreamEndpoint(uri, this, configuration);
         setProperties(endpoint, parameters);
         return endpoint;

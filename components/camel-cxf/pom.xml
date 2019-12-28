@@ -17,14 +17,13 @@
     limitations under the License.
 
 -->
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.apache.camel</groupId>
         <artifactId>components</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>camel-cxf</artifactId>
@@ -34,6 +33,7 @@
     <description>Camel CXF support</description>
 
     <properties>
+        <camel.osgi.import.defaults />
         <camel.osgi.import>
             !org.springframework.boot.*,
             !org.springframework.context.annotation.*;resolution:=optional,
@@ -46,14 +46,15 @@
             !org.apache.camel.component.cxf.spring,
             !org.apache.camel.component.cxf.util,
             !org.apache.camel.blueprint,
-            javax.activation*;version="[0.0,2)",
+            javax.activation.*;version="${javax-activation-version-range}",
             javax.jws*;version="[0.0,3)",
             javax.ws.rs*;version="[0.0,3)",
+            javax.xml.soap*;version="[1.3,2)",
             javax.xml.stream*;version="[0.0,2)",
             javax.xml.ws*;version="[0.0,3.0)",
             org.apache.camel.*;${camel.osgi.import.camel.version},
             org.springframework*;version="${spring-version-range}";resolution:=optional,
-            org.apache.cxf.*;version="${cxf-version-range}"
+            org.apache.cxf.*;version="${cxf-version-range}",
             ${camel.osgi.import.defaults},
             ${camel.osgi.import.additional},
             org.osgi.service.blueprint;resolution:=optional,
@@ -66,12 +67,17 @@
             *
         </camel.osgi.import>
         <camel.osgi.failok>true</camel.osgi.failok>
+
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-support</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-attachments</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.camel</groupId>
@@ -89,7 +95,7 @@
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
-            <version>${javax.servlet-api-version}</version>
+            <version>${javax-servlet-api-version}</version>
         </dependency>
 
         <dependency>
@@ -147,6 +153,11 @@
             <artifactId>camel-core-xml</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-xpath</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Try to test convert PayLoad into POJO -->
         <dependency>
@@ -164,7 +175,7 @@
         <!-- http client tests -->
         <dependency>
             <groupId>org.apache.camel</groupId>
-            <artifactId>camel-http4</artifactId>
+            <artifactId>camel-http</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -319,9 +330,9 @@
         </dependency>
 
         <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.6</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3-version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -452,17 +463,13 @@
                                 <echo>Copying spring meta files</echo>
                                 <copy todir="${project.build.directory}/spring-meta" preservelastmodified="true">
                                     <fileset dir="${project.basedir}/src/main/resources">
-                                        <include name="**/spring.*"/>
+                                        <include name="**/spring.*" />
                                     </fileset>
                                 </copy>
-                                <replace file="${project.build.directory}/spring-meta/META-INF/spring.handlers"
-                                         token="\\${project.version}" value="${project.version}"
-                                         preservelastmodified="true"/>
-                                <replace file="${project.build.directory}/spring-meta/META-INF/spring.schemas"
-                                         token="\\${project.version}" value="${project.version}"
-                                         preservelastmodified="true"/>
+                                <replace file="${project.build.directory}/spring-meta/META-INF/spring.handlers" token="\\${project.version}" value="${project.version}" preservelastmodified="true" />
+                                <replace file="${project.build.directory}/spring-meta/META-INF/spring.schemas" token="\\${project.version}" value="${project.version}" preservelastmodified="true" />
                                 <copy todir="${project.build.directory}/classes" preservelastmodified="true">
-                                    <fileset dir="${project.build.directory}/spring-meta"/>
+                                    <fileset dir="${project.build.directory}/spring-meta" />
                                 </copy>
                             </target>
                         </configuration>

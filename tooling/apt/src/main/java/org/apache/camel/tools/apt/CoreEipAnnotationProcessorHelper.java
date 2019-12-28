@@ -51,6 +51,7 @@ import static org.apache.camel.tools.apt.AnnotationProcessorHelper.findJavaDoc;
 import static org.apache.camel.tools.apt.AnnotationProcessorHelper.findTypeElement;
 import static org.apache.camel.tools.apt.AnnotationProcessorHelper.findTypeElementChildren;
 import static org.apache.camel.tools.apt.AnnotationProcessorHelper.hasSuperClass;
+import static org.apache.camel.tools.apt.AnnotationProcessorHelper.implementsInterface;
 import static org.apache.camel.tools.apt.AnnotationProcessorHelper.processFile;
 import static org.apache.camel.tools.apt.helper.JsonSchemaHelper.sanitizeDescription;
 import static org.apache.camel.tools.apt.helper.Strings.canonicalClassName;
@@ -59,7 +60,9 @@ import static org.apache.camel.tools.apt.helper.Strings.safeNull;
 
 /**
  * Process all camel-core's model classes (EIPs and DSL) and generate json
- * schema documentation
+ * schema documentation and for some models java source code is generated
+ * which allows for faster property placeholder resolution at runtime; without the
+ * overhead of using reflections.
  */
 public class CoreEipAnnotationProcessorHelper {
 
@@ -71,9 +74,9 @@ public class CoreEipAnnotationProcessorHelper {
     // find all classes)
     private static final String[] ONE_OF_INPUTS = new String[] {"org.apache.camel.model.ProcessorDefinition", "org.apache.camel.model.VerbDefinition"};
     // special for outputs (these classes have sub classes, so we use this to
-    // find all classes)
+    // find all classes - and not in particular if they support outputs or not)
     private static final String[] ONE_OF_OUTPUTS = new String[] {"org.apache.camel.model.ProcessorDefinition", "org.apache.camel.model.NoOutputDefinition",
-                                                                 "org.apache.camel.model.OutputDefinition", "org.apache.camel.model.ExpressionNode",
+                                                                 "org.apache.camel.model.OutputDefinition", "org.apache.camel.model.OutputExpressionNode",
                                                                  "org.apache.camel.model.NoOutputExpressionNode", "org.apache.camel.model.SendDefinition",
                                                                  "org.apache.camel.model.InterceptDefinition", "org.apache.camel.model.WhenDefinition",
                                                                  "org.apache.camel.model.ToDynamicDefinition"};
@@ -83,7 +86,8 @@ public class CoreEipAnnotationProcessorHelper {
 
     private boolean skipUnwanted = true;
 
-    protected void processModelClass(final ProcessingEnvironment processingEnv, final RoundEnvironment roundEnv, final TypeElement classElement) {
+    protected void processModelClass(final ProcessingEnvironment processingEnv, final RoundEnvironment roundEnv,
+                                     final TypeElement classElement, Set<String> propertyPlaceholderDefinitions) {
         final String javaTypeName = canonicalClassName(classElement.getQualifiedName().toString());
         String packageName = javaTypeName.substring(0, javaTypeName.lastIndexOf("."));
 
@@ -119,12 +123,13 @@ public class CoreEipAnnotationProcessorHelper {
             fileName = name + ".json";
         }
 
-        // write json schema
-        processFile(processingEnv, packageName, fileName, writer -> writeJSonSchemeDocumentation(processingEnv, writer, roundEnv, classElement, rootElement, javaTypeName, name));
+        // write json schema and property placeholder provider
+        processFile(processingEnv, packageName, fileName, writer -> writeJSonSchemeAndPropertyPlaceholderProvider(processingEnv, writer,
+                roundEnv, classElement, rootElement, javaTypeName, name, propertyPlaceholderDefinitions));
     }
 
-    protected void writeJSonSchemeDocumentation(ProcessingEnvironment processingEnv, PrintWriter writer, RoundEnvironment roundEnv, TypeElement classElement,
-                                                XmlRootElement rootElement, String javaTypeName, String modelName) {
+    protected void writeJSonSchemeAndPropertyPlaceholderProvider(ProcessingEnvironment processingEnv, PrintWriter writer, RoundEnvironment roundEnv, TypeElement classElement,
+                                                                 XmlRootElement rootElement, String javaTypeName, String modelName, Set<String> propertyPlaceholderDefinitions) {
         // gather eip information
         EipModel eipModel = findEipModelProperties(processingEnv, roundEnv, classElement, javaTypeName, modelName);
 
@@ -138,8 +143,51 @@ public class CoreEipAnnotationProcessorHelper {
         eipModel.setInput(hasInput(processingEnv, roundEnv, classElement));
         eipModel.setOutput(hasOutput(eipModel, eipOptions));
 
+        // write json schema file
         String json = createParameterJsonSchema(eipModel, eipOptions);
         writer.println(json);
+
+        // generate property placeholder provider java source code
+        generatePropertyPlaceholderProviderSource(processingEnv, writer, roundEnv, classElement, eipModel, eipOptions, propertyPlaceholderDefinitions);
+    }
+
+    protected void generatePropertyPlaceholderProviderSource(ProcessingEnvironment processingEnv, PrintWriter writer, RoundEnvironment roundEnv, TypeElement classElement,
+                                                             EipModel eipModel, Set<EipOption> options, Set<String> propertyPlaceholderDefinitions) {
+
+        // not ever model classes support property placeholders as this has been limited to mainly Camel routes
+        // so filter out unwanted models
+        boolean rest = classElement.getQualifiedName().toString().startsWith("org.apache.camel.model.rest");
+        boolean processor = hasSuperClass(processingEnv, roundEnv, classElement, "org.apache.camel.model.ProcessorDefinition");
+        boolean language = hasSuperClass(processingEnv, roundEnv, classElement, "org.apache.camel.model.language.ExpressionDefinition");
+        boolean dataformat = hasSuperClass(processingEnv, roundEnv, classElement, "org.apache.camel.model.DataFormatDefinition");
+
+        if (!rest && !processor && !language && !dataformat) {
+            return;
+        }
+
+        TypeElement parent = findTypeElement(processingEnv, roundEnv, "org.apache.camel.spi.PropertyPlaceholderConfigurer");
+        String def = classElement.getSimpleName().toString();
+        String fqnDef = classElement.getQualifiedName().toString();
+        String cn = def + "PropertyPlaceholderProvider";
+        String fqn = "org.apache.camel.model.placeholder." + cn;
+
+        PropertyPlaceholderGenerator.generatePropertyPlaceholderProviderSource(processingEnv, parent, def, fqnDef, cn, fqn, options);
+        propertyPlaceholderDefinitions.add(fqnDef);
+
+        // we also need to generate from when we generate route as from can also configure property placeholders
+        if ("RouteDefinition".equals(def)) {
+            def = "FromDefinition";
+            fqnDef = "org.apache.camel.model.FromDefinition";
+            cn = "FromDefinitionPropertyPlaceholderProvider";
+            fqn = "org.apache.camel.model.placeholder.FromDefinitionPropertyPlaceholderProvider";
+
+            options.clear();
+            options.add(new EipOption("id", null, null, "java.lang.String", false, null, null, false, null, false, null, false, null, false));
+            options.add(new EipOption("uri", null, null, "java.lang.String", false, null, null, false, null, false, null, false, null, false));
+
+            PropertyPlaceholderGenerator.generatePropertyPlaceholderProviderSource(processingEnv, parent, def, fqnDef, cn, fqn, options);
+            propertyPlaceholderDefinitions.add(fqnDef);
+        }
     }
 
     public String createParameterJsonSchema(EipModel eipModel, Set<EipOption> options) {
@@ -190,7 +238,7 @@ public class CoreEipAnnotationProcessorHelper {
             doc = sanitizeDescription(doc, false);
             buffer.append(JsonSchemaHelper.toJson(entry.getName(), entry.getDisplayName(), entry.getKind(), entry.isRequired(), entry.getType(), entry.getDefaultValue(), doc,
                                                   entry.isDeprecated(), entry.getDeprecationNote(), false, null, null, entry.isEnumType(), entry.getEnums(), entry.isOneOf(),
-                                                  entry.getOneOfTypes(), entry.isAsPredicate(), null, null, false));
+                                                  entry.getOneOfTypes(), entry.isAsPredicate(), null, null, false, null, null));
         }
         buffer.append("\n  }");
 
@@ -345,6 +393,9 @@ public class CoreEipAnnotationProcessorHelper {
         TypeMirror fieldType = fieldElement.asType();
         String fieldTypeName = fieldType.toString();
         TypeElement fieldTypeElement = findTypeElement(processingEnv, roundEnv, fieldTypeName);
+        if (metadata != null && !Strings.isNullOrEmpty(metadata.javaType())) {
+            fieldTypeName = metadata.javaType();
+        }
 
         String defaultValue = findDefaultValue(fieldElement, fieldTypeName);
         String docComment = findJavaDoc(elementUtils, fieldElement, fieldName, name, classElement, true);
@@ -617,11 +668,6 @@ public class CoreEipAnnotationProcessorHelper {
         ep = new EipOption("logMask", "Log Mask", "attribute", "java.lang.String", false, "false", docComment, false, null, false, null, false, null, false);
         eipOptions.add(ep);
 
-        // trace
-        docComment = findJavaDoc(elementUtils, null, "handleFault", null, classElement, true);
-        ep = new EipOption("handleFault", "Handle Fault", "attribute", "java.lang.String", false, "", docComment, false, null, false, null, false, null, false);
-        eipOptions.add(ep);
-
         // delayer
         docComment = findJavaDoc(elementUtils, null, "delayer", null, classElement, true);
         ep = new EipOption("delayer", "Delayer", "attribute", "java.lang.String", false, "", docComment, false, null, false, null, false, null, false);
@@ -767,7 +813,7 @@ public class CoreEipAnnotationProcessorHelper {
      */
     private void processOutputs(ProcessingEnvironment processingEnv, RoundEnvironment roundEnv, TypeElement originalClassType, XmlElementRef elementRef,
                                 VariableElement fieldElement, String fieldName, Set<EipOption> eipOptions, String prefix) {
-        if ("outputs".equals(fieldName) && supportOutputs(originalClassType)) {
+        if ("outputs".equals(fieldName) && supportOutputs(processingEnv, roundEnv, originalClassType)) {
             String kind = "element";
             String name = elementRef.name();
             if (isNullOrEmpty(name) || "##default".equals(name)) {
@@ -818,7 +864,7 @@ public class CoreEipAnnotationProcessorHelper {
 
         Elements elementUtils = processingEnv.getElementUtils();
 
-        if ("verbs".equals(fieldName) && supportOutputs(originalClassType)) {
+        if ("verbs".equals(fieldName) && supportOutputs(processingEnv, roundEnv, originalClassType)) {
             String kind = "element";
             String name = elementRef.name();
             if (isNullOrEmpty(name) || "##default".equals(name)) {
@@ -978,9 +1024,8 @@ public class CoreEipAnnotationProcessorHelper {
      * There are some classes which does not support outputs, even though they
      * have a outputs element.
      */
-    private boolean supportOutputs(TypeElement classElement) {
-        String superclass = canonicalClassName(classElement.getSuperclass().toString());
-        return !"org.apache.camel.model.NoOutputExpressionNode".equals(superclass);
+    private boolean supportOutputs(ProcessingEnvironment processingEnv, RoundEnvironment roundEnv, TypeElement classElement) {
+        return implementsInterface(processingEnv, roundEnv, classElement, "org.apache.camel.model.OutputNode");
     }
 
     private String findDefaultValue(VariableElement fieldElement, String fieldTypeName) {
@@ -1060,7 +1105,7 @@ public class CoreEipAnnotationProcessorHelper {
         return false;
     }
 
-    private static final class EipModel {
+    public static final class EipModel {
 
         private String name;
         private String title;
@@ -1162,7 +1207,7 @@ public class CoreEipAnnotationProcessorHelper {
         }
     }
 
-    private static final class EipOption {
+    public static final class EipOption {
 
         private String name;
         private String displayName;
@@ -1287,19 +1332,19 @@ public class CoreEipAnnotationProcessorHelper {
 
         @Override
         public int compare(EipOption o1, EipOption o2) {
-            int weigth = weigth(o1);
-            int weigth2 = weigth(o2);
+            int weight = weight(o1);
+            int weight2 = weight(o2);
 
-            if (weigth == weigth2) {
+            if (weight == weight2) {
                 // keep the current order
                 return 1;
             } else {
                 // sort according to weight
-                return weigth2 - weigth;
+                return weight2 - weight;
             }
         }
 
-        private int weigth(EipOption o) {
+        private int weight(EipOption o) {
             String name = o.getName();
 
             // these should be first

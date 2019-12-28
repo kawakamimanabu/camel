@@ -24,7 +24,6 @@ import com.github.tomakehurst.wiremock.http.HttpServer;
 import com.github.tomakehurst.wiremock.http.StubRequestHandler;
 import com.github.tomakehurst.wiremock.jetty9.JettyHttpServer;
 import com.github.tomakehurst.wiremock.jetty9.JettyHttpServerFactory;
-
 import org.eclipse.jetty.io.NetworkTrafficListener;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -47,7 +46,7 @@ public final class Jetty94ServerFactory extends JettyHttpServerFactory {
             @Override
             protected ServerConnector createHttpsConnector(final String bindAddress, final HttpsSettings httpsSettings,
                 final JettySettings jettySettings, final NetworkTrafficListener listener) {
-                final SslContextFactory sslContextFactory = new SslContextFactory();
+                final SslContextFactory sslContextFactory = new SslContextFactory.Server();
 
                 sslContextFactory.setKeyStorePath(httpsSettings.keyStorePath());
                 sslContextFactory.setKeyManagerPassword(httpsSettings.keyStorePassword());

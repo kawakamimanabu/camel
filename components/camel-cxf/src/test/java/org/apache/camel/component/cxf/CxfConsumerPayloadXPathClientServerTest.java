@@ -29,17 +29,15 @@ import org.w3c.dom.Text;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.builder.xml.XPathBuilder;
 import org.apache.camel.converter.jaxp.XmlConverter;
+import org.apache.camel.language.xpath.XPathBuilder;
 import org.apache.camel.test.junit4.CamelTestSupport;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.cxf.BusFactory;
 import org.apache.cxf.binding.soap.SoapHeader;
 import org.apache.cxf.frontend.ClientFactoryBean;
 import org.apache.cxf.frontend.ClientProxyFactoryBean;
 import org.junit.Test;
-
-
 
 public class CxfConsumerPayloadXPathClientServerTest extends CamelTestSupport {
     private static final String ECHO_RESPONSE = "<ns1:echoResponse xmlns:ns1=\"http://cxf.component.camel.apache.org/\">"

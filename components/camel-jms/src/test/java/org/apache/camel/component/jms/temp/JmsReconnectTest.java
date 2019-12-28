@@ -40,13 +40,14 @@ public class JmsReconnectTest {
 
     private static final class EchoServiceImpl implements MyService {
 
+        @Override
         public String echo(String st) {
             return st;
         }
 
     }
 
-    @Produce(uri = "direct:test")
+    @Produce("direct:test")
     MyService proxy;
 
     /**

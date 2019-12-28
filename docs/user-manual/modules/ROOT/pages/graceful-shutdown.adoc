@@ -1,12 +1,12 @@
 [[GracefulShutdown-GracefulShutdown]]
-=== Graceful Shutdown
+= Graceful Shutdown
 
-*Available as of Camel 2.2*
+*Since Camel 2.2*
 
 Camel now supports a pluggable shutdown strategy using
 `org.apache.camel.spi.ShutdownStrategy`. Its responsible for shutting
 down routes in a graceful manner. The other resources will still be
-handled by link:camelcontext.html[CamelContext] to shutdown. This leaves
+handled by xref:camelcontext.adoc[CamelContext] to shutdown. This leaves
 the problem at hand with properly shutting down all the routes in a
 reliable manner to the `ShutdownStrategy`.
 
@@ -15,7 +15,7 @@ Camel provides a default strategy in the
 doing that.
 
 [[GracefulShutdown-DefaultShutdownStrategy]]
-==== DefaultShutdownStrategy
+== DefaultShutdownStrategy
 
 The default strategy will gracefully shutdown routes:
 
@@ -61,16 +61,16 @@ Notice how it waits while there are inflight exchanges still being
 processed before it can shutdown.
 
 [[GracefulShutdown-Suppressingloggingduetotimeoutnotallowingallinflightmessagestocomplete]]
-==== Suppressing logging due to timeout not allowing all inflight messages to complete
+== Suppressing logging due to timeout not allowing all inflight messages to complete
 
 
-*Available as of Camel 2.12*
+*Since Camel 2.12*
 
 If a graceful shutdown could not shutdown cleanly within the given
 timeout period, then Camel performs a more aggressive shutdown by
 forcing routes and thread pools etc to shutdown. And as well the routing
-engine will reject continue processing link:exchange.adoc[Exchange]s. If
-this happens you may see WARN logs about link:exchange.adoc[Exchange]s
+engine will reject continue processing xref:exchange.adoc[Exchange]s. If
+this happens you may see WARN logs about xref:exchange.adoc[Exchange]s
 being rejected and other failures due the forced shutdown.
 
 If you do not want to see these logs, you can suppress this by setting
@@ -86,9 +86,9 @@ logs coming from 3rd party libraries and whatnot, which Camel cannot
 control.
 
 [[GracefulShutdown-Logginginflightexchangeinformationontimeout]]
-==== Logging inflight exchange information on timeout
+== Logging inflight exchange information on timeout
 
-*Available as of Camel 2.15*
+*Since Camel 2.15*
 
 If a graceful shutdown could not shutdown cleanly within the given
 timeout period, then Camel performs a more aggressive shutdown by
@@ -102,7 +102,7 @@ long at the current node (eg delay1) and duration is total time in
 mills.
 
 If you enable DEBUG logging level
-on `org.apache.camel.impl.DefaultShutdownStrategy` then it logs the same
+on `org.apache.camel.impl.DefaultShutdownStrategy` then it logs the same
 inflight exchange information during graceful shutdown
 
 [source,bash]
@@ -115,7 +115,7 @@ duration=2017]
 ---------------------------------
 
 If you do not want to see these logs, you can turn this off by setting
-the option logInflightExchangesOnTimeout to false.
+the option logInflightExchangesOnTimeout to false.
 
 [source,java]
 ---------------------------------
@@ -123,16 +123,16 @@ context.getShutdownStrategy().setLogInflightExchangesOnTimeout(false);
 ---------------------------------
 
 [[GracefulShutdown-Controllingorderingofroutes]]
-==== Controlling ordering of routes
+== Controlling ordering of routes
 
 You can configure the order in which routes should be started, and thus
 also the same order they are being shutdown. 
  See more at
-link:configuring-route-startup-ordering-and-autostartup.adoc[Configuring
+xref:configuring-route-startup-ordering-and-autostartup.adoc[Configuring
 route startup ordering and autostartup].
 
 [[GracefulShutdown-Finegrainedconfiguration]]
-==== Fine grained configuration
+== Fine grained configuration
 
 You can control two areas that influence graceful shutdown in the Camel
 routing:
@@ -142,11 +142,11 @@ routing:
 
 These options can be configured on two scopes: `context` and `route`.
 Where a route will fallback to the `context` scoped option, if not
-explicit configured. (same principle as link:error-handler.html[Error
+explicit configured. (same principle as xref:error-handler.adoc[Error
 Handler], etc.).
 
 [[GracefulShutdown-ShutdownRoute]]
-==== ShutdownRoute
+== ShutdownRoute
 
 This option can control how a given route should act during graceful
 shutdown. It has two values `Default` and `Defer`. The `Default` is
@@ -159,7 +159,7 @@ For example in the route below we have two routes, where route 1 is
 dependent upon route 2. At shutdown we want route 1 to complete all its
 current messages and we also want the 2nd route to do this as well. So
 we can mark both routes to `Defer` but since route 1 is a
-<<seda-component,SEDA>> based route its `Defer` by default (it uses
+xref:components::seda-component.adoc[SEDA] based route its `Defer` by default (it uses
 `ShutdownAware`).
 
 A Java DSL based example to defer shutting down the 2nd
@@ -268,17 +268,17 @@ keep intake new messages which will delay the shutdown processor. Or
 even have it timeout if a lot of new messages keep coming in.
 
 [[GracefulShutdown-ShutdownRunningTask]]
-==== ShutdownRunningTask
+== ShutdownRunningTask
 
 This option control how a given route consumer acts during shutdown.
 Most route consumer will only operate on a single task (message),
-however the link:batch-consumer.html[Batch Consumer] can operate on many
+however the xref:batch-consumer.adoc[Batch Consumer] can operate on many
 messages (in a batch). This option is for those kind of consumers. By
 default it uses the option `CompleteCurrentTaskOnly` which mean that the
 current _in progress_ task (message) will be completed and then the
 consumer will shutdown. The other option `CompleteAllTasks` allows the
 consumer to complete all the tasks (messages) before shutting down. For
-example a link:file2.html[File] consumer will process all the pending
+example a xref:components::file-component.adoc[File] consumer will process all the pending
 files it has picked up before shutting down.
 
 [source,java]
@@ -370,28 +370,28 @@ public class ShutdownCompleteAllTasksTest extends ContextTestSupport {
 ---------------------------------
 
 [[GracefulShutdown-JMXmanaged]]
-==== JMX managed
+== JMX managed
 
 The `ShutdownStrategy` is JMX aware as well so you can manage it from a
 JMX console. For example you can change the timeout value.
 
 [[GracefulShutdown-Shuttingdownindividualroutes]]
-==== Shutting down individual routes
+== Shutting down individual routes
 
-*Available as of Camel 2.3* 
+*Since Camel 2.3* 
  Its now possible to gracefully shutdown an individual route using
 `shutdownRoute(routeId)` method on `CamelContext`. Its also possible to
 provide a specific timeout to use instead of the default timeout
 settings using `shutdownRoute(routeId, timeout, timeUnit)`.
 
 [[GracefulShutdown-Developerrelated]]
-==== Developer related
+== Developer related
 
 If you develop your own Camel component or want to implement your own
 shutdown strategy then read this section for details.
 
 [[GracefulShutdown-ShutdownStrategy]]
-==== ShutdownStrategy
+== ShutdownStrategy
 
 You can implement your own strategy to control the shutdown by
 implementing the `org.apache.camel.spi.ShutdownStrategy` and the set it
@@ -400,17 +400,17 @@ on the `CamelContext` using the `setShutdownStrategy` method.
 When using Spring XML you then just define a spring bean which
 implements the `org.apache.camel.spi.ShutdownStrategy` and Camel will
 look it up at startup and use it instead of its default. See more at
-link:advanced-configuration-of-camelcontext-using-spring.html[Advanced
+xref:advanced-configuration-of-camelcontext-using-spring.adoc[Advanced
 configuration of CamelContext using Spring].
 
 [[GracefulShutdown-ShutdownAware]]
-==== ShutdownAware
+== ShutdownAware
 
 The interface `org.apache.camel.spi.ShutdownAware` is an optional
 interface consumers can implement to have fine grained control during
 shutdown. The `ShutdownStrategy` must be able to deal with consumers
 which implement this interface. This interface was introduced to cater
-for in memory consumers such as <<seda-component,SEDA>> which potentially
+for in memory consumers such as xref:components::seda-component.adoc[SEDA] which potentially
 have a number of pending messages on its internal in memory queues. What
 this allows is to let it control the shutdown process to let it complete
 its pending messages.
@@ -420,16 +420,7 @@ messages which reside on the in memory queues. +
  The method `deferShutdown` should return `true` to defer the shutdown
 to a later stage, when there are no more pending and inflight messages.
 
-link:batch-consumer.html[Batch Consumer] should implement
+xref:batch-consumer.adoc[Batch Consumer] should implement
 `ShutdownAware` so they properly support the `ShutdownRunningTask`
 option. See `GenericFileConsumer` for an example.
-
-[[GracefulShutdown-SeeAlso]]
-==== See Also
-
-* link:configuring-route-startup-ordering-and-autostartup.adoc[Configuring
-route startup ordering and autostartup]
-* link:advanced-configuration-of-camelcontext-using-spring.html[Advanced
-configuration of CamelContext using Spring]
-* link:user-guide.html[User Guide]
 

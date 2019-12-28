@@ -35,7 +35,7 @@ public class CsvUnmarshalStreamTest extends CamelTestSupport {
 
     public static final int EXPECTED_COUNT = 3;
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint result;
 
     @SuppressWarnings("unchecked")
@@ -88,6 +88,7 @@ public class CsvUnmarshalStreamTest extends CamelTestSupport {
             super(file);
         }
 
+        @Override
         public void close() throws IOException {
             // Use this to find out how camel close the FileInputStream
             super.close();

@@ -26,6 +26,7 @@ import org.apache.camel.RoutesBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.AssertionClause;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.apache.camel.test.AvailablePortFinder;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.eclipse.neoscada.protocol.iec60870.asdu.types.Value;
 import org.eclipse.neoscada.protocol.iec60870.server.data.model.WriteModel.Request;
@@ -43,25 +44,25 @@ public class ConnectionTest extends CamelTestSupport {
 
     private static final String MOCK_SERVER_1 = "mock:testServer1";
 
-    @Produce(uri = DIRECT_SEND_S_1)
+    @Produce(DIRECT_SEND_S_1)
     protected ProducerTemplate producerServer1;
 
-    @Produce(uri = DIRECT_SEND_C_1)
+    @Produce(DIRECT_SEND_C_1)
     protected ProducerTemplate producerClient1;
 
-    @EndpointInject(uri = MOCK_CLIENT_1)
+    @EndpointInject(MOCK_CLIENT_1)
     protected MockEndpoint testClient1Endpoint;
 
-    @EndpointInject(uri = MOCK_CLIENT_2)
+    @EndpointInject(MOCK_CLIENT_2)
     protected MockEndpoint testClient2Endpoint;
 
-    @EndpointInject(uri = MOCK_SERVER_1)
+    @EndpointInject(MOCK_SERVER_1)
     protected MockEndpoint testServer1Endpoint;
 
     @Override
     protected RoutesBuilder createRouteBuilder() throws Exception {
 
-        final int port = Ports.pickServerPort();
+        final int port = AvailablePortFinder.getNextAvailable();
 
         return new RouteBuilder() {
             @Override

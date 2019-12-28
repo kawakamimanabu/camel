@@ -21,11 +21,10 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import oadd.org.apache.commons.lang.StringUtils;
-
 import org.apache.camel.Consumer;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
+import org.apache.camel.component.drill.util.StringUtils;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriEndpoint;
 import org.apache.camel.spi.UriParam;
@@ -33,7 +32,6 @@ import org.apache.camel.spi.UriPath;
 import org.apache.camel.support.DefaultPollingEndpoint;
 import org.springframework.jdbc.core.ColumnMapRowMapper;
 import org.springframework.jdbc.core.RowMapperResultSetExtractor;
-
 
 /**
  * The drill component gives you the ability to quering into apache drill
@@ -65,17 +63,14 @@ public class DrillEndpoint extends DefaultPollingEndpoint {
         super(uri, component);
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         throw new UnsupportedOperationException("DrillConsumer is not supported!");
     }
 
+    @Override
     public Producer createProducer() throws Exception {
         return new DrillProducer(this);
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     public String toJDBCUri() {

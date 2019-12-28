@@ -16,7 +16,6 @@
  */
 package org.apache.camel.dataformat.bindy.csv;
 
-
 import java.util.List;
 
 import org.apache.camel.EndpointInject;
@@ -34,13 +33,13 @@ import static org.junit.Assert.assertEquals;
 @ContextConfiguration
 public class BindySimpleCsvRemoveWhitespaceUnmarshallTest extends AbstractJUnit4SpringContextTests {
 
-    @Produce(uri = "direct:start")
+    @Produce("direct:start")
     protected ProducerTemplate template;
 
     private String record = "1 , 2,Albert,Cartier,ISIN,BE12345678,SELL,,1500,EUR,08-01-2009\r\n"
                             + ",,Jacques,,,BE12345678,SELL,,1500,EUR,08-01-2009";
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint resultEndpoint;
 
     @Test
@@ -57,6 +56,7 @@ public class BindySimpleCsvRemoveWhitespaceUnmarshallTest extends AbstractJUnit4
     public static class ContextConfig extends RouteBuilder {
         BindyCsvDataFormat camelDataFormat = new BindyCsvDataFormat(org.apache.camel.dataformat.bindy.model.simple.oneclassandremovewhitespace.Order.class);
 
+        @Override
         public void configure() {
             // from("file://src/test/data2")
             from("direct:start").unmarshal(camelDataFormat).to("mock:result");

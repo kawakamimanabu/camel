@@ -32,7 +32,6 @@ import org.apache.camel.dataformat.bindy.annotation.DataField;
 import org.apache.camel.dataformat.bindy.annotation.FixedLengthRecord;
 import org.apache.camel.model.dataformat.BindyDataFormat;
 import org.apache.camel.model.dataformat.BindyType;
-import org.apache.camel.spring.boot.TypeConversionConfiguration;
 import org.apache.camel.spring.javaconfig.SingleRouteCamelConfiguration;
 import org.apache.camel.test.spring.CamelSpringDelegatingTestContextLoader;
 import org.apache.camel.test.spring.CamelSpringJUnit4ClassRunner;
@@ -46,8 +45,7 @@ import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 @RunWith(CamelSpringJUnit4ClassRunner.class)
 @ContextConfiguration(
         classes = {
-                BindySimpleFixedLengthObjectMarshallTest.Configuration.class,
-                TypeConversionConfiguration.class},
+                BindySimpleFixedLengthObjectMarshallTest.Configuration.class},
         loader = CamelSpringDelegatingTestContextLoader.class)
 public class BindySimpleFixedLengthObjectMarshallTest extends AbstractJUnit4SpringContextTests {
     
@@ -57,13 +55,13 @@ public class BindySimpleFixedLengthObjectMarshallTest extends AbstractJUnit4Spri
 
     private String expected;
 
-    @Produce(uri = URI_DIRECT_START)
+    @Produce(URI_DIRECT_START)
     private ProducerTemplate template;
 
-    @EndpointInject(uri = URI_MOCK_RESULT)
+    @EndpointInject(URI_MOCK_RESULT)
     private MockEndpoint result;
 
-    @EndpointInject(uri = URI_MOCK_ERROR)
+    @EndpointInject(URI_MOCK_ERROR)
     private MockEndpoint error;
 
     public static class Configuration extends SingleRouteCamelConfiguration {

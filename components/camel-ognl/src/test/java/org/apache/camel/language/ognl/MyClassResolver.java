@@ -17,7 +17,7 @@
 package org.apache.camel.language.ognl;
 
 import org.apache.camel.CamelContext;
-import org.apache.camel.impl.DefaultClassResolver;
+import org.apache.camel.impl.engine.DefaultClassResolver;
 
 public class MyClassResolver extends DefaultClassResolver {
 
@@ -25,6 +25,7 @@ public class MyClassResolver extends DefaultClassResolver {
         super(camelContext);
     }
 
+    @Override
     public Class<?> resolveClass(String name) {
         if (name.equals("org.apache.camel.language.ognl.Animal1")) {
             name = "org.apache.camel.language.ognl.Animal";

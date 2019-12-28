@@ -20,25 +20,28 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.camel.CamelContext;
+import org.apache.camel.support.jsse.KeyStoreParameters;
+import org.apache.camel.support.jsse.SSLContextParameters;
+import org.apache.camel.support.jsse.TrustManagersParameters;
+import org.apache.camel.test.junit4.CamelTestSupport;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 import org.junit.Test;
-import org.mockito.Mockito;
 
-import static org.junit.Assert.assertEquals;
+public class KafkaComponentTest extends CamelTestSupport {
 
-public class KafkaComponentTest {
-
-    private CamelContext context = Mockito.mock(CamelContext.class);
+    @Override
+    public boolean isUseRouteBuilder() {
+        return false;
+    }
 
     @Test
     public void testPropertiesSet() throws Exception {
         String uri = "kafka:mytopic?brokers=broker1:12345,broker2:12566&partitioner=com.class.Party";
 
-        KafkaEndpoint endpoint = (KafkaEndpoint) new KafkaComponent(context).createEndpoint(uri);
+        KafkaEndpoint endpoint = context.getEndpoint(uri, KafkaEndpoint.class);
         assertEquals("broker1:12345,broker2:12566", endpoint.getConfiguration().getBrokers());
         assertEquals("mytopic", endpoint.getConfiguration().getTopic());
         assertEquals("com.class.Party", endpoint.getConfiguration().getPartitioner());
@@ -46,12 +49,12 @@ public class KafkaComponentTest {
 
     @Test
     public void testBrokersOnComponent() throws Exception {
-        KafkaComponent kafka = new KafkaComponent(context);
+        KafkaComponent kafka = context.getComponent("kafka", KafkaComponent.class);
         kafka.setBrokers("broker1:12345,broker2:12566");
 
         String uri = "kafka:mytopic?partitioner=com.class.Party";
 
-        KafkaEndpoint endpoint = (KafkaEndpoint) kafka.createEndpoint(uri);
+        KafkaEndpoint endpoint = context.getEndpoint(uri, KafkaEndpoint.class);
         assertEquals("broker1:12345,broker2:12566", endpoint.getConfiguration().getBrokers());
         assertEquals("broker1:12345,broker2:12566", endpoint.getComponent().getBrokers());
         assertEquals("mytopic", endpoint.getConfiguration().getTopic());
@@ -64,9 +67,8 @@ public class KafkaComponentTest {
         setProducerProperty(params);
 
         String uri = "kafka:mytopic?brokers=dev1:12345,dev2:12566";
-        String remaining = "mytopic";
 
-        KafkaEndpoint endpoint = new KafkaComponent(context).createEndpoint(uri, remaining, params);
+        KafkaEndpoint endpoint = (KafkaEndpoint) context.getComponent("kafka").createEndpoint(uri, params);
 
         assertEquals("mytopic", endpoint.getConfiguration().getTopic());
         assertEquals("1", endpoint.getConfiguration().getRequestRequiredAcks());
@@ -120,9 +122,8 @@ public class KafkaComponentTest {
         Map<String, Object> params = new HashMap<>();
 
         String uri = "kafka:mytopic?brokers=dev1:12345,dev2:12566";
-        String remaining = "mytopic";
 
-        KafkaEndpoint endpoint = new KafkaComponent(context).createEndpoint(uri, remaining, params);
+        KafkaEndpoint endpoint = (KafkaEndpoint) context.getComponent("kafka").createEndpoint(uri, params);
         assertEquals(endpoint.getConfiguration().createProducerProperties().keySet(), getProducerKeys().keySet());
     }
 
@@ -181,10 +182,7 @@ public class KafkaComponentTest {
         params.put("receiveBufferBytes", 23);
         params.put("requestTimeoutMs", 100);
         params.put("sendBufferBytes", 765);
-        params.put("timeoutMs", 2045);
-        params.put("blockOnBufferFull", false);
         params.put("maxInFlightRequest", 1);
-        params.put("metadataFetchTimeoutMs", 9043);
         params.put("metadataMaxAgeMs", 1029);
         params.put("reconnectBackoffMs", 234);
         params.put("reconnectBackoffMaxMs", 234);
@@ -215,5 +213,45 @@ public class KafkaComponentTest {
         params.put("sslKeymanagerAlgorithm", "SunX509");
         params.put("sslTrustmanagerAlgorithm", "PKIX");
     }
+
+    @Test
+    public void testCreateProducerConfigTruststorePassword() throws Exception {
+        KeyStoreParameters keyStoreParameters = new KeyStoreParameters();
+        keyStoreParameters.setPassword("my-password");
     
+        TrustManagersParameters trustManagersParameters = new TrustManagersParameters();
+        trustManagersParameters.setKeyStore(keyStoreParameters);
+    
+        SSLContextParameters sslContextParameters = new SSLContextParameters();
+        sslContextParameters.setTrustManagers(trustManagersParameters);
+
+        KafkaConfiguration kcfg = new KafkaConfiguration();
+        kcfg.setSslContextParameters(sslContextParameters);
+
+        Properties props = kcfg.createProducerProperties();
+    
+        assertEquals("my-password", props.getProperty("ssl.truststore.password"));
+        assertNull(props.getProperty("ssl.keystore.password"));
+    }
+
+    @Test
+    public void testCreateConsumerConfigTruststorePassword() throws Exception {
+        KeyStoreParameters keyStoreParameters = new KeyStoreParameters();
+        keyStoreParameters.setPassword("my-password");
+    
+        TrustManagersParameters trustManagersParameters = new TrustManagersParameters();
+        trustManagersParameters.setKeyStore(keyStoreParameters);
+    
+        SSLContextParameters sslContextParameters = new SSLContextParameters();
+        sslContextParameters.setTrustManagers(trustManagersParameters);
+
+        KafkaConfiguration kcfg = new KafkaConfiguration();
+        kcfg.setSslContextParameters(sslContextParameters);
+
+        Properties props = kcfg.createConsumerProperties();
+    
+        assertEquals("my-password", props.getProperty("ssl.truststore.password"));
+        assertNull(props.getProperty("ssl.keystore.password"));
+    }
+
 }

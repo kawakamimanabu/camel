@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.processor;
+
 import java.util.List;
 
 import org.apache.camel.ContextTestSupport;
@@ -22,8 +23,9 @@ import org.apache.camel.Endpoint;
 import org.apache.camel.Route;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.impl.EventDrivenConsumerRoute;
-import org.apache.camel.processor.interceptor.DefaultChannel;
+import org.apache.camel.impl.engine.EventDrivenConsumerRoute;
+import org.apache.camel.processor.channel.DefaultChannel;
+import org.apache.camel.processor.errorhandler.DefaultErrorHandler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,24 +48,24 @@ public class ResequencerTest extends ContextTestSupport {
         resultEndpoint = getMockEndpoint("mock:result");
     }
 
-    @Override 
+    @Override
     @After
     public void tearDown() throws Exception {
         super.tearDown();
     }
-    
+
+    @Override
     protected boolean useJmx() {
         // use jmx only when running the following test(s)
         return getName().equals("testBatchResequencerTypeWithJmx");
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() {
         return new RouteBuilder() {
             public void configure() {
                 // START SNIPPET: example
-                from("direct:start")
-                    .resequence().body().timeout(50)
-                    .to("mock:result");
+                from("direct:start").resequence().body().timeout(50).to("mock:result");
                 // END SNIPPET: example
             }
         };

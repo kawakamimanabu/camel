@@ -28,7 +28,8 @@ import org.apache.camel.Processor;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.Route;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.impl.EventDrivenConsumerRoute;
+import org.apache.camel.impl.engine.EventDrivenConsumerRoute;
+import org.apache.camel.processor.errorhandler.DefaultErrorHandler;
 import org.apache.camel.support.service.ServiceHelper;
 import org.junit.Test;
 
@@ -90,6 +91,7 @@ public class StreamResequencerTest extends ContextTestSupport {
         return enable;
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() {
         return new RouteBuilder() {
             public void configure() {

@@ -88,8 +88,6 @@ public class MailConfiguration implements Cloneable {
     private boolean debugMode;
     @UriParam(defaultValue = "" + MailConstants.MAIL_DEFAULT_CONNECTION_TIMEOUT, label = "advanced")
     private int connectionTimeout = MailConstants.MAIL_DEFAULT_CONNECTION_TIMEOUT;
-    @UriParam(label = "security")
-    private boolean dummyTrustManager;
     @UriParam(defaultValue = "text/plain", label = "advanced")
     private String contentType = "text/plain";
     @UriParam(defaultValue = MailConstants.MAIL_ALTERNATIVE_BODY, label = "advanced")
@@ -203,6 +201,14 @@ public class MailConfiguration implements Cloneable {
         }
         if (session != null) {
             answer.setSession(session);
+            String host = session.getProperty("mail.smtp.host");
+            if (host != null && !host.isEmpty()) {
+                answer.setHost(host);
+            }
+            String port = session.getProperty("mail.smtp.port");
+            if (port != null && !port.isEmpty()) {
+                answer.setPort(Integer.parseInt(port));
+            }
         } else {
             ClassLoader tccl = Thread.currentThread().getContextClassLoader();
             try {
@@ -254,17 +260,6 @@ public class MailConfiguration implements Cloneable {
             properties.put("mail." + protocol + ".ssl.socketFactory", createSSLContext().getSocketFactory());
             properties.put("mail." + protocol + ".ssl.socketFactory.port", "" + port);
         }
-        if (dummyTrustManager && isSecureProtocol()) {
-            // set the custom SSL properties
-            properties.put("mail." + protocol + ".socketFactory.class", "org.apache.camel.component.mail.DummySSLSocketFactory");
-            properties.put("mail." + protocol + ".socketFactory.fallback", "false");
-            properties.put("mail." + protocol + ".socketFactory.port", "" + port);
-        }
-        if (dummyTrustManager && isStartTlsEnabled()) {
-            // set the custom SSL properties
-            properties.put("mail." + protocol + ".ssl.socketFactory.class", "org.apache.camel.component.mail.DummySSLSocketFactory");
-            properties.put("mail." + protocol + ".ssl.socketFactory.port", "" + port);
-        }
 
         return properties;
     }
@@ -297,7 +292,7 @@ public class MailConfiguration implements Cloneable {
     public String getMailStoreLogInformation() {
         String ssl = "";
         if (isSecureProtocol()) {
-            ssl = " (SSL enabled" + (dummyTrustManager ? " using DummyTrustManager)" : ")");
+            ssl = " (SSL enabled)";
         }
 
         return protocol + "://" + host + ":" + port + ssl + ", folder=" + folderName;
@@ -407,7 +402,7 @@ public class MailConfiguration implements Cloneable {
     /**
      * Specifies the mail session that camel should use for all mail interactions. Useful in scenarios where
      * mail sessions are created and managed by some other resource, such as a JavaEE container.
-     * If this is not specified, Camel automatically creates the mail session for you.
+     * When using a custom mail session, then the hostname and port from the mail session will be used (if configured on the session).
      */
     public void setSession(Session session) {
         this.session = session;
@@ -462,8 +457,9 @@ public class MailConfiguration implements Cloneable {
     }
 
     /**
-     * Specifies whether Camel should map the received mail message to Camel body/headers.
-     * If set to true, the body of the mail message is mapped to the body of the Camel IN message and the mail headers are mapped to IN headers.
+     * Specifies whether Camel should map the received mail message to Camel body/headers/attachments.
+     * If set to true, the body of the mail message is mapped to the body of the Camel IN message, the mail headers are mapped to IN headers,
+     * and the attachments to Camel IN attachment message.
      * If this option is set to false then the IN message contains a raw javax.mail.Message.
      * You can retrieve this raw message by calling exchange.getIn().getBody(javax.mail.Message.class).
      */
@@ -589,17 +585,6 @@ public class MailConfiguration implements Cloneable {
      */
     public void setConnectionTimeout(int connectionTimeout) {
         this.connectionTimeout = connectionTimeout;
-    }
-
-    public boolean isDummyTrustManager() {
-        return dummyTrustManager;
-    }
-
-    /**
-     * To use a dummy security setting for trusting all certificates. Should only be used for development mode, and not production.
-     */
-    public void setDummyTrustManager(boolean dummyTrustManager) {
-        this.dummyTrustManager = dummyTrustManager;
     }
 
     public String getContentType() {

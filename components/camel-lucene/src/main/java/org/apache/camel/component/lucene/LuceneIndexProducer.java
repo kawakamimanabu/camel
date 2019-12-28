@@ -30,15 +30,13 @@ public class LuceneIndexProducer extends DefaultProducer {
         this.indexer = indexer;
     }
     
-    public void start() throws Exception {
-        super.doStart();
-    }
-
-    public void stop() throws Exception {
+    @Override
+    public void doStop() throws Exception {
         this.indexer.getNiofsDirectory().close();
         super.doStop();
     }
 
+    @Override
     public void process(Exchange exchange) throws Exception {
         indexer.index(exchange);
     }
