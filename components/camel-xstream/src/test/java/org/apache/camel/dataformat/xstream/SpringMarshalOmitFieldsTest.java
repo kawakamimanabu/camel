@@ -24,6 +24,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class SpringMarshalOmitFieldsTest extends XStreamDataFormatOmitFieldsTest {
 
+    @Override
     protected CamelContext createCamelContext() throws Exception {
         setUseRouteBuilder(false);
 
@@ -31,11 +32,11 @@ public class SpringMarshalOmitFieldsTest extends XStreamDataFormatOmitFieldsTest
             "org/apache/camel/dataformat/xstream/SpringMarshalOmitFieldsTest.xml");
 
         setCamelContextService(new Service() {
-            public void start() throws Exception {
+            public void start() {
                 applicationContext.start();
             }
 
-            public void stop() throws Exception {
+            public void stop() {
                 applicationContext.stop();
             }
         });

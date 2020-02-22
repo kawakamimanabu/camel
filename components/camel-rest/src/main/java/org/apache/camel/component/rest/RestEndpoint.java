@@ -22,6 +22,7 @@ import java.util.Set;
 import org.apache.camel.Component;
 import org.apache.camel.Consumer;
 import org.apache.camel.ExchangePattern;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.NoFactoryAvailableException;
 import org.apache.camel.NoSuchBeanException;
 import org.apache.camel.Processor;
@@ -46,8 +47,8 @@ import static org.apache.camel.support.RestProducerFactoryHelper.setupComponent;
 @UriEndpoint(firstVersion = "2.14.0", scheme = "rest", title = "REST", syntax = "rest:method:path:uriTemplate", label = "core,rest", lenientProperties = true)
 public class RestEndpoint extends DefaultEndpoint {
 
-    public static final String[] DEFAULT_REST_CONSUMER_COMPONENTS = new String[]{"coap", "netty-http", "netty4-http", "jetty", "restlet", "servlet", "spark-java", "undertow"};
-    public static final String[] DEFAULT_REST_PRODUCER_COMPONENTS = new String[]{"http", "http4", "netty4-http", "jetty", "restlet", "undertow"};
+    public static final String[] DEFAULT_REST_CONSUMER_COMPONENTS = new String[]{"coap", "netty-http", "jetty", "servlet", "spark-java", "undertow"};
+    public static final String[] DEFAULT_REST_PRODUCER_COMPONENTS = new String[]{"http", "netty-http", "undertow"};
     public static final String DEFAULT_API_COMPONENT_NAME = "swagger";
     public static final String RESOURCE_PATH = "META-INF/services/org/apache/camel/rest/";
 
@@ -61,8 +62,6 @@ public class RestEndpoint extends DefaultEndpoint {
     private String consumes;
     @UriParam(label = "common")
     private String produces;
-    @UriParam(label = "common")
-    private String componentName;
     @UriParam(label = "common")
     private String inType;
     @UriParam(label = "common")
@@ -79,6 +78,10 @@ public class RestEndpoint extends DefaultEndpoint {
     private String queryParameters;
     @UriParam(label = "producer", enums = "auto,off,json,xml,json_xml")
     private RestConfiguration.RestBindingMode bindingMode;
+    @UriParam(label = "producer")
+    private String producerComponentName;
+    @UriParam(label = "consumer")
+    private String consumerComponentName;
 
     private Map<String, Object> parameters;
 
@@ -148,18 +151,32 @@ public class RestEndpoint extends DefaultEndpoint {
         this.produces = produces;
     }
 
-    public String getComponentName() {
-        return componentName;
+    public String getProducerComponentName() {
+        return producerComponentName;
     }
 
     /**
-     * The Camel Rest component to use for the REST transport, such as restlet, spark-rest.
+     * The Camel Rest component to use for (producer) the REST transport, such as http, undertow.
+     * If no component has been explicit configured, then Camel will lookup if there is a Camel component
+     * that integrates with the Rest DSL, or if a org.apache.camel.spi.RestProducerFactory is registered in the registry.
+     * If either one is found, then that is being used.
+     */
+    public void setProducerComponentName(String producerComponentName) {
+        this.producerComponentName = producerComponentName;
+    }
+
+    public String getConsumerComponentName() {
+        return consumerComponentName;
+    }
+
+    /**
+     * The Camel Rest component to use for (consumer) the REST transport, such as jetty, servlet, undertow.
      * If no component has been explicit configured, then Camel will lookup if there is a Camel component
      * that integrates with the Rest DSL, or if a org.apache.camel.spi.RestConsumerFactory is registered in the registry.
      * If either one is found, then that is being used.
      */
-    public void setComponentName(String componentName) {
-        this.componentName = componentName;
+    public void setConsumerComponentName(String consumerComponentName) {
+        this.consumerComponentName = consumerComponentName;
     }
 
     public String getInType() {
@@ -284,25 +301,21 @@ public class RestEndpoint extends DefaultEndpoint {
             log.debug("Discovering camel-swagger-java on classpath for using api-doc: {}", apiDoc);
             // lookup on classpath using factory finder to automatic find it (just add camel-swagger-java to classpath etc)
             try {
-                FactoryFinder finder = getCamelContext().getFactoryFinder(RESOURCE_PATH);
-                Object instance = finder.newInstance(DEFAULT_API_COMPONENT_NAME);
-                if (instance instanceof RestProducerFactory) {
-                    // this factory from camel-swagger-java will facade the http component in use
-                    apiDocFactory = (RestProducerFactory) instance;
-                }
+                FactoryFinder finder = getCamelContext().adapt(ExtendedCamelContext.class).getFactoryFinder(RESOURCE_PATH);
+                apiDocFactory = finder.newInstance(DEFAULT_API_COMPONENT_NAME, RestProducerFactory.class).orElse(null);
                 parameters.put("apiDoc", apiDoc);
             } catch (NoFactoryAvailableException e) {
                 throw new IllegalStateException("Cannot find camel-swagger-java on classpath to use with api-doc: " + apiDoc);
             }
         }
 
-        String cname = getComponentName();
-        if (cname != null) {
-            Object comp = getCamelContext().getRegistry().lookupByName(getComponentName());
+        String pname = getProducerComponentName();
+        if (pname != null) {
+            Object comp = getCamelContext().getRegistry().lookupByName(getProducerComponentName());
             if (comp instanceof RestProducerFactory) {
                 factory = (RestProducerFactory) comp;
             } else {
-                comp = setupComponent(getComponentName(), getCamelContext(), (Map<String, Object>) parameters.get("component"));
+                comp = setupComponent(getProducerComponentName(), getCamelContext(), (Map<String, Object>) parameters.get("component"));
                 if (comp instanceof RestProducerFactory) {
                     factory = (RestProducerFactory) comp;
                 }
@@ -310,12 +323,12 @@ public class RestEndpoint extends DefaultEndpoint {
 
             if (factory == null) {
                 if (comp != null) {
-                    throw new IllegalArgumentException("Component " + getComponentName() + " is not a RestProducerFactory");
+                    throw new IllegalArgumentException("Component " + getProducerComponentName() + " is not a RestProducerFactory");
                 } else {
-                    throw new NoSuchBeanException(getComponentName(), RestProducerFactory.class.getName());
+                    throw new NoSuchBeanException(getProducerComponentName(), RestProducerFactory.class.getName());
                 }
             }
-            cname = getComponentName();
+            pname = getProducerComponentName();
         }
 
         // try all components
@@ -324,13 +337,13 @@ public class RestEndpoint extends DefaultEndpoint {
                 Component comp = setupComponent(name, getCamelContext(), (Map<String, Object>) parameters.get("component"));
                 if (comp instanceof RestProducerFactory) {
                     factory = (RestProducerFactory) comp;
-                    cname = name;
+                    pname = name;
                     break;
                 }
             }
         }
 
-        parameters.put("componentName", cname);
+        parameters.put("producerComponentName", pname);
 
         // lookup in registry
         if (factory == null) {
@@ -340,13 +353,13 @@ public class RestEndpoint extends DefaultEndpoint {
             }
         }
 
-        // no explicit factory found then try to see if we can find any of the default rest consumer components
+        // no explicit factory found then try to see if we can find any of the default rest producer components
         // and there must only be exactly one so we safely can pick this one
         if (factory == null) {
             RestProducerFactory found = null;
             String foundName = null;
             for (String name : DEFAULT_REST_PRODUCER_COMPONENTS) {
-                Object comp = setupComponent(getComponentName(), getCamelContext(), (Map<String, Object>) parameters.get("component"));
+                Object comp = setupComponent(name, getCamelContext(), (Map<String, Object>) parameters.get("component"));
                 if (comp instanceof RestProducerFactory) {
                     if (found == null) {
                         found = (RestProducerFactory) comp;
@@ -364,8 +377,14 @@ public class RestEndpoint extends DefaultEndpoint {
 
         if (factory != null) {
             log.debug("Using RestProducerFactory: {}", factory);
-            
-            RestConfiguration config = getCamelContext().getRestConfiguration(cname, true);
+
+            RestConfiguration config = getCamelContext().getRestConfiguration(pname, false);
+            if (config == null) {
+                config = getCamelContext().getRestConfiguration();
+            }
+            if (config == null) {
+                config = getCamelContext().getRestConfiguration(pname, true);
+            }
 
             Producer producer;
             if (apiDocFactory != null) {
@@ -375,7 +394,7 @@ public class RestEndpoint extends DefaultEndpoint {
             } else {
                 producer = factory.createProducer(getCamelContext(), host, method, path, uriTemplate, queryParameters, consumes, produces, config, parameters);
             }
-            
+
             RestProducer answer = new RestProducer(this, producer, config);
             answer.setOutType(outType);
             answer.setType(inType);
@@ -391,12 +410,12 @@ public class RestEndpoint extends DefaultEndpoint {
     public Consumer createConsumer(Processor processor) throws Exception {
         RestConsumerFactory factory = null;
         String cname = null;
-        if (getComponentName() != null) {
-            Object comp = getCamelContext().getRegistry().lookupByName(getComponentName());
+        if (getConsumerComponentName() != null) {
+            Object comp = getCamelContext().getRegistry().lookupByName(getConsumerComponentName());
             if (comp instanceof RestConsumerFactory) {
                 factory = (RestConsumerFactory) comp;
             } else {
-                comp = getCamelContext().getComponent(getComponentName());
+                comp = getCamelContext().getComponent(getConsumerComponentName());
                 if (comp instanceof RestConsumerFactory) {
                     factory = (RestConsumerFactory) comp;
                 }
@@ -404,12 +423,12 @@ public class RestEndpoint extends DefaultEndpoint {
 
             if (factory == null) {
                 if (comp != null) {
-                    throw new IllegalArgumentException("Component " + getComponentName() + " is not a RestConsumerFactory");
+                    throw new IllegalArgumentException("Component " + getConsumerComponentName() + " is not a RestConsumerFactory");
                 } else {
-                    throw new NoSuchBeanException(getComponentName(), RestConsumerFactory.class.getName());
+                    throw new NoSuchBeanException(getConsumerComponentName(), RestConsumerFactory.class.getName());
                 }
             }
-            cname = getComponentName();
+            cname = getConsumerComponentName();
         }
 
         // try all components
@@ -526,11 +545,6 @@ public class RestEndpoint extends DefaultEndpoint {
         } else {
             throw new IllegalStateException("Cannot find RestConsumerFactory in Registry or as a Component to use");
         }
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     @Override

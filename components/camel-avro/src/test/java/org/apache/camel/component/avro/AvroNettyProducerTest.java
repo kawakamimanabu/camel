@@ -18,7 +18,7 @@ package org.apache.camel.component.avro;
 
 import java.net.InetSocketAddress;
 
-import org.apache.avro.ipc.NettyServer;
+import org.apache.avro.ipc.netty.NettyServer;
 import org.apache.avro.ipc.reflect.ReflectResponder;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.camel.avro.generated.KeyValueProtocol;
@@ -40,6 +40,7 @@ public class AvroNettyProducerTest extends AvroProducerTestSupport {
         }
     }
 
+    @Override
     public RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             @Override

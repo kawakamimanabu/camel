@@ -38,10 +38,10 @@ import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 @ContextConfiguration
 public class BindySimpleKeyValuePairNullMarshallTest extends AbstractJUnit4SpringContextTests {
 
-    @Produce(uri = "direct:start")
+    @Produce("direct:start")
     private ProducerTemplate template;
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint resultEndpoint;
 
     @Test
@@ -93,6 +93,7 @@ public class BindySimpleKeyValuePairNullMarshallTest extends AbstractJUnit4Sprin
     public static class ContextConfig extends RouteBuilder {
         BindyKeyValuePairDataFormat kvpBindyDataFormat = new BindyKeyValuePairDataFormat(org.apache.camel.dataformat.bindy.model.fix.simple.Order.class);
 
+        @Override
         public void configure() {
             from("direct:start").marshal(kvpBindyDataFormat).to("mock:result");
         }

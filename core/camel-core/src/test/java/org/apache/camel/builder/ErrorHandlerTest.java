@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.builder;
+
 import java.util.List;
 
 import org.apache.camel.Channel;
@@ -22,23 +23,25 @@ import org.apache.camel.Endpoint;
 import org.apache.camel.Processor;
 import org.apache.camel.Route;
 import org.apache.camel.TestSupport;
-import org.apache.camel.impl.EventDrivenConsumerRoute;
-import org.apache.camel.processor.DeadLetterChannel;
+import org.apache.camel.impl.engine.EventDrivenConsumerRoute;
 import org.apache.camel.processor.FilterProcessor;
-import org.apache.camel.processor.RedeliveryPolicy;
 import org.apache.camel.processor.SendProcessor;
+import org.apache.camel.processor.errorhandler.DeadLetterChannel;
+import org.apache.camel.processor.errorhandler.RedeliveryPolicy;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 public class ErrorHandlerTest extends TestSupport {
 
+    @Override
     @Before
     public void setUp() throws Exception {
         // make SEDA testing faster
         System.setProperty("CamelSedaPollTimeout", "10");
     }
 
+    @Override
     @After
     public void tearDown() throws Exception {
         System.clearProperty("CamelSedaPollTimeout");
@@ -87,7 +90,8 @@ public class ErrorHandlerTest extends TestSupport {
                     // and we continue with the routing here
                     .to("seda:b");
 
-                // this route will use the default error handler (DeadLetterChannel)
+                // this route will use the default error handler
+                // (DeadLetterChannel)
                 from("seda:b").to("seda:c");
             }
         };
@@ -124,13 +128,13 @@ public class ErrorHandlerTest extends TestSupport {
         }
     }
 
-
     @Test
     public void testConfigureDeadLetterChannelWithCustomRedeliveryPolicy() throws Exception {
         // START SNIPPET: e4
         RouteBuilder builder = new RouteBuilder() {
             public void configure() {
-                // configures dead letter channel to use seda queue for errors and use at most 2 redelveries
+                // configures dead letter channel to use seda queue for errors
+                // and use at most 2 redelveries
                 // and exponential backoff
                 errorHandler(deadLetterChannel("seda:errors").maximumRedeliveries(2).useExponentialBackOff());
 

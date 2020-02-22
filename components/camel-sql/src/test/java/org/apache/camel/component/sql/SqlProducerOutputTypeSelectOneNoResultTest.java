@@ -29,11 +29,12 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 
 public class SqlProducerOutputTypeSelectOneNoResultTest extends CamelTestSupport {
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     MockEndpoint result;
 
     private EmbeddedDatabase db;
 
+    @Override
     @Before
     public void setUp() throws Exception {
         db = new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.DERBY).addScript("sql/createAndPopulateDatabase5.sql").build();
@@ -41,6 +42,7 @@ public class SqlProducerOutputTypeSelectOneNoResultTest extends CamelTestSupport
         super.setUp();
     }
 
+    @Override
     @After
     public void tearDown() throws Exception {
         super.tearDown();

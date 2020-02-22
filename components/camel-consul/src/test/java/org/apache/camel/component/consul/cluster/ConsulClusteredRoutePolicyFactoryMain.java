@@ -20,8 +20,8 @@ import java.util.UUID;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.impl.ExplicitCamelContextNameStrategy;
 import org.apache.camel.impl.cluster.ClusteredRoutePolicyFactory;
+import org.apache.camel.impl.engine.ExplicitCamelContextNameStrategy;
 import org.apache.camel.main.Main;
 import org.apache.camel.main.MainListenerSupport;
 
@@ -50,12 +50,10 @@ public final class ConsulClusteredRoutePolicyFactoryMain {
             }
         });
 
-        main.addRouteBuilder(new RouteBuilder() {
+        main.addRoutesBuilder(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("timer:clustered?delay=1s&period=1s")
-                    .routeId("route-" + id)
-                    .log("Route ${routeId} is running ...");
+                from("timer:clustered?delay=1s&period=1s").routeId("route-" + id).log("Route ${routeId} is running ...");
             }
         });
 

@@ -50,11 +50,6 @@ public class MvelEndpoint extends ResourceEndpoint {
     }
 
     @Override
-    public boolean isSingleton() {
-        return true;
-    }
-
-    @Override
     public ExchangePattern getExchangePattern() {
         return ExchangePattern.InOut;
     }
@@ -125,7 +120,6 @@ public class MvelEndpoint extends ResourceEndpoint {
         Message out = exchange.getOut();
         out.setBody(result.toString());
         out.setHeaders(exchange.getIn().getHeaders());
-        out.setAttachments(exchange.getIn().getAttachments());
     }
 
     public MvelEndpoint findOrCreateEndpoint(String uri, String newResourceUri) {

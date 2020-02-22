@@ -19,6 +19,7 @@ package org.apache.camel.jaxb;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -41,16 +42,16 @@ import org.junit.Test;
  */
 public class SplitterAndExceptionRouteTwistIssueTest extends CamelTestSupport {
 
-    @Produce(uri = "direct:error")
+    @Produce("direct:error")
     protected ProducerTemplate templateError;
 
-    @Produce(uri = "direct:error2")
+    @Produce("direct:error2")
     protected ProducerTemplate templateError2;
 
-    @EndpointInject(uri = "mock:mockReject")
+    @EndpointInject("mock:mockReject")
     protected MockEndpoint mockRejectEndpoint;
 
-    @EndpointInject(uri = "mock:mock_output")
+    @EndpointInject("mock:mock_output")
     protected MockEndpoint mockOutput;
 
     @Test
@@ -107,7 +108,6 @@ public class SplitterAndExceptionRouteTwistIssueTest extends CamelTestSupport {
                 );
 
                 from("direct:error")
-                    .handleFault()
                     .convertBodyTo(String.class, "UTF-8")
                     .process(new Processor() {
                         @Override
@@ -127,7 +127,6 @@ public class SplitterAndExceptionRouteTwistIssueTest extends CamelTestSupport {
 
 
                 from("direct:error2")
-                    .handleFault()
                     .convertBodyTo(String.class, "UTF-8")
                     .process(new Processor() {
                         @Override

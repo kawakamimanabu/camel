@@ -27,10 +27,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import org.apache.camel.TypeConverter;
-import org.apache.camel.impl.DefaultClassResolver;
-import org.apache.camel.impl.DefaultFactoryFinderResolver;
-import org.apache.camel.impl.DefaultPackageScanClassResolver;
 import org.apache.camel.impl.converter.DefaultTypeConverter;
+import org.apache.camel.impl.engine.DefaultClassResolver;
+import org.apache.camel.impl.engine.DefaultFactoryFinderResolver;
+import org.apache.camel.impl.engine.DefaultPackageScanClassResolver;
 import org.apache.camel.support.service.ServiceHelper;
 import org.apache.camel.util.ReflectionInjector;
 import org.junit.Assert;
@@ -41,8 +41,8 @@ import org.slf4j.LoggerFactory;
 
 public class JaxpTest extends Assert {
     private static final Logger LOG = LoggerFactory.getLogger(JaxpTest.class);
-    protected TypeConverter converter = new DefaultTypeConverter(new DefaultPackageScanClassResolver(),
-            new ReflectionInjector(), new DefaultFactoryFinderResolver().resolveDefaultFactoryFinder(new DefaultClassResolver()), false);
+    protected TypeConverter converter = new DefaultTypeConverter(new DefaultPackageScanClassResolver(), new ReflectionInjector(),
+                                                                 new DefaultFactoryFinderResolver().resolveDefaultFactoryFinder(new DefaultClassResolver()), false);
 
     @Before
     public void setUp() throws Exception {
@@ -52,8 +52,7 @@ public class JaxpTest extends Assert {
 
     @Test
     public void testConvertToDocument() throws Exception {
-        Document document = converter
-                .convertTo(Document.class, "<?xml version=\"1.0\" encoding=\"UTF-8\"?><hello>world!</hello>");
+        Document document = converter.convertTo(Document.class, "<?xml version=\"1.0\" encoding=\"UTF-8\"?><hello>world!</hello>");
         assertNotNull(document);
 
         LOG.debug("Found document: " + document);

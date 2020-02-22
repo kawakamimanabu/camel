@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.file;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -38,11 +39,6 @@ public class FileConsumerFileExpressionTest extends ContextTestSupport {
     }
 
     @Override
-    public boolean isUseRouteBuilder() {
-        return false;
-    }
-
-    @Override
     protected JndiRegistry createRegistry() throws Exception {
         JndiRegistry jndi = super.createRegistry();
         jndi.bind("counter", new MyGuidGenerator());
@@ -58,16 +54,14 @@ public class FileConsumerFileExpressionTest extends ContextTestSupport {
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("file://target/data/filelanguage/bean/"
-                      + "?initialDelay=0&delay=10&fileName=${bean:counter.next}.txt&delete=true").to("mock:result");
+                from("file://target/data/filelanguage/bean/" + "?initialDelay=0&delay=10&fileName=${bean:counter.next}.txt&delete=true").to("mock:result");
             }
         });
 
-        // we should only get one as we only poll a single file using the file expression
+        // we should only get one as we only poll a single file using the file
+        // expression
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Goodday World");
-
-        context.start();
 
         assertMockEndpointsSatisfied();
     }
@@ -82,17 +76,15 @@ public class FileConsumerFileExpressionTest extends ContextTestSupport {
             @Override
             public void configure() throws Exception {
                 // START SNIPPET: e1
-                from("file://target/data/filelanguage/date/"
-                      + "?initialDelay=0&delay=10&fileName=myfile-${date:now:yyyyMMdd}.txt").convertBodyTo(String.class).to("mock:result");
+                from("file://target/data/filelanguage/date/" + "?initialDelay=0&delay=10&fileName=myfile-${date:now:yyyyMMdd}.txt").convertBodyTo(String.class).to("mock:result");
                 // END SNIPPET: e1
             }
         });
 
-        // we should only get one as we only poll a single file using the file expression
+        // we should only get one as we only poll a single file using the file
+        // expression
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Goodday World");
-
-        context.start();
 
         assertMockEndpointsSatisfied();
     }

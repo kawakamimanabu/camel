@@ -26,14 +26,15 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class SpringBatchJobLauncherTest extends CamelSpringTestSupport {
 
-    @EndpointInject(uri = "mock:output")
+    @EndpointInject("mock:output")
     MockEndpoint outputEndpoint;
 
-    @EndpointInject(uri = "mock:jobExecutionEventsQueue")
+    @EndpointInject("mock:jobExecutionEventsQueue")
     MockEndpoint jobExecutionEventsQueueEndpoint;
 
     String[] inputMessages = new String[]{"foo", "bar", "baz", null};
 
+    @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();

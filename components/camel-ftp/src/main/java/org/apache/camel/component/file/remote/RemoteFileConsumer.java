@@ -50,6 +50,7 @@ public abstract class RemoteFileConsumer<T> extends GenericFileConsumer<T> {
         return (RemoteFileOperations<T>) operations;
     }
 
+    @Override
     protected boolean prePollCheck() throws Exception {
         if (log.isTraceEnabled()) {
             log.trace("prePollCheck on {}", getEndpoint().getConfiguration().remoteServerInformation());
@@ -194,7 +195,7 @@ public abstract class RemoteFileConsumer<T> extends GenericFileConsumer<T> {
             if (log.isDebugEnabled()) {
                 log.debug("Not connected/logged in, connecting to: {}", remoteServer());
             }
-            loggedIn = getOperations().connect((RemoteFileConfiguration) endpoint.getConfiguration());
+            loggedIn = getOperations().connect((RemoteFileConfiguration) endpoint.getConfiguration(), null);
             if (loggedIn) {
                 log.debug("Connected and logged in to: {}", remoteServer());
             }

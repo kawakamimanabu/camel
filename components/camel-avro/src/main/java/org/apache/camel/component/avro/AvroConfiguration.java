@@ -17,7 +17,6 @@
 package org.apache.camel.component.avro;
 
 import java.net.URI;
-import java.util.Map;
 
 import org.apache.avro.Protocol;
 import org.apache.camel.RuntimeCamelException;
@@ -25,7 +24,7 @@ import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriParams;
 import org.apache.camel.spi.UriPath;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import static org.apache.camel.component.avro.AvroConstants.AVRO_MESSAGE_NAME_SEPARATOR;
 
@@ -62,7 +61,7 @@ public class AvroConfiguration implements Cloneable {
         }
     }
 
-    public void parseURI(URI uri, Map<String, Object> parameters, AvroComponent component) throws Exception {
+    public void parseURI(URI uri) throws Exception {
         transport = AvroTransport.valueOf(uri.getScheme());
 
         setHost(uri.getHost());

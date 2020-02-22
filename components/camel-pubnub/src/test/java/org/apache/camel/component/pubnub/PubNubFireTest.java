@@ -25,13 +25,12 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-
 import static org.apache.camel.component.pubnub.PubNubConstants.TIMETOKEN;
 
 public class PubNubFireTest extends PubNubTestBase {
     private String endpoint = "pubnub:someChannel?operation=fire&pubnub=#pubnub";
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint mockResult;
 
     @Test

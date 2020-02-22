@@ -93,19 +93,17 @@ public class HBaseEndpoint extends DefaultEndpoint {
         }
     }
 
+    @Override
     public Producer createProducer() throws Exception {
         return new HBaseProducer(this);
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         HBaseConsumer consumer = new HBaseConsumer(this, processor);
         configureConsumer(consumer);
         consumer.setMaxMessagesPerPoll(maxMessagesPerPoll);
         return consumer;
-    }
-
-    public boolean isSingleton() {
-        return true;
     }
 
     public Configuration getConfiguration() {
@@ -324,7 +322,7 @@ public class HBaseEndpoint extends DefaultEndpoint {
             if (parameters.containsKey(HBaseAttribute.HBASE_VALUE_TYPE.asOption(i))) {
                 String valueType = String.valueOf(parameters.remove(HBaseAttribute.HBASE_VALUE_TYPE.asOption(i)));
                 if (valueType != null && !valueType.isEmpty()) {
-                    rowModel.setRowType(getCamelContext().getClassResolver().resolveClass(valueType));
+                    cellModel.setValueType(getCamelContext().getClassResolver().resolveClass(valueType));
                 }
             }
             rowModel.getCells().add(cellModel);

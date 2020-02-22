@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 package org.apache.camel.spring;
+
 import java.util.Map;
 
-import org.apache.camel.impl.DefaultConsumerTemplate;
-import org.apache.camel.impl.DefaultProducerTemplate;
+import org.apache.camel.impl.engine.DefaultConsumerTemplate;
+import org.apache.camel.impl.engine.DefaultProducerTemplate;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.support.AbstractXmlApplicationContext;
@@ -57,6 +58,7 @@ public class CamelContextAwareTest extends SpringTestSupport {
     }
        
 
+    @Override
     protected AbstractXmlApplicationContext createApplicationContext() {
         return new ClassPathXmlApplicationContext("org/apache/camel/spring/camelContextAwareBean.xml");
     }

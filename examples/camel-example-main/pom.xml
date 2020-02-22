@@ -17,15 +17,14 @@
     limitations under the License.
 
 -->
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.apache.camel.example</groupId>
         <artifactId>examples</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>camel-example-main</artifactId>
@@ -45,7 +44,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.camel</groupId>
-            <artifactId>camel-quartz2</artifactId>
+            <artifactId>camel-main</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-quartz</artifactId>
         </dependency>
 
         <!-- logging -->
@@ -55,19 +58,14 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <scope>runtime</scope>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>${logback-version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-jul</artifactId>
-            <scope>runtime</scope>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback-version}</version>
         </dependency>
 
     </dependencies>
@@ -80,9 +78,23 @@
                 <artifactId>camel-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <configuration>
+                    <logClasspath>true</logClasspath>
                     <mainClass>org.apache.camel.example.MyApplication</mainClass>
                 </configuration>
             </plugin>
+
+            <!-- Run 'mvn camel-main:generate' -->
+            <!-- generate autowire.properties file that can automatic detect resources
+                 from the classpath to make convention over configuration for Camel components -->
+            <plugin>
+                <groupId>org.apache.camel</groupId>
+                <artifactId>camel-main-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <configuration>
+                    <logClasspath>false</logClasspath>
+                </configuration>
+            </plugin>
+
         </plugins>
     </build>
 

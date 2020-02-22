@@ -17,14 +17,16 @@
 package org.apache.camel.impl;
 
 import org.apache.camel.ContextTestSupport;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.impl.engine.InterceptSendToMockEndpointStrategy;
 import org.junit.Test;
 
 public class InterceptSendToMockEndpointStrategyTest extends ContextTestSupport {
 
     @Test
     public void testAdvisedMockEndpoints() throws Exception {
-        context.addRegisterEndpointCallback(new InterceptSendToMockEndpointStrategy());
+        context.adapt(ExtendedCamelContext.class).registerEndpointCallback(new InterceptSendToMockEndpointStrategy());
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
@@ -57,7 +59,7 @@ public class InterceptSendToMockEndpointStrategyTest extends ContextTestSupport 
 
     @Test
     public void testAdvisedMockEndpointsWithPattern() throws Exception {
-        context.addRegisterEndpointCallback(new InterceptSendToMockEndpointStrategy("log*"));
+        context.adapt(ExtendedCamelContext.class).registerEndpointCallback(new InterceptSendToMockEndpointStrategy("log*"));
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {

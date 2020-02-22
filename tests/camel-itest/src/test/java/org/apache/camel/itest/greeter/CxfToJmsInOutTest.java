@@ -31,7 +31,7 @@ import static org.junit.Assert.assertNotNull;
 
 @ContextConfiguration
 public class CxfToJmsInOutTest extends AbstractJUnit4SpringContextTests {
-    private static int port = AvailablePortFinder.getNextAvailable(20005);
+    private static int port = AvailablePortFinder.getNextAvailable();
     static {
         //set them as system properties so Spring can use the property place holder
         //things to set them into the URL's in the spring contexts 
@@ -41,10 +41,10 @@ public class CxfToJmsInOutTest extends AbstractJUnit4SpringContextTests {
     @Autowired
     protected ProducerTemplate template;
 
-    @EndpointInject(uri = "mock:cxf.input")
+    @EndpointInject("mock:cxf.input")
     protected MockEndpoint inputEndpoint;
 
-    @EndpointInject(uri = "mock:jms.output")
+    @EndpointInject("mock:jms.output")
     protected MockEndpoint outputEndpoint;
 
     @Test

@@ -27,14 +27,13 @@ import org.junit.Test;
  */
 public class HazelcastSedaConcurrentConsumersTest extends CamelTestSupport {
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint mock;
 
     @Test
     public void createConcurrentConsumers() throws Exception {
         int bodyCount = 5;
 
-        mock.expectedBodiesReceived("test");
         mock.expectedMessageCount(bodyCount);
 
         for (int i = 0; i < bodyCount; i++) {

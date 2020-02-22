@@ -44,9 +44,10 @@ public class MethodCallBeanRefMethodNotFoundTest extends ContextTestSupport {
         try {
             context.start();
             fail("Should have thrown exception");
-        } catch (FailedToCreateRouteException e) {
-            assertEquals("b", e.getRouteId());
-            MethodNotFoundException cause = assertIsInstanceOf(MethodNotFoundException.class, e.getCause().getCause());
+        } catch (Exception e) {
+            FailedToCreateRouteException failed = assertIsInstanceOf(FailedToCreateRouteException.class, e);
+            assertEquals("b", failed.getRouteId());
+            MethodNotFoundException cause = assertIsInstanceOf(MethodNotFoundException.class, e.getCause());
             assertEquals("bye", cause.getMethodName());
         }
     }

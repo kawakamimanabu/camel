@@ -35,9 +35,10 @@ public class AnnotatedBookServiceImpl implements AnnotatedBookStore {
     @Autowired
     private DataSource dataSource;
 
-    @EndpointInject(uri = "seda:book")
+    @EndpointInject("seda:book")
     private ProducerTemplate template;
 
+    @Override
     public void orderBook(String title) throws Exception {
         Transactional tx = this.getClass().getAnnotation(Transactional.class);
         if (tx == null) {

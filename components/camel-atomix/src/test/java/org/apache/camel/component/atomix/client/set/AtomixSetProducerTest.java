@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.atomix.client.set;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
@@ -35,7 +36,7 @@ public class AtomixSetProducerTest extends AtomixClientTestSupport {
     private static final String SET_NAME = UUID.randomUUID().toString();
     private DistributedSet<Object> set;
 
-    @EndpointInject(uri = "direct:start")
+    @EndpointInject("direct:start")
     private FluentProducerTemplate fluent;
 
     // ************************************

@@ -37,7 +37,7 @@ public class JmsRequestReplyManualWithJMSReplyToTest extends CamelTestSupport {
         return false;
     }
 
-    @Consume(uri = "activemq:queue:foo")
+    @Consume("activemq:queue:foo")
     public void doSomething(@Header("JMSReplyTo") Destination jmsReplyTo, @Body String body) throws Exception {
         assertEquals("Hello World", body);
 
@@ -61,6 +61,7 @@ public class JmsRequestReplyManualWithJMSReplyToTest extends CamelTestSupport {
         assertEquals("Bye World", reply);
     }
 
+    @Override
     protected CamelContext createCamelContext() throws Exception {
         CamelContext camelContext = super.createCamelContext();
 

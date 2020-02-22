@@ -43,24 +43,10 @@ public class PropertiesComponentLoadPropertiesTest extends ContextTestSupport {
         assertEquals("10", prop.getProperty("myQueueSize"));
     }
 
-    @Test
-    public void testLoadPropertiesLocation() throws Exception {
-        context.start();
-
-        org.apache.camel.spi.PropertiesComponent pc = context.getPropertiesComponent();
-        Properties prop = pc.loadProperties("application.properties", "example.properties");
-
-        assertNotNull(prop);
-        assertEquals(5, prop.size());
-
-        assertEquals("World", prop.getProperty("hello"));
-        assertEquals("2000", prop.getProperty("millisecs"));
-    }
-
     @Override
     protected CamelContext createCamelContext() throws Exception {
         CamelContext context = super.createCamelContext();
-        context.addComponent("properties", new PropertiesComponent("classpath:org/apache/camel/component/properties/myproperties.properties"));
+        context.getPropertiesComponent().setLocation("classpath:org/apache/camel/component/properties/myproperties.properties");
         return context;
     }
 

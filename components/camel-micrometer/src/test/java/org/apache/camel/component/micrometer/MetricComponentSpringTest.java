@@ -34,6 +34,7 @@ import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
+
 import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -46,10 +47,10 @@ import static org.mockito.Mockito.when;
 @MockEndpoints
 public class MetricComponentSpringTest {
 
-    @EndpointInject(uri = "mock:out")
+    @EndpointInject("mock:out")
     private MockEndpoint endpoint;
 
-    @Produce(uri = "direct:in")
+    @Produce("direct:in")
     private ProducerTemplate producer;
 
     @Configuration

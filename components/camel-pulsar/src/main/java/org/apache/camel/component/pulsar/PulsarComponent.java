@@ -22,6 +22,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
 import org.apache.camel.component.pulsar.configuration.PulsarConfiguration;
 import org.apache.camel.component.pulsar.utils.AutoConfiguration;
+import org.apache.camel.component.pulsar.utils.PulsarPath;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.annotations.Component;
 import org.apache.camel.support.DefaultComponent;
@@ -30,13 +31,16 @@ import org.apache.pulsar.client.api.PulsarClient;
 @Component("pulsar")
 public class PulsarComponent extends DefaultComponent {
 
-    @Metadata
+    @Metadata(label = "advanced")
     private AutoConfiguration autoConfiguration;
-    @Metadata
+    @Metadata(label = "advanced")
     private PulsarClient pulsarClient;
+    @Metadata(label = "consumer", defaultValue = "false")
+    private boolean allowManualAcknowledgement;
+    @Metadata(label = "consumer,advanced")
+    private PulsarMessageReceiptFactory pulsarMessageReceiptFactory = new DefaultPulsarMessageReceiptFactory();
 
     public PulsarComponent() {
-        this(null);
     }
 
     public PulsarComponent(CamelContext context) {
@@ -46,17 +50,28 @@ public class PulsarComponent extends DefaultComponent {
     @Override
     protected Endpoint createEndpoint(final String uri, final String path, final Map<String, Object> parameters) throws Exception {
         final PulsarConfiguration configuration = new PulsarConfiguration();
+        configuration.setAllowManualAcknowledgement(isAllowManualAcknowledgement());
 
-        setProperties(configuration, parameters);
-        if (autoConfiguration != null) {
-            setProperties(autoConfiguration, parameters);
-
-            if (autoConfiguration.isAutoConfigurable()) {
-                autoConfiguration.ensureNameSpaceAndTenant(path);
-            }
+        if (autoConfiguration != null && autoConfiguration.isAutoConfigurable()) {
+            autoConfiguration.ensureNameSpaceAndTenant(path);
         }
 
-        return PulsarEndpoint.create(uri, path, configuration, this, pulsarClient);
+        PulsarEndpoint answer = new PulsarEndpoint(uri, this);
+        answer.setPulsarConfiguration(configuration);
+        answer.setPulsarClient(pulsarClient);
+        setProperties(answer, parameters);
+
+        PulsarPath pp = new PulsarPath(path);
+        if (pp.isAutoConfigurable()) {
+            answer.setPersistence(pp.getPersistence());
+            answer.setTenant(pp.getTenant());
+            answer.setNamespace(pp.getNamespace());
+            answer.setTopic(pp.getTopic());
+        } else {
+            throw new IllegalArgumentException("Pulsar name structure is invalid: was " + path);
+        }
+
+        return answer;
     }
 
     public AutoConfiguration getAutoConfiguration() {
@@ -64,7 +79,7 @@ public class PulsarComponent extends DefaultComponent {
     }
 
     /**
-     * The pulsar autoconfiguration
+     * The pulsar auto configuration
      */
     public void setAutoConfiguration(AutoConfiguration autoConfiguration) {
         this.autoConfiguration = autoConfiguration;
@@ -79,5 +94,35 @@ public class PulsarComponent extends DefaultComponent {
      */
     public void setPulsarClient(PulsarClient pulsarClient) {
         this.pulsarClient = pulsarClient;
+    }
+
+    public boolean isAllowManualAcknowledgement() {
+        return allowManualAcknowledgement;
+    }
+
+    /**
+     * Whether to allow manual message acknowledgements.
+     * <p/>
+     * If this option is enabled, then messages are not immediately acknowledged
+     * after being consumed. Instead, an instance of
+     * {@link PulsarMessageReceipt} is stored as a header on the
+     * {@link org.apache.camel.Exchange}. Messages can then be acknowledged
+     * using {@link PulsarMessageReceipt} at any time before the ackTimeout
+     * occurs.
+     */
+    public void setAllowManualAcknowledgement(boolean allowManualAcknowledgement) {
+        this.allowManualAcknowledgement = allowManualAcknowledgement;
+    }
+
+    public PulsarMessageReceiptFactory getPulsarMessageReceiptFactory() {
+        return pulsarMessageReceiptFactory;
+    }
+
+    /**
+     * Provide a factory to create an alternate implementation of
+     * {@link PulsarMessageReceipt}.
+     */
+    public void setPulsarMessageReceiptFactory(PulsarMessageReceiptFactory pulsarMessageReceiptFactory) {
+        this.pulsarMessageReceiptFactory = pulsarMessageReceiptFactory;
     }
 }

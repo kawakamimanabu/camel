@@ -24,6 +24,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
 import static org.junit.Assert.assertEquals;
+
 /**
  * Unit test will look for the spring .xml file with the same class name
  * but postfixed with -config.xml as filename.
@@ -35,13 +36,13 @@ import static org.junit.Assert.assertEquals;
 public class JmsToHttpTXTest extends AbstractJUnit4SpringContextTests {
 
     // use uri to refer to our mock
-    @EndpointInject(uri = "mock:rollback")
+    @EndpointInject("mock:rollback")
     MockEndpoint mock;
 
     // use the spring id to refer to the endpoint we should send data to
     // notice using this id we can setup the actual endpoint in spring XML
     // and we can even use spring ${ } property in the spring XML
-    @EndpointInject(uri = "ref:data")
+    @EndpointInject("ref:data")
     private ProducerTemplate template;
 
     // the ok response to expect

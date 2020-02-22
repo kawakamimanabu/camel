@@ -17,14 +17,13 @@
     limitations under the License.
 
 -->
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.apache.camel</groupId>
         <artifactId>components</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>camel-cdi</artifactId>
@@ -80,6 +79,18 @@
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-support</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-main</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-mock</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-bean</artifactId>
+        </dependency>
 
         <!-- DeltaSpike is only used to provide Main support thus optional -->
         <dependency>
@@ -129,6 +140,26 @@
             <artifactId>camel-cloud</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-seda</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-direct</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-rest</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-ref</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>junit</groupId>
@@ -144,8 +175,7 @@
 
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>java-hamcrest</artifactId>
-            <version>${hamcrest-version}</version>
+            <artifactId>hamcrest</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -188,9 +218,47 @@
 
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.camel</groupId>
+                <artifactId>camel-package-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <id>jaxb-list</id>
+                        <goals>
+                            <goal>generate-jaxb-list</goal>
+                        </goals>
+                        <phase>process-classes</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-generated-resources-jaxb</id>
+                        <goals>
+                            <goal>resources</goal>
+                        </goals>
+                        <phase>process-classes</phase>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/target/generated/camel/jaxb</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
     <profiles>
         <profile>
-            <id>weld-1.0</id>
+            <id>weld-3.0</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
@@ -200,120 +268,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <excludes>
-                                <exclude>**/*Cdi12Test.java</exclude>
-                                <exclude>**/*Cdi20Test.java</exclude>
-                            </excludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-
-            <dependencies>
-
-                <!-- provided dependencies -->
-
-                <dependency>
-                    <groupId>javax.enterprise</groupId>
-                    <artifactId>cdi-api</artifactId>
-                    <version>${cdi-api-1.0-version}</version>
-                    <scope>provided</scope>
-                </dependency>
-
-                <dependency>
-                    <groupId>javax.el</groupId>
-                    <artifactId>javax.el-api</artifactId>
-                    <version>${javax.el-api-version}</version>
-                    <scope>provided</scope>
-                </dependency>
-
-                <!-- test dependencies -->
-
-                <dependency>
-                    <groupId>org.jboss.weld</groupId>
-                    <artifactId>weld-core</artifactId>
-                    <version>${weld1-version}</version>
-                    <scope>test</scope>
-                </dependency>
-
-                <dependency>
-                    <groupId>org.jboss.arquillian.container</groupId>
-                    <artifactId>arquillian-weld-se-embedded-1.1</artifactId>
-                    <version>1.0.0.CR9</version>
-                    <scope>test</scope>
-                </dependency>
-
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>weld-1.2</id>
-
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <excludes>
-                                <exclude>**/*Cdi20Test.java</exclude>
-                                <!-- Reactivate when CAMEL-12834 is fixed -->
-                                <exclude>**/UnsatisfiedContextForEndpointInjectTest.java</exclude>
-                                <!-- Reactivate when CAMEL-12834 is fixed -->
-                                <exclude>**/UriWithWrongContextTest.java</exclude>
-                            </excludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-
-            <dependencies>
-
-                <!-- provided dependencies -->
-
-                <dependency>
-                    <groupId>javax.enterprise</groupId>
-                    <artifactId>cdi-api</artifactId>
-                    <version>${cdi-api-1.2-version}</version>
-                    <scope>provided</scope>
-                </dependency>
-
-                <!-- test dependencies -->
-
-                <dependency>
-                    <groupId>org.jboss.weld</groupId>
-                    <artifactId>weld-core-impl</artifactId>
-                    <version>${weld2-version}</version>
-                    <scope>test</scope>
-                </dependency>
-
-                <dependency>
-                    <groupId>org.jboss.arquillian.container</groupId>
-                    <artifactId>arquillian-weld-embedded</artifactId>
-                    <version>${arquillian-weld-embedded-version}</version>
-                    <scope>test</scope>
-                </dependency>
-
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>weld-2.0</id>
-
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <excludes>
-                                <!-- Reactivate when CAMEL-12834 is fixed -->
-                                <exclude>**/UnsatisfiedContextForEndpointInjectTest.java</exclude>
-                                <!-- Reactivate when CAMEL-12834 is fixed -->
-                                <exclude>**/UriWithWrongContextTest.java</exclude>
-                            </excludes>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>
@@ -490,7 +444,7 @@
         </profile>
 
         <profile>
-            <id>jdk9+-weld-2.0</id>
+            <id>jdk9+-weld-3.0</id>
             <activation>
                 <jdk>[9,)</jdk>
             </activation>
@@ -531,12 +485,6 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <reuseForks>true</reuseForks>
-                            <excludes>
-                                <!-- Reactivate when CAMEL-12834 is fixed -->
-                                <exclude>**/UnsatisfiedContextForEndpointInjectTest.java</exclude>
-                                <!-- Reactivate when CAMEL-12834 is fixed -->
-                                <exclude>**/UriWithWrongContextTest.java</exclude>
-                            </excludes>
                         </configuration>
                     </plugin>
                     <plugin>

@@ -23,7 +23,6 @@ import com.splunk.Index;
 import com.splunk.IndexCollection;
 import com.splunk.InputCollection;
 import com.splunk.TcpInput;
-
 import org.apache.camel.CamelExecutionException;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.Producer;
@@ -46,13 +45,13 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class ProducerTest extends SplunkMockTestSupport {
 
-    @EndpointInject(uri = "splunk://stream")
+    @EndpointInject("splunk://stream")
     protected SplunkEndpoint streamEndpoint;
 
-    @EndpointInject(uri = "splunk://submit")
+    @EndpointInject("splunk://submit")
     protected SplunkEndpoint submitEndpoint;
 
-    @EndpointInject(uri = "splunk://tcp")
+    @EndpointInject("splunk://tcp")
     protected SplunkEndpoint tcpEndpoint;
 
     @Mock

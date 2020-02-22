@@ -28,7 +28,6 @@ import com.bazaarvoice.jolt.Removr;
 import com.bazaarvoice.jolt.Shiftr;
 import com.bazaarvoice.jolt.Sortr;
 import com.bazaarvoice.jolt.Transform;
-
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
 import org.apache.camel.Message;
@@ -59,11 +58,6 @@ public class JoltEndpoint extends ResourceEndpoint {
 
     public JoltEndpoint(String uri, JoltComponent component, String resourceUri) {
         super(uri, component, resourceUri);
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     @Override
@@ -196,6 +190,5 @@ public class JoltEndpoint extends ResourceEndpoint {
             out.setBody(output);
         }
         out.setHeaders(exchange.getIn().getHeaders());
-        out.setAttachments(exchange.getIn().getAttachments());
     }
 }

@@ -27,15 +27,14 @@ import javax.xml.ws.Holder;
 import javax.xml.ws.soap.SOAPBinding;
 
 import org.apache.camel.Exchange;
-import org.apache.camel.Message;
 import org.apache.camel.Processor;
+import org.apache.camel.attachment.AttachmentMessage;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.cxf.CXFTestSupport;
 import org.apache.camel.cxf.mtom_feature.Hello;
 import org.apache.camel.cxf.mtom_feature.HelloService;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.junit.Test;
-
 
 public class CxfMtomConsumerTest extends CamelTestSupport {
     protected static final String MTOM_ENDPOINT_ADDRESS = "http://localhost:"
@@ -46,14 +45,15 @@ public class CxfMtomConsumerTest extends CamelTestSupport {
     private final QName serviceName = new QName("http://apache.org/camel/cxf/mtom_feature", "HelloService");
     
 
-    protected RouteBuilder createRouteBuilder() {      
+    @Override
+    protected RouteBuilder createRouteBuilder() {
         
         return new RouteBuilder() {
             public void configure() {
                 from(MTOM_ENDPOINT_URI).process(new Processor() {
                     @SuppressWarnings("unchecked")
                     public void process(final Exchange exchange) throws Exception {
-                        Message in = exchange.getIn();
+                        AttachmentMessage in = exchange.getIn(AttachmentMessage.class);
                         assertEquals("We should not get any attachements here.", 0, in.getAttachments().size());
                         assertEquals("Get a wrong Content-Type header", "application/xop+xml", in.getHeader("Content-Type"));
                         // Get the parameter list

@@ -25,9 +25,9 @@ import org.apache.camel.SSLContextParametersAware;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.annotations.Component;
 import org.apache.camel.support.HeaderFilterStrategyComponent;
-import org.apache.camel.support.IntrospectionSupport;
 import org.apache.camel.support.jsse.SSLContextParameters;
 import org.apache.camel.util.ObjectHelper;
+import org.apache.camel.util.PropertiesHelper;
 import org.apache.camel.util.URISupport;
 import org.apache.camel.util.UnsafeUriCharactersEncoder;
 import org.asynchttpclient.AsyncHttpClient;
@@ -35,6 +35,8 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.Builder;
+import org.asynchttpclient.cookie.CookieStore;
+import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 
 /**
  *  To call external HTTP services using <a href="http://github.com/sonatype/async-http-client">Async Http Client</a>
@@ -81,7 +83,7 @@ public class AhcComponent extends HeaderFilterStrategyComponent implements SSLCo
         
         setProperties(endpoint, parameters);
 
-        if (IntrospectionSupport.hasProperties(parameters, CLIENT_CONFIG_PREFIX)) {
+        if (PropertiesHelper.hasProperties(parameters, CLIENT_CONFIG_PREFIX)) {
             DefaultAsyncHttpClientConfig.Builder builder = endpoint.getClientConfig() == null
                     ? new DefaultAsyncHttpClientConfig.Builder() : AhcComponent.cloneConfig(endpoint.getClientConfig());
             
@@ -101,10 +103,10 @@ public class AhcComponent extends HeaderFilterStrategyComponent implements SSLCo
 
             // special for realm builder
             Builder realmBuilder = null;
-            if (IntrospectionSupport.hasProperties(parameters, CLIENT_REALM_CONFIG_PREFIX)) {
+            if (PropertiesHelper.hasProperties(parameters, CLIENT_REALM_CONFIG_PREFIX)) {
 
                 // set and validate additional parameters on client config
-                Map<String, Object> realmParams = IntrospectionSupport.extractProperties(parameters, CLIENT_REALM_CONFIG_PREFIX);
+                Map<String, Object> realmParams = PropertiesHelper.extractProperties(parameters, CLIENT_REALM_CONFIG_PREFIX);
 
                 // copy the parameters for the endpoint to have
                 endpoint.setClientConfigRealmOptions(new LinkedHashMap<>(realmParams));
@@ -125,7 +127,7 @@ public class AhcComponent extends HeaderFilterStrategyComponent implements SSLCo
             }
             
             // set and validate additional parameters on client config
-            Map<String, Object> clientParams = IntrospectionSupport.extractProperties(parameters, CLIENT_CONFIG_PREFIX);
+            Map<String, Object> clientParams = PropertiesHelper.extractProperties(parameters, CLIENT_CONFIG_PREFIX);
 
             // copy the parameters for the endpoint to have
             endpoint.setClientConfigOptions(new LinkedHashMap<>(clientParams));
@@ -240,6 +242,21 @@ public class AhcComponent extends HeaderFilterStrategyComponent implements SSLCo
      */
     static DefaultAsyncHttpClientConfig.Builder cloneConfig(AsyncHttpClientConfig clientConfig) {
         DefaultAsyncHttpClientConfig.Builder builder = new DefaultAsyncHttpClientConfig.Builder(clientConfig);
+        /*
+         * The builder creates a new ThreadSafeCookieStore and does not copy the
+         * one from clientConfig. This might be desired in case no explicit
+         * cookie store was set on the builder that built the clientConfig,
+         * because otherwise all endpoints sharing a configuration will also
+         * share the cookie store. On the other hand if someone explicitly
+         * configured a cookie store (or no cookie store) on the provided
+         * config, he likely intends to use it, so we create either a new
+         * default implementation or we keep the non default one (or the null
+         * value).
+         */
+        CookieStore cookieStore = clientConfig.getCookieStore();
+        if (!(cookieStore instanceof ThreadSafeCookieStore)) {
+            builder.setCookieStore(cookieStore);
+        }
         return builder;
     }
 }

@@ -39,6 +39,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
 import org.apache.camel.Processor;
+import org.apache.camel.attachment.AttachmentMessage;
 import org.apache.camel.component.cxf.CXFTestSupport;
 import org.apache.camel.component.cxf.CxfPayload;
 import org.apache.camel.converter.jaxp.XmlConverter;
@@ -53,7 +54,6 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
-
 
 /**
  * Unit test for exercising MTOM feature of a CxfProducer in PAYLOAD mode
@@ -99,10 +99,10 @@ public class CxfMtomProducerPayloadModeTest extends AbstractJUnit4SpringContextT
                 CxfPayload<SoapHeader> body = new CxfPayload<>(new ArrayList<SoapHeader>(),
                     elements, null);
                 exchange.getIn().setBody(body);
-                exchange.getIn().addAttachment(MtomTestHelper.REQ_PHOTO_CID, 
+                exchange.getIn(AttachmentMessage.class).addAttachment(MtomTestHelper.REQ_PHOTO_CID,
                     new DataHandler(new ByteArrayDataSource(MtomTestHelper.REQ_PHOTO_DATA, "application/octet-stream")));
 
-                exchange.getIn().addAttachment(MtomTestHelper.REQ_IMAGE_CID, 
+                exchange.getIn(AttachmentMessage.class).addAttachment(MtomTestHelper.REQ_IMAGE_CID,
                     new DataHandler(new ByteArrayDataSource(MtomTestHelper.requestJpeg, "image/jpeg")));
 
             }
@@ -129,11 +129,11 @@ public class CxfMtomProducerPayloadModeTest extends AbstractJUnit4SpringContextT
         String imageId = ele.getAttribute("href").substring(4); // skip "cid:"
 
         
-        DataHandler dr = exchange.getOut().getAttachment(decodingReference(photoId));
+        DataHandler dr = exchange.getOut(AttachmentMessage.class).getAttachment(decodingReference(photoId));
         Assert.assertEquals("application/octet-stream", dr.getContentType());
         MtomTestHelper.assertEquals(MtomTestHelper.RESP_PHOTO_DATA, IOUtils.readBytesFromStream(dr.getInputStream()));
    
-        dr = exchange.getOut().getAttachment(decodingReference(imageId));
+        dr = exchange.getOut(AttachmentMessage.class).getAttachment(decodingReference(imageId));
         Assert.assertEquals("image/jpeg", dr.getContentType());
         
         BufferedImage image = ImageIO.read(dr.getInputStream());

@@ -17,6 +17,7 @@
 package org.apache.camel.itest.issues;
 
 import org.apache.camel.EndpointInject;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.Produce;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
@@ -24,16 +25,15 @@ import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.junit.Test;
 
-
 public class IntercepFromAndStrategyTest extends CamelTestSupport {
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     protected MockEndpoint resultEndpoint;
     
-    @EndpointInject(uri = "mock:intercepted")
+    @EndpointInject("mock:intercepted")
     protected MockEndpoint interceptedEndpoint;
 
-    @Produce(uri = "direct:start")
+    @Produce("direct:start")
     protected ProducerTemplate template;
 
     @Test
@@ -52,7 +52,7 @@ public class IntercepFromAndStrategyTest extends CamelTestSupport {
             public void configure() throws Exception {
                 // add a dummy strategy
                 // removing this line the test works
-                context.addInterceptStrategy(new DummyInterceptor());
+                context.adapt(ExtendedCamelContext.class).addInterceptStrategy(new DummyInterceptor());
                 // intercet from
                 interceptFrom("direct:start").log("Intercepted").to("mock:intercepted");
 

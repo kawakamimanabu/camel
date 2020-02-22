@@ -16,32 +16,23 @@
  */
 package org.apache.camel.support;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.StringTokenizer;
-import java.util.TreeMap;
+import java.util.function.Function;
 
 import org.apache.camel.CamelContext;
-import org.apache.camel.Component;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
-import org.apache.camel.LoadPropertiesException;
+import org.apache.camel.ExtendedCamelContext;
+import org.apache.camel.NamedNode;
 import org.apache.camel.NoSuchBeanException;
 import org.apache.camel.NoSuchEndpointException;
-import org.apache.camel.spi.ClassResolver;
+import org.apache.camel.NoTypeConversionAvailableException;
 import org.apache.camel.spi.RouteStartupOrder;
-import org.apache.camel.util.IOHelper;
 import org.apache.camel.util.ObjectHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import static org.apache.camel.util.ObjectHelper.isNotEmpty;
 import static org.apache.camel.util.ObjectHelper.notNull;
 
@@ -49,11 +40,7 @@ import static org.apache.camel.util.ObjectHelper.notNull;
  * A number of helper methods
  */
 public final class CamelContextHelper {
-    public static final String COMPONENT_BASE = "META-INF/services/org/apache/camel/component/";
-    public static final String COMPONENT_DESCRIPTOR = "META-INF/services/org/apache/camel/component.properties";
     public static final String MODEL_DOCUMENTATION_PREFIX = "org/apache/camel/model/";
-
-    private static final Logger LOG = LoggerFactory.getLogger(CamelContextHelper.class);
 
     /**
      * Utility classes should not have a public constructor.
@@ -257,8 +244,8 @@ public final class CamelContextHelper {
             if (s != null) {
                 // we cannot use Camel type converters as they may not be ready this early
                 try {
-                    Integer size = Integer.valueOf(s);
-                    if (size == null || size <= 0) {
+                    int size = Integer.parseInt(s);
+                    if (size <= 0) {
                         throw new IllegalArgumentException("Property " + Exchange.MAXIMUM_ENDPOINT_CACHE_SIZE + " must be a positive number, was: " + s);
                     }
                     return size;
@@ -371,9 +358,9 @@ public final class CamelContextHelper {
      * @param camelContext the camel context
      * @param text  the text
      * @return the parsed text, or <tt>null</tt> if the text was <tt>null</tt>
-     * @throws Exception is thrown if illegal argument
+     * @throws IllegalStateException is thrown if illegal argument
      */
-    public static String parseText(CamelContext camelContext, String text) throws Exception {
+    public static String parseText(CamelContext camelContext, String text) {
         // ensure we support property placeholders
         return camelContext.resolvePropertyPlaceholders(text);
     }
@@ -384,23 +371,10 @@ public final class CamelContextHelper {
      * @param camelContext the camel context
      * @param text  the text
      * @return the integer vale, or <tt>null</tt> if the text was <tt>null</tt>
-     * @throws Exception is thrown if illegal argument or type conversion not possible
+     * @throws IllegalStateException is thrown if illegal argument or type conversion not possible
      */
-    public static Integer parseInteger(CamelContext camelContext, String text) throws Exception {
-        // ensure we support property placeholders
-        String s = camelContext.resolvePropertyPlaceholders(text);
-        if (s != null) {
-            try {
-                return camelContext.getTypeConverter().mandatoryConvertTo(Integer.class, s);
-            } catch (NumberFormatException e) {
-                if (s.equals(text)) {
-                    throw new IllegalArgumentException("Error parsing [" + s + "] as an Integer.", e);
-                } else {
-                    throw new IllegalArgumentException("Error parsing [" + s + "] from property " + text + " as an Integer.", e);
-                }
-            }
-        }
-        return null;
+    public static Integer parseInteger(CamelContext camelContext, String text) {
+        return parse(camelContext, Integer.class, text);
     }
 
     /**
@@ -409,23 +383,10 @@ public final class CamelContextHelper {
      * @param camelContext the camel context
      * @param text  the text
      * @return the long vale, or <tt>null</tt> if the text was <tt>null</tt>
-     * @throws Exception is thrown if illegal argument or type conversion not possible
+     * @throws IllegalStateException is thrown if illegal argument or type conversion not possible
      */
-    public static Long parseLong(CamelContext camelContext, String text) throws Exception {
-        // ensure we support property placeholders
-        String s = camelContext.resolvePropertyPlaceholders(text);
-        if (s != null) {
-            try {
-                return camelContext.getTypeConverter().mandatoryConvertTo(Long.class, s);
-            } catch (NumberFormatException e) {
-                if (s.equals(text)) {
-                    throw new IllegalArgumentException("Error parsing [" + s + "] as a Long.", e);
-                } else {
-                    throw new IllegalArgumentException("Error parsing [" + s + "] from property " + text + " as a Long.", e);
-                }
-            }
-        }
-        return null;
+    public static Long parseLong(CamelContext camelContext, String text) {
+        return parse(camelContext, Long.class, text);
     }
 
     /**
@@ -434,23 +395,10 @@ public final class CamelContextHelper {
      * @param camelContext the camel context
      * @param text  the text
      * @return the double vale, or <tt>null</tt> if the text was <tt>null</tt>
-     * @throws Exception is thrown if illegal argument or type conversion not possible
+     * @throws IllegalStateException is thrown if illegal argument or type conversion not possible
      */
-    public static Double parseDouble(CamelContext camelContext, String text) throws Exception {
-        // ensure we support property placeholders
-        String s = camelContext.resolvePropertyPlaceholders(text);
-        if (s != null) {
-            try {
-                return camelContext.getTypeConverter().mandatoryConvertTo(Double.class, s);
-            } catch (NumberFormatException e) {
-                if (s.equals(text)) {
-                    throw new IllegalArgumentException("Error parsing [" + s + "] as an Integer.", e);
-                } else {
-                    throw new IllegalArgumentException("Error parsing [" + s + "] from property " + text + " as an Integer.", e);
-                }
-            }
-        }
-        return null;
+    public static Double parseDouble(CamelContext camelContext, String text) {
+        return parse(camelContext, Double.class, text);
     }
 
     /**
@@ -459,126 +407,36 @@ public final class CamelContextHelper {
      * @param camelContext the camel context
      * @param text  the text
      * @return the boolean vale, or <tt>null</tt> if the text was <tt>null</tt>
-     * @throws Exception is thrown if illegal argument or type conversion not possible
+     * @throws IllegalArgumentException is thrown if illegal argument or type conversion not possible
      */
-    public static Boolean parseBoolean(CamelContext camelContext, String text) throws Exception {
+    public static Boolean parseBoolean(CamelContext camelContext, String text) {
+        return parse(camelContext, Boolean.class, text);
+    }
+
+    /**
+     * Parses the given text and converts it to the specified class and handling property placeholders as well
+     *
+     * @param camelContext the camel context
+     * @param clazz the class to convert the value to
+     * @param text  the text
+     * @return the boolean vale, or <tt>null</tt> if the text was <tt>null</tt>
+     * @throws IllegalArgumentException is thrown if illegal argument or type conversion not possible
+     */
+    public static <T> T parse(CamelContext camelContext, Class<T> clazz, String text) {
         // ensure we support property placeholders
         String s = camelContext.resolvePropertyPlaceholders(text);
         if (s != null) {
-            s = s.trim().toLowerCase(Locale.ENGLISH);
-            if (s.equals("true") || s.equals("false")) {
-                return "true".equals(s) ? Boolean.TRUE : Boolean.FALSE;
-            } else {
+            try {
+                return camelContext.getTypeConverter().mandatoryConvertTo(clazz, s);
+            } catch (Exception e) {
                 if (s.equals(text)) {
-                    throw new IllegalArgumentException("Error parsing [" + s + "] as a Boolean.");
+                    throw new IllegalArgumentException("Error parsing [" + s + "] as a " + clazz.getName() + ".", e);
                 } else {
-                    throw new IllegalArgumentException("Error parsing [" + s + "] from property " + text + " as a Boolean.");
+                    throw new IllegalArgumentException("Error parsing [" + s + "] from property " + text + " as a " + clazz.getName() + ".", e);
                 }
             }
         }
         return null;
-    }
-
-    /**
-     * Finds all possible Components on the classpath, already registered in {@link org.apache.camel.CamelContext},
-     * and from the {@link org.apache.camel.spi.Registry}.
-     */
-    public static SortedMap<String, Properties> findComponents(CamelContext camelContext) throws LoadPropertiesException {
-        ClassResolver resolver = camelContext.getClassResolver();
-        LOG.debug("Finding all components using class resolver: {}", resolver);
-        Enumeration<URL> iter = resolver.loadAllResourcesAsURL(COMPONENT_DESCRIPTOR);
-        return findComponents(camelContext, iter);
-    }
-
-    public static SortedMap<String, Properties> findComponents(CamelContext camelContext, Enumeration<URL> componentDescriptionIter)
-        throws LoadPropertiesException {
-
-        SortedMap<String, Properties> map = new TreeMap<>();
-        while (componentDescriptionIter != null && componentDescriptionIter.hasMoreElements()) {
-            URL url = componentDescriptionIter.nextElement();
-            LOG.trace("Finding components in url: {}", url);
-            try {
-                Properties properties = new Properties();
-                properties.load(url.openStream());
-                String names = properties.getProperty("components");
-                if (names != null) {
-                    StringTokenizer tok = new StringTokenizer(names);
-                    while (tok.hasMoreTokens()) {
-                        String name = tok.nextToken();
-
-                        // try to find the class name for this component
-                        String className = null;
-                        InputStream is = null;
-                        try {
-                            // now load the component name resource so we can grab its properties and the class name
-                            Enumeration<URL> urls = camelContext.getClassResolver().loadAllResourcesAsURL(COMPONENT_BASE + name);
-                            if (urls != null && urls.hasMoreElements()) {
-                                is = urls.nextElement().openStream();
-                            }
-                            if (is != null) {
-                                Properties compProperties = new Properties();
-                                compProperties.load(is);
-                                if (!compProperties.isEmpty()) {
-                                    className = compProperties.getProperty("class");
-                                }
-                            }
-                        } catch (Exception e) {
-                            // ignore
-                        } finally {
-                            IOHelper.close(is);
-                        }
-
-                        // inherit properties we loaded first, as it has maven details
-                        Properties prop = new Properties();
-                        prop.putAll(properties);
-                        if (camelContext.hasComponent(name) != null) {
-                            prop.put("component", camelContext.getComponent(name));
-                        }
-                        if (className != null) {
-                            prop.put("class", className);
-                        }
-                        prop.put("name", name);
-                        map.put(name, prop);
-                    }
-                }
-            } catch (IOException e) {
-                throw new LoadPropertiesException(url, e);
-            }
-        }
-
-        // lets see what other components are registered on camel context
-        List<String> names = camelContext.getComponentNames();
-        for (String name : names) {
-            if (!map.containsKey(name)) {
-                Component component = camelContext.getComponent(name);
-                if (component != null) {
-                    Properties properties = new Properties();
-                    properties.put("component", component);
-                    properties.put("class", component.getClass().getName());
-                    properties.put("name", name);
-                    // override default component if name clash
-                    map.put(name, properties);
-                }
-            }
-        }
-
-        // lets see what other components are in the registry
-        Map<String, Component> beanMap = camelContext.getRegistry().findByTypeWithName(Component.class);
-        Set<Map.Entry<String, Component>> entries = beanMap.entrySet();
-        for (Map.Entry<String, Component> entry : entries) {
-            String name = entry.getKey();
-            if (!map.containsKey(name)) {
-                Component component = entry.getValue();
-                if (component != null) {
-                    Properties properties = new Properties();
-                    properties.put("component", component);
-                    properties.put("class", component.getClass().getName());
-                    properties.put("name", name);
-                    map.put(name, properties);
-                }
-            }
-        }
-        return map;
     }
 
     /**
@@ -589,7 +447,7 @@ public final class CamelContextHelper {
      * @return the startup order, or <tt>0</tt> if not possible to determine
      */
     public static int getRouteStartupOrder(CamelContext camelContext, String routeId) {
-        for (RouteStartupOrder order : camelContext.getRouteStartupOrder()) {
+        for (RouteStartupOrder order : camelContext.adapt(ExtendedCamelContext.class).getRouteStartupOrder()) {
             if (order.getRoute().getId().equals(routeId)) {
                 return order.getStartupOrder();
             }
@@ -618,4 +476,19 @@ public final class CamelContextHelper {
         }
         return answer;
     }
+
+    /**
+     * Gets the route id the given node belongs to.
+     *
+     * @param node the node
+     * @return the route id, or <tt>null</tt> if not possible to find
+     */
+    public static String getRouteId(NamedNode node) {
+        NamedNode parent = node;
+        while (parent != null && parent.getParent() != null) {
+            parent = parent.getParent();
+        }
+        return parent != null ? parent.getId() : null;
+    }
+
 }

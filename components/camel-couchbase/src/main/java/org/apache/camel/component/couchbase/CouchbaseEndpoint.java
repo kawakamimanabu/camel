@@ -27,7 +27,6 @@ import java.util.Set;
 
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
-
 import org.apache.camel.Consumer;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
@@ -180,11 +179,6 @@ public class CouchbaseEndpoint extends ScheduledPollEndpoint {
     @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         return new CouchbaseConsumer(this, createClient(), processor);
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     public String getProtocol() {

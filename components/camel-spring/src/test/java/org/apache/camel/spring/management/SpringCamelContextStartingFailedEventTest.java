@@ -18,7 +18,6 @@ package org.apache.camel.spring.management;
 
 import org.apache.camel.FailedToCreateRouteException;
 import org.apache.camel.ResolveEndpointFailedException;
-import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.spring.SpringTestSupport;
 import org.junit.Test;
 import org.springframework.context.support.AbstractXmlApplicationContext;
@@ -31,12 +30,13 @@ public class SpringCamelContextStartingFailedEventTest extends SpringTestSupport
         return true;
     }
 
+    @Override
     protected AbstractXmlApplicationContext createApplicationContext() {
         try {
             new ClassPathXmlApplicationContext("org/apache/camel/spring/management/SpringCamelContextStartingFailedEventTest.xml");
             fail("Should thrown an exception");
-        } catch (RuntimeCamelException e) {
-            FailedToCreateRouteException ftcre = assertIsInstanceOf(FailedToCreateRouteException.class, e.getCause());
+        } catch (Exception e) {
+            FailedToCreateRouteException ftcre = assertIsInstanceOf(FailedToCreateRouteException.class, e);
             assertIsInstanceOf(ResolveEndpointFailedException.class, ftcre.getCause());
             // expected
         }

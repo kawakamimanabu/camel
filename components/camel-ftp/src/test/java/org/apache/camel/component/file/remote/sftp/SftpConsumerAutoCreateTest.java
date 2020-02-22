@@ -21,17 +21,20 @@ import java.io.File;
 import org.apache.camel.Exchange;
 import org.apache.camel.component.file.GenericFileOperationFailedException;
 import org.apache.camel.component.file.remote.SftpEndpoint;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class SftpConsumerAutoCreateTest extends SftpServerTestSupport {
 
     protected String getFtpUrl() {
-        return "sftp://admin@localhost:" + getPort() + "/" + FTP_ROOT_DIR + "/foo/bar/baz/xxx?password=admin&autoCreate=true";
+        return "sftp://admin@localhost:" + getPort() + "/" + FTP_ROOT_DIR + "/foo/bar/baz/xxx?password=admin";
     }
 
     @Override
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
     }
@@ -41,7 +44,7 @@ public class SftpConsumerAutoCreateTest extends SftpServerTestSupport {
         if (!canTest()) {
             return;
         }
-        SftpEndpoint endpoint = (SftpEndpoint) this.getMandatoryEndpoint(getFtpUrl());
+        SftpEndpoint endpoint = (SftpEndpoint) this.getMandatoryEndpoint(getFtpUrl() + "&autoCreate=true");
         endpoint.start();
         endpoint.getExchanges();
         assertTrue(new File(FTP_ROOT_DIR + "/foo/bar/baz/xxx").exists());

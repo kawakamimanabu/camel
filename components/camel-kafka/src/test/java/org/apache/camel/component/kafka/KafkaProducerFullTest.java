@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.kafka;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 
+import org.apache.camel.BindToRegistry;
 import org.apache.camel.Endpoint;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.Exchange;
@@ -36,7 +38,6 @@ import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.kafka.serde.DefaultKafkaHeaderSerializer;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.impl.JndiRegistry;
 import org.apache.camel.support.DefaultHeaderFilterStrategy;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -61,49 +62,47 @@ public class KafkaProducerFullTest extends BaseEmbeddedKafkaTest {
     private static KafkaConsumer<String, String> stringsConsumerConn;
     private static KafkaConsumer<byte[], byte[]> bytesConsumerConn;
 
-    @EndpointInject(uri = "kafka:" + TOPIC_STRINGS + "?requestRequiredAcks=-1")
+    @EndpointInject("kafka:" + TOPIC_STRINGS + "?requestRequiredAcks=-1")
     private Endpoint toStrings;
 
-    @EndpointInject(uri = "kafka:" + TOPIC_STRINGS + "?requestRequiredAcks=-1&partitionKey=1")
+    @EndpointInject("kafka:" + TOPIC_STRINGS + "?requestRequiredAcks=-1&partitionKey=1")
     private Endpoint toStrings2;
 
-    @EndpointInject(uri = "kafka:" + TOPIC_INTERCEPTED + "?requestRequiredAcks=-1"
+    @EndpointInject("kafka:" + TOPIC_INTERCEPTED + "?requestRequiredAcks=-1"
             + "&interceptorClasses=org.apache.camel.component.kafka.MockProducerInterceptor")
     private Endpoint toStringsWithInterceptor;
 
-    @EndpointInject(uri = "mock:kafkaAck")
+    @EndpointInject("mock:kafkaAck")
     private MockEndpoint mockEndpoint;
 
-    @EndpointInject(uri = "kafka:" + TOPIC_BYTES + "?requestRequiredAcks=-1"
+    @EndpointInject("kafka:" + TOPIC_BYTES + "?requestRequiredAcks=-1"
             + "&serializerClass=org.apache.kafka.common.serialization.ByteArraySerializer&"
             + "keySerializerClass=org.apache.kafka.common.serialization.ByteArraySerializer")
     private Endpoint toBytes;
 
-    @EndpointInject(uri = "kafka:" + TOPIC_PROPAGATED_HEADERS + "?requestRequiredAcks=-1")
+    @EndpointInject("kafka:" + TOPIC_PROPAGATED_HEADERS + "?requestRequiredAcks=-1")
     private Endpoint toPropagatedHeaders;
 
-    @Produce(uri = "direct:startStrings")
+    @Produce("direct:startStrings")
     private ProducerTemplate stringsTemplate;
 
-    @Produce(uri = "direct:startStrings2")
+    @Produce("direct:startStrings2")
     private ProducerTemplate stringsTemplate2;
 
-    @Produce(uri = "direct:startBytes")
+    @Produce("direct:startBytes")
     private ProducerTemplate bytesTemplate;
 
-    @Produce(uri = "direct:startTraced")
+    @Produce("direct:startTraced")
     private ProducerTemplate interceptedTemplate;
 
-    @Produce(uri = "direct:propagatedHeaders")
+    @Produce("direct:propagatedHeaders")
     private ProducerTemplate propagatedHeadersTemplate;
-
-    @Override
-    protected JndiRegistry createRegistry() throws Exception {
-        JndiRegistry jndi = super.createRegistry();
-        jndi.bind("myStrategy", new MyHeaderFilterStrategy());
-        jndi.bind("myHeaderSerializer", new MyKafkaHeadersSerializer());
-        return jndi;
-    }
+    
+    @BindToRegistry("myStrategy")
+    private MyHeaderFilterStrategy strategy = new MyHeaderFilterStrategy();
+    
+    @BindToRegistry("myHeaderSerializer")
+    private MyKafkaHeadersSerializer serializer = new MyKafkaHeadersSerializer();
 
     @BeforeClass
     public static void before() {

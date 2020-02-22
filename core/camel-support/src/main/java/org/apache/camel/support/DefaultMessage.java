@@ -17,14 +17,10 @@
 package org.apache.camel.support;
 
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import javax.activation.DataHandler;
-
-import org.apache.camel.Attachment;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.spi.HeadersMapFactory;
@@ -41,10 +37,7 @@ import org.apache.camel.util.ObjectHelper;
  * on the {@link CamelContext}. The default implementation uses the {@link org.apache.camel.util.CaseInsensitiveMap CaseInsensitiveMap}.
  */
 public class DefaultMessage extends MessageSupport {
-    private boolean fault;
     private Map<String, Object> headers;
-    private Map<String, DataHandler> attachments;
-    private Map<String, Attachment> attachmentObjects;
 
     public DefaultMessage(Exchange exchange) {
         setExchange(exchange);
@@ -55,14 +48,7 @@ public class DefaultMessage extends MessageSupport {
         setCamelContext(camelContext);
     }
 
-    public boolean isFault() {
-        return fault;
-    }
-
-    public void setFault(boolean fault) {
-        this.fault = fault;
-    }
-
+    @Override
     public Object getHeader(String name) {
         if (hasHeaders()) {
             return getHeaders().get(name);
@@ -71,11 +57,13 @@ public class DefaultMessage extends MessageSupport {
         }
     }
 
+    @Override
     public Object getHeader(String name, Object defaultValue) {
         Object answer = getHeaders().get(name);
         return answer != null ? answer : defaultValue;
     }
 
+    @Override
     public Object getHeader(String name, Supplier<Object> defaultValueSupplier) {
         ObjectHelper.notNull(name, "name");
         ObjectHelper.notNull(defaultValueSupplier, "defaultValueSupplier");
@@ -83,6 +71,7 @@ public class DefaultMessage extends MessageSupport {
         return answer != null ? answer : defaultValueSupplier.get();
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T getHeader(String name, Class<T> type) {
         Object value = getHeader(name);
@@ -108,6 +97,7 @@ public class DefaultMessage extends MessageSupport {
         }
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T getHeader(String name, Object defaultValue, Class<T> type) {
         Object value = getHeader(name, defaultValue);
@@ -133,6 +123,7 @@ public class DefaultMessage extends MessageSupport {
         }
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T getHeader(String name, Supplier<Object> defaultValueSupplier, Class<T> type) {
         ObjectHelper.notNull(name, "name");
@@ -161,6 +152,7 @@ public class DefaultMessage extends MessageSupport {
         }
     }
 
+    @Override
     public void setHeader(String name, Object value) {
         if (headers == null) {
             headers = createHeaders();
@@ -168,6 +160,7 @@ public class DefaultMessage extends MessageSupport {
         headers.put(name, value);
     }
 
+    @Override
     public Object removeHeader(String name) {
         if (!hasHeaders()) {
             return null;
@@ -175,10 +168,12 @@ public class DefaultMessage extends MessageSupport {
         return headers.remove(name);
     }
 
+    @Override
     public boolean removeHeaders(String pattern) {
         return removeHeaders(pattern, (String[]) null);
     }
 
+    @Override
     public boolean removeHeaders(String pattern, String... excludePatterns) {
         if (!hasHeaders()) {
             return false;
@@ -205,6 +200,7 @@ public class DefaultMessage extends MessageSupport {
         return matches;
     }
 
+    @Override
     public Map<String, Object> getHeaders() {
         if (headers == null) {
             headers = createHeaders();
@@ -212,6 +208,7 @@ public class DefaultMessage extends MessageSupport {
         return headers;
     }
 
+    @Override
     public void setHeaders(Map<String, Object> headers) {
         ObjectHelper.notNull(getCamelContext(), "CamelContext", this);
 
@@ -223,6 +220,7 @@ public class DefaultMessage extends MessageSupport {
         }
     }
 
+    @Override
     public boolean hasHeaders() {
         if (!hasPopulatedHeaders()) {
             // force creating headers
@@ -231,6 +229,7 @@ public class DefaultMessage extends MessageSupport {
         return headers != null && !headers.isEmpty();
     }
 
+    @Override
     public DefaultMessage newInstance() {
         ObjectHelper.notNull(getCamelContext(), "CamelContext", this);
 
@@ -254,35 +253,12 @@ public class DefaultMessage extends MessageSupport {
     }
 
     /**
-     * A factory method to lazily create the attachmentObjects to make it easy to
-     * create efficient Message implementations which only construct and
-     * populate the Map on demand
-     *
-     * @return return a newly constructed Map
-     */
-    protected Map<String, Attachment> createAttachments() {
-        Map<String, Attachment> map = new LinkedHashMap<>();
-        populateInitialAttachments(map);
-        return map;
-    }
-
-    /**
      * A strategy method populate the initial set of headers on an inbound
      * message from an underlying binding
      *
      * @param map is the empty header map to populate
      */
     protected void populateInitialHeaders(Map<String, Object> map) {
-        // do nothing by default
-    }
-
-    /**
-     * A strategy method populate the initial set of attachmentObjects on an inbound
-     * message from an underlying binding
-     *
-     * @param map is the empty attachment map to populate
-     */
-    protected void populateInitialAttachments(Map<String, Attachment> map) {
         // do nothing by default
     }
 
@@ -299,85 +275,6 @@ public class DefaultMessage extends MessageSupport {
     protected Boolean isTransactedRedelivered() {
         // return null by default
         return null;
-    }
-
-    public void addAttachment(String id, DataHandler content) {
-        addAttachmentObject(id, new DefaultAttachment(content));
-    }
-
-    public void addAttachmentObject(String id, Attachment content) {
-        if (attachmentObjects == null) {
-            attachmentObjects = createAttachments();
-        }
-        attachmentObjects.put(id, content);
-    }
-
-    public DataHandler getAttachment(String id) {
-        Attachment att = getAttachmentObject(id);
-        if (att == null) {
-            return null;
-        } else {
-            return att.getDataHandler();
-        }
-    }
-
-    @Override
-    public Attachment getAttachmentObject(String id) {
-        return getAttachmentObjects().get(id);
-    }
-
-    public Set<String> getAttachmentNames() {
-        if (attachmentObjects == null) {
-            attachmentObjects = createAttachments();
-        }
-        return attachmentObjects.keySet();
-    }
-
-    public void removeAttachment(String id) {
-        if (attachmentObjects != null && attachmentObjects.containsKey(id)) {
-            attachmentObjects.remove(id);
-        }
-    }
-
-    public Map<String, DataHandler> getAttachments() {
-        if (attachments == null) {
-            attachments = new AttachmentMap(getAttachmentObjects());
-        }
-        return attachments;
-    }
-
-    public Map<String, Attachment> getAttachmentObjects() {
-        if (attachmentObjects == null) {
-            attachmentObjects = createAttachments();
-        }
-        return attachmentObjects;
-    }
-    
-    public void setAttachments(Map<String, DataHandler> attachments) {
-        if (attachments == null) {
-            this.attachmentObjects = null;
-        } else if (attachments instanceof AttachmentMap) {
-            // this way setAttachments(getAttachments()) will tunnel attachment headers
-            this.attachmentObjects = ((AttachmentMap)attachments).getOriginalMap();
-        } else {
-            this.attachmentObjects = new LinkedHashMap<>();
-            for (Map.Entry<String, DataHandler> entry : attachments.entrySet()) {
-                this.attachmentObjects.put(entry.getKey(), new DefaultAttachment(entry.getValue()));
-            }
-        }
-        this.attachments = null;
-    }
-
-    public void setAttachmentObjects(Map<String, Attachment> attachments) {
-        this.attachmentObjects = attachments;
-        this.attachments = null;
-    }
-
-    public boolean hasAttachments() {
-        // optimized to avoid calling createAttachments as that creates a new empty map
-        // that we 99% do not need (only camel-mail supports attachments), and we have
-        // then ensure camel-mail always creates attachments to remedy for this
-        return this.attachmentObjects != null && this.attachmentObjects.size() > 0;
     }
 
     /**

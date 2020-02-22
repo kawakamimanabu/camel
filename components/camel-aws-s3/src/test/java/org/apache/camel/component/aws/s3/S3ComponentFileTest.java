@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.util.Map;
 
 import com.amazonaws.services.s3.model.PutObjectRequest;
-
 import org.apache.camel.BindToRegistry;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.Exchange;
@@ -42,14 +41,14 @@ public class S3ComponentFileTest extends CamelTestSupport {
 
     @BindToRegistry("amazonS3Client")
     AmazonS3ClientMock client = new AmazonS3ClientMock();
-    
-    @EndpointInject(uri = "direct:startKeep")
+
+    @EndpointInject("direct:startKeep")
     ProducerTemplate templateKeep;
 
-    @EndpointInject(uri = "direct:startDelete")
+    @EndpointInject("direct:startDelete")
     ProducerTemplate templateDelete;
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     MockEndpoint result;
 
     File testFile;
@@ -69,6 +68,7 @@ public class S3ComponentFileTest extends CamelTestSupport {
         writer.close();
     }
 
+    @Override
     @After
     public void tearDown() throws Exception {
         super.tearDown();

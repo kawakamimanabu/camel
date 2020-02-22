@@ -16,7 +16,8 @@
  */
 package org.apache.camel.component.xslt;
 
-//START SNIPPET: example
+// START SNIPPET: example
+// START SNIPPET: example
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -24,9 +25,9 @@ import java.lang.annotation.Target;
 
 import org.w3c.dom.NodeList;
 
-import org.apache.camel.component.bean.XPathAnnotationExpressionFactory;
-import org.apache.camel.language.LanguageAnnotation;
-import org.apache.camel.language.NamespacePrefix;
+import org.apache.camel.language.xpath.XPathAnnotationExpressionFactory;
+import org.apache.camel.support.language.LanguageAnnotation;
+import org.apache.camel.support.language.NamespacePrefix;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER})
@@ -35,9 +36,7 @@ public @interface MyXPath {
     String value();
 
     // You can add the namespaces as the default value of the annotation
-    NamespacePrefix[] namespaces() default {
-    @NamespacePrefix(prefix = "n1", uri = "http://example.org/ns1"),
-    @NamespacePrefix(prefix = "n2", uri = "http://example.org/ns2")};
+    NamespacePrefix[] namespaces() default {@NamespacePrefix(prefix = "n1", uri = "http://example.org/ns1"), @NamespacePrefix(prefix = "n2", uri = "http://example.org/ns2")};
 
     Class<?> resultType() default NodeList.class;
 }

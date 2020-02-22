@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.component.slack.helper.SlackMessage;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -34,13 +33,12 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
-
-
 public class SlackConsumerTest extends CamelTestSupport {
 
     private String token;
     private String hook;
 
+    @Override
     @Before
     public void setUp() throws Exception {
         token = System.getProperty("SLACK_TOKEN");
@@ -57,14 +55,14 @@ public class SlackConsumerTest extends CamelTestSupport {
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
-        mock.message(0).body(SlackMessage.class).method("getText").isEqualTo(message);
+        mock.message(0).simple("${body.getText()}").isEqualTo(message);
 
         assertMockEndpointsSatisfied();
     }
 
     private void assumeCredentials() {
-        Assume.assumeThat("You should specified access token", token, CoreMatchers.notNullValue());
-        Assume.assumeThat("You should specified slack application hook", hook, CoreMatchers.notNullValue());
+        Assume.assumeThat("Please specify a Slack access token", token, CoreMatchers.notNullValue());
+        Assume.assumeThat("Please specify a Slack application webhook URL", hook, CoreMatchers.notNullValue());
     }
 
     private void sendMessage(String message) throws IOException {
@@ -73,7 +71,7 @@ public class SlackConsumerTest extends CamelTestSupport {
         post.setHeader("Content-type", "application/json");
         post.setEntity(new StringEntity(String.format("{ 'text': '%s'}", message)));
         HttpResponse response = client.execute(post);
-        Assert.assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
+        Assert.assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
     }
 
     @Override

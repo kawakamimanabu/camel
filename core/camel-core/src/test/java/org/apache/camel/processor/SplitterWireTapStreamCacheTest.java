@@ -19,11 +19,10 @@ package org.apache.camel.processor;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.impl.DefaultStreamCachingStrategy;
+import org.apache.camel.impl.engine.DefaultStreamCachingStrategy;
 import org.apache.camel.spi.StreamCachingStrategy;
 import org.junit.Before;
 import org.junit.Test;
-
 
 public class SplitterWireTapStreamCacheTest extends ContextTestSupport {
 
@@ -63,24 +62,19 @@ public class SplitterWireTapStreamCacheTest extends ContextTestSupport {
                 context.setStreamCachingStrategy(streamCachingStrategy);
                 context.setStreamCaching(true);
 
-                from("direct:start")
-                    .split(bodyAs(String.class).tokenize())
-                        .to("direct:split")
-                        .to("mock:startEnd")
-                    .end();
+                from("direct:start").split(bodyAs(String.class).tokenize()).to("direct:split").to("mock:startEnd").end();
 
-                from("direct:split")
-                    .wireTap("direct:wireTap")
-                    //wait for the streamcache to be created in the wireTap route
+                from("direct:split").wireTap("direct:wireTap")
+                    // wait for the streamcache to be created in the wireTap
+                    // route
                     .delay(1000)
-                    //spool file is deleted when this route ends
+                    // spool file is deleted when this route ends
                     .to("mock:splitEnd");
 
                 from("direct:wireTap")
-                    //create streamcache
-                    .setBody(constant(this.getClass().getResourceAsStream("/log4j2.properties")))
-                    .delay(3000)
-                    //spool file is deleted by the split route
+                    // create streamcache
+                    .setBody(constant(this.getClass().getResourceAsStream("/log4j2.properties"))).delay(3000)
+                    // spool file is deleted by the split route
                     .to("mock:wireTapEnd");
             }
         };

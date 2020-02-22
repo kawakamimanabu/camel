@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.atomix.client.value;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
@@ -35,7 +36,7 @@ public class AtomixValueProducerTest extends AtomixClientTestSupport {
     private static final String VALUE_NAME = UUID.randomUUID().toString();
     private DistributedValue<Object> value;
 
-    @EndpointInject(uri = "direct:start")
+    @EndpointInject("direct:start")
     private FluentProducerTemplate fluent;
 
     // ************************************

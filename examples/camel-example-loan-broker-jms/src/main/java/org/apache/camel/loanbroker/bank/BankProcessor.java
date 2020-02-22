@@ -16,6 +16,8 @@
  */
 package org.apache.camel.loanbroker.bank;
 
+import java.util.Random;
+
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.loanbroker.Constants;
@@ -30,10 +32,12 @@ public class BankProcessor implements Processor {
         primeRate = 3.5;
     }
 
+    @Override
     public void process(Exchange exchange) throws Exception {
         String ssn = exchange.getIn().getHeader(Constants.PROPERTY_SSN, String.class);
         Integer historyLength = exchange.getIn().getHeader(Constants.PROPERTY_HISTORYLENGTH, Integer.class);
-        double rate = primeRate + (double) (historyLength / 12) / 10 + (Math.random() * 10) / 10;
+        Random rand = new Random();
+        double rate = primeRate + (double) (historyLength / 12) / 10 + (rand.nextDouble()  * 10) / 10;
 
         // set reply details as headers
         exchange.getOut().setHeader(Constants.PROPERTY_BANK, bankName);

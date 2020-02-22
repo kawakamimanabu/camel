@@ -16,9 +16,12 @@
  */
 package org.apache.camel.component.mail;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 
 import javax.mail.Flags;
@@ -33,8 +36,12 @@ import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.IMAPStore;
 import com.sun.mail.imap.SortTerm;
 import org.apache.camel.Exchange;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.Processor;
-import org.apache.camel.support.IntrospectionSupport;
+import org.apache.camel.RuntimeCamelException;
+import org.apache.camel.attachment.Attachment;
+import org.apache.camel.attachment.AttachmentMessage;
+import org.apache.camel.spi.BeanIntrospection;
 import org.apache.camel.support.ScheduledBatchPollingConsumer;
 import org.apache.camel.support.SynchronizationAdapter;
 import org.apache.camel.util.CastUtils;
@@ -83,6 +90,7 @@ public class MailConsumer extends ScheduledBatchPollingConsumer {
         super.doStop();
     }
 
+    @Override
     protected int poll() throws Exception {
         // must reset for each poll
         shutdownRunningTask = null;
@@ -169,6 +177,7 @@ public class MailConsumer extends ScheduledBatchPollingConsumer {
         return polledMessages;
     }
 
+    @Override
     public int processBatch(Queue<Object> exchanges) throws Exception {
         int total = exchanges.size();
 
@@ -227,7 +236,8 @@ public class MailConsumer extends ScheduledBatchPollingConsumer {
         if (mail.getClass().getSimpleName().startsWith("IMAP")) {
             try {
                 log.trace("Calling setPeek(true) on mail message {}", mail);
-                IntrospectionSupport.setProperty(mail, "peek", true);
+                BeanIntrospection beanIntrospection = getEndpoint().getCamelContext().adapt(ExtendedCamelContext.class).getBeanIntrospection();
+                beanIntrospection.setProperty(getEndpoint().getCamelContext(), mail, "peek", true);
             } catch (Throwable e) {
                 // ignore
                 log.trace("Error setting peak property to true on: " + mail + ". This exception is ignored.", e);
@@ -351,7 +361,16 @@ public class MailConsumer extends ScheduledBatchPollingConsumer {
                         log.trace("Mapping #{} from javax.mail.Message to Camel MailMessage", i);
                         exchange.getIn().getBody();
                         exchange.getIn().getHeaders();
-                        exchange.getIn().getAttachments();
+                        // must also map attachments
+                        try {
+                            Map<String, Attachment> att = new HashMap<>();
+                            getEndpoint().getBinding().extractAttachmentsFromMail(message, att);
+                            if (!att.isEmpty()) {
+                                exchange.getIn(AttachmentMessage.class).setAttachmentObjects(att);
+                            }
+                        } catch (MessagingException | IOException e) {
+                            throw new RuntimeCamelException("Error accessing attachments due to: " + e.getMessage(), e);
+                        }
                     }
 
                     // If the protocol is POP3 we need to remember the uid on the exchange

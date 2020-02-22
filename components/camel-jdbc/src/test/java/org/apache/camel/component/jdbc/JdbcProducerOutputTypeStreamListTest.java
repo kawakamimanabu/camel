@@ -17,6 +17,7 @@
 package org.apache.camel.component.jdbc;
 
 import java.util.*;
+
 import org.apache.camel.EndpointInject;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
@@ -27,7 +28,7 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 public class JdbcProducerOutputTypeStreamListTest extends AbstractJdbcTestSupport {
     private static final String QUERY = "select * from customer";
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint result;
 
     @Test

@@ -19,6 +19,7 @@ package org.apache.camel.support;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.Service;
 import org.apache.camel.support.service.ServiceHelper;
 import org.apache.camel.support.service.ServiceSupport;
@@ -30,7 +31,8 @@ public abstract class ChildServiceSupport extends ServiceSupport {
 
     protected volatile List<Service> childServices;
 
-    public void start() throws Exception {
+    @Override
+    public void start() {
         synchronized (lock) {
             if (status == STARTED) {
                 log.trace("Service: {} already started", this);
@@ -40,9 +42,16 @@ public abstract class ChildServiceSupport extends ServiceSupport {
                 log.trace("Service: {} already starting", this);
                 return;
             }
-            status = STARTING;
-            log.trace("Starting service: {}", this);
             try {
+                initService(childServices);
+            } catch (Exception e) {
+                status = FAILED;
+                log.trace("Error while initializing service: " + this, e);
+                throw RuntimeCamelException.wrapRuntimeCamelException(e);
+            }
+            try {
+                status = STARTING;
+                log.trace("Starting service: {}", this);
                 ServiceHelper.startService(childServices);
                 doStart();
                 status = STARTED;
@@ -51,12 +60,13 @@ public abstract class ChildServiceSupport extends ServiceSupport {
                 status = FAILED;
                 log.trace("Error while starting service: " + this, e);
                 ServiceHelper.stopService(childServices);
-                throw e;
+                throw RuntimeCamelException.wrapRuntimeCamelException(e);
             }
         }
     }
 
-    public void stop() throws Exception {
+    @Override
+    public void stop() {
         synchronized (lock) {
             if (status == STOPPED || status == SHUTTINGDOWN || status == SHUTDOWN) {
                 log.trace("Service: {} already stopped", this);
@@ -76,13 +86,13 @@ public abstract class ChildServiceSupport extends ServiceSupport {
             } catch (Exception e) {
                 status = FAILED;
                 log.trace("Error while stopping service: " + this, e);
-                throw e;
+                throw RuntimeCamelException.wrapRuntimeCamelException(e);
             }
         }
     }
 
     @Override
-    public void shutdown() throws Exception {
+    public void shutdown() {
         synchronized (lock) {
             if (status == SHUTDOWN) {
                 log.trace("Service: {} already shut down", this);
@@ -103,7 +113,7 @@ public abstract class ChildServiceSupport extends ServiceSupport {
             } catch (Exception e) {
                 status = FAILED;
                 log.trace("Error shutting down service: " + this, e);
-                throw e;
+                throw RuntimeCamelException.wrapRuntimeCamelException(e);
             }
         }
     }
@@ -123,6 +133,12 @@ public abstract class ChildServiceSupport extends ServiceSupport {
 
     protected boolean removeChildService(Object childService) {
         return childServices != null && childServices.remove(childService);
+    }
+
+    private void initService(List<Service> services) {
+        if (services != null) {
+            services.forEach(Service::init);
+        }
     }
 
 }

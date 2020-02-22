@@ -79,19 +79,16 @@ public class TimerEndpoint extends DefaultEndpoint implements MultipleConsumersS
         return (TimerComponent) super.getComponent();
     }
 
+    @Override
     public Producer createProducer() throws Exception {
         throw new RuntimeCamelException("Cannot produce to a TimerEndpoint: " + getEndpointUri());
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         Consumer answer = new TimerConsumer(this, processor);
         configureConsumer(answer);
         return answer;
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     @Override
@@ -109,6 +106,7 @@ public class TimerEndpoint extends DefaultEndpoint implements MultipleConsumersS
         super.doStop();
     }
 
+    @Override
     @ManagedAttribute
     public boolean isMultipleConsumersSupported() {
         return true;
@@ -227,12 +225,8 @@ public class TimerEndpoint extends DefaultEndpoint implements MultipleConsumersS
         this.pattern = pattern;
     }
 
-    public Timer getTimer(TimerConsumer consumer) {
-        if (timer != null) {
-            // use custom timer
-            return timer;
-        }
-        return getComponent().getTimer(consumer);
+    public Timer getTimer() {
+        return timer;
     }
 
     /**
@@ -240,6 +234,14 @@ public class TimerEndpoint extends DefaultEndpoint implements MultipleConsumersS
      */
     public void setTimer(Timer timer) {
         this.timer = timer;
+    }
+
+    public Timer getTimer(TimerConsumer consumer) {
+        if (timer != null) {
+            // use custom timer
+            return timer;
+        }
+        return getComponent().getTimer(consumer);
     }
 
     public void removeTimer(TimerConsumer consumer) {

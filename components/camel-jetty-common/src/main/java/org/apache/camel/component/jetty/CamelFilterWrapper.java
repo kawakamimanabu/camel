@@ -18,6 +18,7 @@ package org.apache.camel.component.jetty;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -38,6 +39,7 @@ public class CamelFilterWrapper implements Filter {
         this.wrapped = wrapped;
     }
     
+    @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         if (request.getAttribute(CamelContinuationServlet.EXCHANGE_ATTRIBUTE_NAME) == null) {
             wrapped.doFilter(request, response, chain);
@@ -46,10 +48,12 @@ public class CamelFilterWrapper implements Filter {
         }
     }
 
+    @Override
     public void destroy() {
         wrapped.destroy();
     }
 
+    @Override
     public void init(FilterConfig config) throws ServletException {
         Object o = config.getServletContext().getAttribute("javax.servlet.context.tempdir");
         if (o == null) {
@@ -57,7 +61,7 @@ public class CamelFilterWrapper implements Filter {
             //but the MultiPartFilter requires it (will NPE if not set) so we'll 
             //go ahead and set it to the default tmp dir on the system.
             try {
-                File file = File.createTempFile("camel", "");
+                File file = Files.createTempFile("camel", "").toFile();
                 file.delete();
                 config.getServletContext().setAttribute("javax.servlet.context.tempdir",
                                                         file.getParentFile());

@@ -17,14 +17,12 @@
 package org.apache.camel.component.file.remote.sftp;
 
 import org.apache.camel.Exchange;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SftpConsumeTemplateTest extends SftpServerTestSupport {
-
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
-    }
 
     @Test
     public void testSftpSimpleConsume() throws Exception {

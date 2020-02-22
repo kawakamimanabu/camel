@@ -30,10 +30,9 @@ import org.apache.camel.TypeConverters;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.model.DataFormatDefinition;
-import org.apache.camel.spi.DataFormat;
 import org.apache.camel.spi.DataType;
 import org.apache.camel.spi.DataTypeAware;
-import org.apache.camel.spi.RouteContext;
+import org.apache.camel.support.DefaultDataFormat;
 import org.junit.Test;
 
 public class TransformerContractTest extends ContextTestSupport {
@@ -49,13 +48,11 @@ public class TransformerContractTest extends ContextTestSupport {
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:a")
-                    .inputType(A.class)
-                    .to("mock:a");
+                from("direct:a").inputType(A.class).to("mock:a");
             }
         });
         context.start();
-        
+
         MockEndpoint mock = context.getEndpoint("mock:a", MockEndpoint.class);
         mock.setExpectedCount(1);
         Object answer = template.requestBody("direct:a", "foo");
@@ -71,13 +68,11 @@ public class TransformerContractTest extends ContextTestSupport {
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:a")
-                    .outputType(A.class)
-                    .to("mock:a");
+                from("direct:a").outputType(A.class).to("mock:a");
             }
         });
         context.start();
-        
+
         MockEndpoint mock = context.getEndpoint("mock:a", MockEndpoint.class);
         mock.setExpectedCount(1);
         Object answer = template.requestBody("direct:a", "foo");
@@ -92,26 +87,15 @@ public class TransformerContractTest extends ContextTestSupport {
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                transformer()
-                    .scheme("xml")
-                    .withDataFormat(new MyDataFormatDefinition());
-                from("direct:a")
-                    .inputType("xml")
-                    .outputType("xml")
-                    .to("mock:a")
-                    .to("direct:b")
-                    .to("mock:a2");
-                from("direct:b")
-                    .inputType("java")
-                    .outputType("java")
-                    .to("mock:b")
-                    .process(ex -> {
-                        ex.getIn().setBody(new B());
-                    });
+                transformer().scheme("xml").withDataFormat(new MyDataFormatDefinition());
+                from("direct:a").inputType("xml").outputType("xml").to("mock:a").to("direct:b").to("mock:a2");
+                from("direct:b").inputType("java").outputType("java").to("mock:b").process(ex -> {
+                    ex.getIn().setBody(new B());
+                });
             }
         });
         context.start();
-        
+
         MockEndpoint mocka = context.getEndpoint("mock:a", MockEndpoint.class);
         MockEndpoint mocka2 = context.getEndpoint("mock:a2", MockEndpoint.class);
         MockEndpoint mockb = context.getEndpoint("mock:b", MockEndpoint.class);
@@ -142,14 +126,9 @@ public class TransformerContractTest extends ContextTestSupport {
     }
 
     public static class MyDataFormatDefinition extends DataFormatDefinition {
-        public static DataFormat getDataFormat(RouteContext routeContext, DataFormatDefinition type, String ref) {
-            return new MyDataFormatDefinition().createDataFormat();
-        }
-        public DataFormat getDataFormat(RouteContext routeContext) {
-            return createDataFormat();
-        }
-        private DataFormat createDataFormat() {
-            return new DataFormat() {
+
+        public MyDataFormatDefinition() {
+            super(new DefaultDataFormat() {
                 @Override
                 public void marshal(Exchange exchange, Object graph, OutputStream stream) throws Exception {
                     assertEquals(B.class, graph.getClass());
@@ -157,16 +136,20 @@ public class TransformerContractTest extends ContextTestSupport {
                     pw.print("<fooResponse/>");
                     pw.close();
                 }
+
                 @Override
                 public Object unmarshal(Exchange exchange, InputStream stream) throws Exception {
                     BufferedReader br = new BufferedReader(new InputStreamReader(stream));
                     assertEquals("<foo/>", br.readLine());
                     return new A();
                 }
-            };
+            });
         }
     }
 
-    public static class A { }
-    public static class B { }
+    public static class A {
+    }
+
+    public static class B {
+    }
 }

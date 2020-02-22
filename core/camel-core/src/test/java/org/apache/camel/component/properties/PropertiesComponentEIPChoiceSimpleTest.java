@@ -25,11 +25,12 @@ public class PropertiesComponentEIPChoiceSimpleTest extends ContextTestSupport {
 
     @Test
     public void testChoice() throws Exception {
-        getMockEndpoint("mock:camel").expectedBodiesReceived("Hello Camel");
-        getMockEndpoint("mock:other").expectedBodiesReceived("Hello World");
+        getMockEndpoint("mock:camel").expectedBodiesReceived("Hello Camel", "Hi Camel");
+        getMockEndpoint("mock:other").expectedBodiesReceived("Bye World");
 
-        template.sendBody("direct:start", "Hello Camel");
-        template.sendBody("direct:start", "Hello World");
+        template.sendBody("direct:start", context.resolvePropertyPlaceholders("Hello {{cool.name}}"));
+        template.sendBody("direct:start", context.resolvePropertyPlaceholders("Hi {{cool.name}}"));
+        template.sendBody("direct:start", "Bye World");
 
         assertMockEndpointsSatisfied();
     }
@@ -39,12 +40,7 @@ public class PropertiesComponentEIPChoiceSimpleTest extends ContextTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:start")
-                    .choice()
-                        .when(simple("${body} contains '${properties:cool.name}'"))
-                            .to("mock:camel")
-                        .otherwise()
-                            .to("mock:other");
+                from("direct:start").choice().when(simple("${body} contains '{{cool.name}}'")).to("mock:camel").otherwise().to("mock:other");
             }
         };
     }
@@ -52,11 +48,7 @@ public class PropertiesComponentEIPChoiceSimpleTest extends ContextTestSupport {
     @Override
     protected CamelContext createCamelContext() throws Exception {
         CamelContext context = super.createCamelContext();
-
-        PropertiesComponent pc = new PropertiesComponent();
-        pc.setLocations(new String[]{"classpath:org/apache/camel/component/properties/myproperties.properties"});
-        context.addComponent("properties", pc);
-
+        context.getPropertiesComponent().setLocation("classpath:org/apache/camel/component/properties/myproperties.properties");
         return context;
     }
 

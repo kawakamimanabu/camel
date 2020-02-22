@@ -24,7 +24,6 @@ import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.dataformat.bindy.model.simple.bool.BooleanExample;
-
 import org.junit.Test;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -42,13 +41,13 @@ public class BindySimpleCsvBooleanUnmarshallTest extends AbstractJUnit4SpringCon
     private static final String URI_MOCK_ERROR = "mock:error";
     private static final String URI_DIRECT_START = "direct:start";
 
-    @Produce(uri = URI_DIRECT_START)
+    @Produce(URI_DIRECT_START)
     private ProducerTemplate template;
 
-    @EndpointInject(uri = URI_MOCK_RESULT)
+    @EndpointInject(URI_MOCK_RESULT)
     private MockEndpoint result;
 
-    @EndpointInject(uri = URI_MOCK_ERROR)
+    @EndpointInject(URI_MOCK_ERROR)
     private MockEndpoint error;
 
     private String expected;
@@ -108,6 +107,7 @@ public class BindySimpleCsvBooleanUnmarshallTest extends AbstractJUnit4SpringCon
         BindyCsvDataFormat camelDataFormat = new BindyCsvDataFormat(
             org.apache.camel.dataformat.bindy.model.simple.bool.BooleanExample.class);
 
+        @Override
         public void configure() {
             // from("file://src/test/data?move=./target/done").unmarshal(camelDataFormat).to("mock:result");
 

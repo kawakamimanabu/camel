@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.stax;
+
 import org.apache.camel.EndpointInject;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
@@ -27,7 +28,7 @@ import org.junit.Test;
 import static org.apache.camel.component.stax.StAXBuilder.stax;
 
 public class StAXJAXBIteratorExpressionTest extends CamelTestSupport {
-    @EndpointInject(uri = "mock:records")
+    @EndpointInject("mock:records")
     private MockEndpoint recordsEndpoint;
 
     @BeforeClass

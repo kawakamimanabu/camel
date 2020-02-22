@@ -26,7 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
-
 /**
  * Unit testing Mail configured using spring bean
  */
@@ -36,7 +35,7 @@ public class SpringMailEndpointTest extends AbstractJUnit4SpringContextTests {
 
     @Autowired
     protected ProducerTemplate template;
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     protected MockEndpoint result;
 
     @Test

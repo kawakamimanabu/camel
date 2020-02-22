@@ -37,6 +37,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.CamelContextAware;
 import org.apache.camel.CamelExecutionException;
 import org.apache.camel.Exchange;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.NoFactoryAvailableException;
 import org.apache.camel.NoTypeConversionAvailableException;
@@ -51,7 +52,6 @@ import org.apache.camel.spi.CamelLogger;
 import org.apache.camel.spi.FactoryFinder;
 import org.apache.camel.spi.Injector;
 import org.apache.camel.spi.PackageScanClassResolver;
-import org.apache.camel.spi.TypeConverterAware;
 import org.apache.camel.spi.TypeConverterLoader;
 import org.apache.camel.spi.TypeConverterRegistry;
 import org.apache.camel.support.MessageHelper;
@@ -68,6 +68,7 @@ import org.apache.camel.util.ObjectHelper;
 public abstract class BaseTypeConverterRegistry extends ServiceSupport implements TypeConverter, TypeConverterRegistry {
 
     public static final String META_INF_SERVICES_TYPE_CONVERTER_LOADER = "META-INF/services/org/apache/camel/TypeConverterLoader";
+    public static final String META_INF_SERVICES_FALLBACK_TYPE_CONVERTER = "META-INF/services/org/apache/camel/FallbackTypeConverter";
 
     protected static final TypeConverter MISS_CONVERTER = new TypeConverterSupport() {
         @Override
@@ -398,11 +399,6 @@ public abstract class BaseTypeConverterRegistry extends ServiceSupport implement
         // the last one which is add to the FallbackTypeConverter will be called at the first place
         fallbackConverters.add(0, new FallbackTypeConverter(typeConverter, canPromote));
 
-        // TODO: Remove this in the near future as this is no longer needed (you can use exchange as parameter)
-        if (typeConverter instanceof TypeConverterAware) {
-            TypeConverterAware typeConverterAware = (TypeConverterAware) typeConverter;
-            typeConverterAware.setTypeConverter(this);
-        }
         if (typeConverter instanceof CamelContextAware) {
             CamelContextAware camelContextAware = (CamelContextAware) typeConverter;
             if (camelContext != null) {
@@ -418,11 +414,6 @@ public abstract class BaseTypeConverterRegistry extends ServiceSupport implement
         // the last one which is add to the FallbackTypeConverter will be called at the first place
         converters.add(0, new FallbackTypeConverter(typeConverter, canPromote));
 
-        // TODO: Remove this in the near future as this is no longer needed (you can use exchange as parameter)
-        if (typeConverter instanceof TypeConverterAware) {
-            TypeConverterAware typeConverterAware = (TypeConverterAware) typeConverter;
-            typeConverterAware.setTypeConverter(this);
-        }
         if (typeConverter instanceof CamelContextAware) {
             CamelContextAware camelContextAware = (CamelContextAware) typeConverter;
             if (camelContext != null) {
@@ -518,6 +509,7 @@ public abstract class BaseTypeConverterRegistry extends ServiceSupport implement
         return null;
     }
 
+    @Override
     public List<Class<?>[]> listAllTypeConvertersFromTo() {
         List<Class<?>[]> answer = new ArrayList<>();
         typeMappings.forEach((k1, k2, v) -> answer.add(new Class<?>[]{k2, k1}));
@@ -525,9 +517,10 @@ public abstract class BaseTypeConverterRegistry extends ServiceSupport implement
     }
 
     /**
-     * Loads the core type converters which is mandatory to use Camel
+     * Loads the core type converters which is mandatory to use Camel,
+     * and also loads the fast type converters (generated via @Converter(loader = true).
      */
-    public void loadCoreTypeConverters() throws Exception {
+    public void loadCoreAndFastTypeConverters() throws Exception {
         Collection<String> names = findTypeConverterLoaderClasses();
         for (String name : names) {
             log.debug("Resolving TypeConverterLoader: {}", name);
@@ -535,7 +528,7 @@ public abstract class BaseTypeConverterRegistry extends ServiceSupport implement
                     .map(cl -> ObjectHelper.loadClass(name, cl))
                     .filter(Objects::nonNull)
                     .findAny().orElseThrow(() -> new ClassNotFoundException(name));
-            Object obj = getInjector().newInstance(clazz);
+            Object obj = getInjector().newInstance(clazz, false);
             if (obj instanceof TypeConverterLoader) {
                 TypeConverterLoader loader = (TypeConverterLoader) obj;
                 log.debug("TypeConverterLoader: {} loading converters", name);
@@ -595,11 +588,54 @@ public abstract class BaseTypeConverterRegistry extends ServiceSupport implement
         }
     }
 
+    /**
+     * Finds the fallback type converter classes from the classpath looking
+     * for text files on the classpath at the {@link #META_INF_SERVICES_FALLBACK_TYPE_CONVERTER} location.
+     */
+    protected Collection<String> findFallbackTypeConverterClasses() throws IOException {
+        Set<String> loaders = new LinkedHashSet<>();
+        Collection<URL> loaderResources = getFallbackUrls();
+        for (URL url : loaderResources) {
+            log.debug("Loading file {} to retrieve list of fallback type converters, from url: {}", META_INF_SERVICES_FALLBACK_TYPE_CONVERTER, url);
+            BufferedReader reader = IOHelper.buffered(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8));
+            try {
+                reader.lines()
+                        .map(String::trim)
+                        .filter(l -> !l.isEmpty())
+                        .filter(l -> !l.startsWith("#"))
+                        .forEach(loaders::add);
+            } finally {
+                IOHelper.close(reader, url.toString(), log);
+            }
+        }
+        return loaders;
+    }
+
+    protected Collection<URL> getFallbackUrls() throws IOException {
+        List<URL> loaderResources = new ArrayList<>();
+        for (ClassLoader classLoader : resolver.getClassLoaders()) {
+            Enumeration<URL> resources = classLoader.getResources(META_INF_SERVICES_FALLBACK_TYPE_CONVERTER);
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                loaderResources.add(url);
+            }
+        }
+        return loaderResources;
+    }
+
     protected void loadFallbackTypeConverters() throws IOException, ClassNotFoundException {
-        if (factoryFinder != null) {
-            List<TypeConverter> converters = factoryFinder.newInstances("FallbackTypeConverter", getInjector(), TypeConverter.class);
-            for (TypeConverter converter : converters) {
-                addFallbackTypeConverter(converter, false);
+        Collection<String> names = findFallbackTypeConverterClasses();
+        for (String name : names) {
+            log.debug("Resolving FallbackTypeConverter: {}", name);
+            Class clazz = getResolver().getClassLoaders().stream()
+                    .map(cl -> ObjectHelper.loadClass(name, cl))
+                    .filter(Objects::nonNull)
+                    .findAny().orElseThrow(() -> new ClassNotFoundException(name));
+            Object obj = getInjector().newInstance(clazz, false);
+            if (obj instanceof TypeConverter) {
+                TypeConverter fb = (TypeConverter) obj;
+                log.debug("Adding loaded FallbackTypeConverter: {}", name);
+                addFallbackTypeConverter(fb, false);
             }
         }
     }
@@ -631,18 +667,22 @@ public abstract class BaseTypeConverterRegistry extends ServiceSupport implement
         return typeMappings.size();
     }
 
+    @Override
     public LoggingLevel getTypeConverterExistsLoggingLevel() {
         return typeConverterExistsLoggingLevel;
     }
 
+    @Override
     public void setTypeConverterExistsLoggingLevel(LoggingLevel typeConverterExistsLoggingLevel) {
         this.typeConverterExistsLoggingLevel = typeConverterExistsLoggingLevel;
     }
 
+    @Override
     public TypeConverterExists getTypeConverterExists() {
         return typeConverterExists;
     }
 
+    @Override
     public void setTypeConverterExists(TypeConverterExists typeConverterExists) {
         this.typeConverterExists = typeConverterExists;
     }
@@ -653,7 +693,7 @@ public abstract class BaseTypeConverterRegistry extends ServiceSupport implement
             injector = camelContext.getInjector();
         }
         if (resolver == null && camelContext != null) {
-            resolver = camelContext.getPackageScanClassResolver();
+            resolver = camelContext.adapt(ExtendedCamelContext.class).getPackageScanClassResolver();
         }
         initTypeConverterLoaders();
 

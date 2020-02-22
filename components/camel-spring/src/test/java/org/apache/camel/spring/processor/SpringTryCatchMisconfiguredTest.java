@@ -19,7 +19,6 @@ package org.apache.camel.spring.processor;
 import org.apache.camel.CamelContext;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.FailedToCreateRouteException;
-import org.apache.camel.RuntimeCamelException;
 import org.junit.Test;
 
 import static org.apache.camel.spring.processor.SpringTestHelper.createSpringCamelContext;
@@ -31,8 +30,8 @@ public class SpringTryCatchMisconfiguredTest extends ContextTestSupport {
         try {
             createSpringCamelContext(this, "org/apache/camel/spring/processor/SpringTryCatchMisconfiguredTest.xml");
             fail("Should have thrown exception");
-        } catch (RuntimeCamelException e) {
-            FailedToCreateRouteException ftce = assertIsInstanceOf(FailedToCreateRouteException.class, e.getCause());
+        } catch (Exception e) {
+            FailedToCreateRouteException ftce = assertIsInstanceOf(FailedToCreateRouteException.class, e);
             IllegalArgumentException iae = assertIsInstanceOf(IllegalArgumentException.class, ftce.getCause());
             assertEquals("This doCatch should have a doTry as its parent on DoCatch[ [class java.io.IOException] -> [To[mock:fail]]]", iae.getMessage());
         }
@@ -40,8 +39,8 @@ public class SpringTryCatchMisconfiguredTest extends ContextTestSupport {
         try {
             createSpringCamelContext(this, "org/apache/camel/spring/processor/SpringTryCatchMisconfiguredFinallyTest.xml");
             fail("Should have thrown exception");
-        } catch (RuntimeCamelException e) {
-            FailedToCreateRouteException ftcre = assertIsInstanceOf(FailedToCreateRouteException.class, e.getCause());
+        } catch (Exception e) {
+            FailedToCreateRouteException ftcre = assertIsInstanceOf(FailedToCreateRouteException.class, e);
             IllegalArgumentException iae = assertIsInstanceOf(IllegalArgumentException.class, ftcre.getCause());
             assertEquals("This doFinally should have a doTry as its parent on DoFinally[[To[mock:finally]]]", iae.getMessage());
         }

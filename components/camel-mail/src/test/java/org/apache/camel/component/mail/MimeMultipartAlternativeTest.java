@@ -24,7 +24,7 @@ import javax.activation.FileDataSource;
 import javax.mail.internet.MimeMultipart;
 
 import org.apache.camel.Exchange;
-import org.apache.camel.Message;
+import org.apache.camel.attachment.AttachmentMessage;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.junit4.CamelTestSupport;
@@ -47,7 +47,7 @@ public class MimeMultipartAlternativeTest extends CamelTestSupport {
 
         // create the exchange with the mail message that is multipart with a file and a Hello World text/plain message.
         Exchange exchange = endpoint.createExchange();
-        Message in = exchange.getIn();
+        AttachmentMessage in = exchange.getIn(AttachmentMessage.class);
         in.setBody(htmlBody);
         in.setHeader(MAIL_ALTERNATIVE_BODY, alternativeBody);
         in.addAttachment("cid:0001", new DataHandler(new FileDataSource("src/test/data/logo.jpeg")));
@@ -75,7 +75,7 @@ public class MimeMultipartAlternativeTest extends CamelTestSupport {
         assertEquals(alternativeBody, out.getIn().getBody(String.class));
 
         // attachment
-        Map<String, DataHandler> attachments = out.getIn().getAttachments();
+        Map<String, DataHandler> attachments = out.getIn(AttachmentMessage.class).getAttachments();
         assertNotNull("Should not have null attachments", attachments);
         assertEquals(1, attachments.size());
         assertEquals("multipart body should have 2 parts", 2, out.getIn().getBody(MimeMultipart.class).getCount());
@@ -93,10 +93,11 @@ public class MimeMultipartAlternativeTest extends CamelTestSupport {
         verifyTheRecivedEmail("Content-Disposition: attachment; filename=0001");
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             public void configure() throws Exception {
-                from("pop3://ryan@mymailserver.com?password=secret&consumer.initialDelay=100&consumer.delay=100").to("mock:result");
+                from("pop3://ryan@mymailserver.com?password=secret&initialDelay=100&delay=100").to("mock:result");
             }
         };
     }

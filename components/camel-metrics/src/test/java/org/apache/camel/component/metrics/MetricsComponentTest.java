@@ -22,9 +22,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.codahale.metrics.MetricRegistry;
-import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.RuntimeCamelException;
+import org.apache.camel.impl.engine.DefaultBeanIntrospection;
 import org.apache.camel.spi.Registry;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,6 +40,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
@@ -46,7 +49,7 @@ import static org.mockito.Mockito.when;
 public class MetricsComponentTest {
 
     @Mock
-    private CamelContext camelContext;
+    private ExtendedCamelContext camelContext;
 
     @Mock
     private Registry camelRegistry;
@@ -68,7 +71,11 @@ public class MetricsComponentTest {
     public void testCreateEndpoint() throws Exception {
         component.setCamelContext(camelContext);
         when(camelContext.getRegistry()).thenReturn(camelRegistry);
+        when(camelContext.resolvePropertyPlaceholders(anyString())).then(returnsFirstArg());
         when(camelRegistry.lookupByNameAndType(MetricsComponent.METRIC_REGISTRY_NAME, MetricRegistry.class)).thenReturn(metricRegistry);
+        when(camelContext.adapt(ExtendedCamelContext.class)).thenReturn(camelContext);
+        when(camelContext.getBeanIntrospection()).thenReturn(new DefaultBeanIntrospection());
+
         Map<String, Object> params = new HashMap<>();
         Long value = System.currentTimeMillis();
         params.put("mark", value);
@@ -89,7 +96,10 @@ public class MetricsComponentTest {
     public void testCreateEndpoints() throws Exception {
         component.setCamelContext(camelContext);
         when(camelContext.getRegistry()).thenReturn(camelRegistry);
+        when(camelContext.resolvePropertyPlaceholders(anyString())).then(returnsFirstArg());
         when(camelRegistry.lookupByNameAndType(MetricsComponent.METRIC_REGISTRY_NAME, MetricRegistry.class)).thenReturn(metricRegistry);
+        when(camelContext.adapt(ExtendedCamelContext.class)).thenReturn(camelContext);
+        when(camelContext.getBeanIntrospection()).thenReturn(new DefaultBeanIntrospection());
         Map<String, Object> params = new HashMap<>();
         Long value = System.currentTimeMillis();
         params.put("mark", value);
@@ -116,7 +126,7 @@ public class MetricsComponentTest {
 
         inOrder.verify(camelContext, times(1)).getRegistry();
         inOrder.verify(camelRegistry, times(1)).lookupByNameAndType(MetricsComponent.METRIC_REGISTRY_NAME, MetricRegistry.class);
-        inOrder.verify(camelContext, times(2)).getTypeConverter();
+        inOrder.verify(camelContext, times(3)).getTypeConverter();
         inOrder.verifyNoMoreInteractions();
     }
 

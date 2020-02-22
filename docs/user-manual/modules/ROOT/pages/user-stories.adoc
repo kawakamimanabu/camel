@@ -1,5 +1,5 @@
 [[UserStories-UserStories]]
-=== User Stories
+= User Stories
 
 This page is intended as a place to collect user stories and feedback on
 Apache Camel. If you are using or have tried Apache Camel please add an
@@ -9,13 +9,13 @@ entry or comment; or post to the mailing list.
 |=======================================================================
 |Company, Product, or Project |Description
 |http://activemq.apache.org/[Apache ActiveMQ] |Uses Camel to add
-link:enterprise-integration-patterns.adoc[Enterprise Integration Patterns]
+xref:enterprise-integration-patterns.adoc[Enterprise Integration Patterns]
 support into the
 http://activemq.apache.org/enterprise-integration-patterns.html[ActiveMQ
 broker]. If you run an out of the box ActiveMQ broker, look in
 conf/camel.xml and you'll see `<camelContext>` with some example routing
 rules. Can be used to bridge ActiveMQ with any of the camel
-link:component.adoc[Components].
+xref:component.adoc[Components].
 
 |http://servicemix.apache.org/home.html[Apache ServiceMix] |Uses Camel
 as a routing engine as a
@@ -228,10 +228,10 @@ components, add/edit existing endpoints in a UI that allows to edit each
 options individually in a more type safe manner. You can also setup your
 Maven project for Docker and Kubernetes platforms.
 
-|http://islandora.ca/[Islandora] |Islandora** **is an open-source
+|http://islandora.ca/[Islandora] |Islandora** **is an open-source
 software framework designed to help institutions and organizations and
 their audiences collaboratively manage, and discover digital assets
-using a best-practices framework.  They use Camel and JMS queues in the
+using a best-practices framework.  They use Camel and JMS queues in the
 platform.
 
 |SAP HANA |The
@@ -248,12 +248,14 @@ Camel
 |http://www.openhub.cz/[OpenHub] |OpenHub is an integration platform
 that is built on top of Apache Camel.
 
+|https://www.platform6.io/[Platform6] | Decentralised application framework for blockchains, called Platform 6 which heavily uses Apache Camel and Web3j. 
+
 |https://abi-laboratory.pro/java/tracker/timeline/camel-core/[API
 Tracker 4j of camel-core] |The review of API changes for the Camel Core
 library since Camel 2.16 which is updated several times per week.
 |=======================================================================
 
-==== User Groups
+== User Groups
 
 [width="100%",cols="50%,50%",options="header",]
 |=======================================================================
@@ -274,7 +276,7 @@ Apache Camel Group] |The Apache Camel group in google+
 user group for Apache Camel.
 |=======================================================================
 
-==== External Camel Components
+== External Camel Components
 
 [width="100%",cols="50%,50%",options="header",]
 |=======================================================================
@@ -339,4 +341,4 @@ traces for Apache Camel routes, processors
 |A component to integrate with Spring Cloud Stream
 |=======================================================================
 
- 
+ 

@@ -17,14 +17,13 @@
     limitations under the License.
 
 -->
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.apache.camel</groupId>
         <artifactId>core</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>camel-cloud</artifactId>
@@ -39,27 +38,26 @@
 
     <dependencies>
 
-        <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>apt</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
+        <!-- camel annotations -->
         <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>spi-annotations</artifactId>
             <optional>true</optional>
         </dependency>
-
         <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>meta-annotations</artifactId>
             <optional>true</optional>
         </dependency>
 
+        <!-- required dependencies by camel-cloud -->
         <dependency>
             <groupId>org.apache.camel</groupId>
-            <artifactId>camel-core</artifactId>
+            <artifactId>camel-core-engine</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-caffeine-lrucache</artifactId>
         </dependency>
 
         <!-- testing -->
@@ -87,7 +85,7 @@
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>java-hamcrest</artifactId>
+            <artifactId>hamcrest</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -109,5 +107,26 @@
         </dependency>
 
     </dependencies>
+
+    <profiles>
+        <!-- enables the APT dependency so that it can be disabled in IDE builds -->
+        <profile>
+            <id>apt</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+
+            <dependencies>
+
+                <!-- enable the APT processor -->
+                <dependency>
+                    <groupId>org.apache.camel</groupId>
+                    <artifactId>apt</artifactId>
+                    <scope>provided</scope>
+                </dependency>
+
+            </dependencies>
+        </profile>
+    </profiles>
 
 </project>

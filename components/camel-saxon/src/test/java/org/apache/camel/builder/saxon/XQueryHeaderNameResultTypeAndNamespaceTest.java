@@ -17,8 +17,8 @@
 package org.apache.camel.builder.saxon;
 
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.builder.xml.Namespaces;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.apache.camel.support.builder.Namespaces;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.junit.Test;
 
@@ -37,6 +37,7 @@ public class XQueryHeaderNameResultTypeAndNamespaceTest extends CamelTestSupport
         mock.assertIsSatisfied();
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             public void configure() throws Exception {

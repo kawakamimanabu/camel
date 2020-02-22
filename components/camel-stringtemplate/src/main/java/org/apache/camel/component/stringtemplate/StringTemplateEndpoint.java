@@ -50,11 +50,6 @@ public class StringTemplateEndpoint extends ResourceEndpoint {
     }
 
     @Override
-    public boolean isSingleton() {
-        return true;
-    }
-
-    @Override
     public ExchangePattern getExchangePattern() {
         return ExchangePattern.InOut;
     }
@@ -105,6 +100,5 @@ public class StringTemplateEndpoint extends ResourceEndpoint {
         out.setBody(buffer.toString());
         out.setHeaders(exchange.getIn().getHeaders());
         out.setHeader(StringTemplateConstants.STRINGTEMPLATE_RESOURCE_URI, getResourceUri());
-        out.setAttachments(exchange.getIn().getAttachments());
     }
 }

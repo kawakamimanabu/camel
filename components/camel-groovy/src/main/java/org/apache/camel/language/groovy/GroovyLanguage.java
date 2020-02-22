@@ -40,11 +40,11 @@ public class GroovyLanguage extends LanguageSupport {
         }
 
         @Override
-        public void start() throws Exception {
+        public void start() {
         }
 
         @Override
-        public void stop() throws Exception {
+        public void stop() {
             InvokerHelper.removeClass(script);
         }
 
@@ -54,10 +54,12 @@ public class GroovyLanguage extends LanguageSupport {
         return new GroovyLanguage().createExpression(expression);
     }
 
+    @Override
     public GroovyExpression createPredicate(String expression) {
         return createExpression(expression);
     }
 
+    @Override
     public GroovyExpression createExpression(String expression) {
         expression = loadResource(expression);
         return new GroovyExpression(expression);

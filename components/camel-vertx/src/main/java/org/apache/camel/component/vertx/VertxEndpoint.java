@@ -50,18 +50,16 @@ public class VertxEndpoint extends DefaultEndpoint implements AsyncEndpoint, Mul
         return (VertxComponent) super.getComponent();
     }
 
+    @Override
     public Producer createProducer() throws Exception {
         return new VertxProducer(this);
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         VertxConsumer consumer = new VertxConsumer(this, processor);
         configureConsumer(consumer);
         return consumer;
-    }
-
-    public boolean isSingleton() {
-        return true;
     }
 
     @Override

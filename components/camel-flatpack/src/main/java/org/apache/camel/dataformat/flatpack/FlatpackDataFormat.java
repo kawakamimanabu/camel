@@ -42,7 +42,6 @@ import org.apache.camel.support.ExchangeHelper;
 import org.apache.camel.support.ResourceHelper;
 import org.apache.camel.support.service.ServiceSupport;
 import org.apache.camel.util.ObjectHelper;
-import org.jdom.JDOMException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +72,7 @@ public class FlatpackDataFormat extends ServiceSupport implements DataFormat, Da
         return "flatback";
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public void marshal(Exchange exchange, Object graph, OutputStream stream) throws Exception {
         ObjectHelper.notNull(graph, "The object to marshal must be provided");
@@ -106,6 +106,7 @@ public class FlatpackDataFormat extends ServiceSupport implements DataFormat, Da
         }
     }
 
+    @Override
     public Object unmarshal(Exchange exchange, InputStream stream) throws Exception {
         InputStreamReader reader = new InputStreamReader(stream, ExchangeHelper.getCharsetName(exchange));
         try {
@@ -238,7 +239,7 @@ public class FlatpackDataFormat extends ServiceSupport implements DataFormat, Da
         }
     }
 
-    private Writer createWriter(Exchange exchange, Map<String, Object> firstRow, OutputStream stream) throws JDOMException, IOException {
+    private Writer createWriter(Exchange exchange, Map<String, Object> firstRow, OutputStream stream) throws IOException {
         if (isFixed()) {
             InputStream is = ResourceHelper.resolveMandatoryResourceAsInputStream(exchange.getContext(), getDefinition());
             InputStreamReader reader = new InputStreamReader(is, ExchangeHelper.getCharsetName(exchange));

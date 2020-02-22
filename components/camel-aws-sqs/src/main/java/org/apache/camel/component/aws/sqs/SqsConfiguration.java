@@ -16,8 +16,8 @@
  */
 package org.apache.camel.component.aws.sqs;
 
+import com.amazonaws.Protocol;
 import com.amazonaws.services.sqs.AmazonSQS;
-
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriParams;
@@ -39,10 +39,14 @@ public class SqsConfiguration implements Cloneable {
     private String queueOwnerAWSAccountId;
     @UriParam
     private String region;
+    @UriParam(enums = "HTTP,HTTPS", defaultValue = "HTTPS")
+    private Protocol proxyProtocol = Protocol.HTTPS;
     @UriParam(label = "proxy")
     private String proxyHost;
     @UriParam(label = "proxy")
     private Integer proxyPort;
+    @UriParam(defaultValue = "true")
+    private boolean autoCreateQueue = true;
 
     // consumer properties
     @UriParam(label = "consumer", defaultValue = "true")
@@ -94,21 +98,22 @@ public class SqsConfiguration implements Cloneable {
     private Integer receiveMessageWaitTimeSeconds;
     @UriParam(label = "queue")
     private String policy;
-    
+
     // dead letter queue properties
     @UriParam(label = "queue")
     private String redrivePolicy;
 
+    // Likely used only for testing
+    @UriParam(defaultValue = "https")
+    private String protocol = "https";
+
     /**
-     *  Whether or not the queue is a FIFO queue
+     * Whether or not the queue is a FIFO queue
      */
     boolean isFifoQueue() {
         // AWS docs suggest this is valid derivation.
         // FIFO queue names must end with .fifo, and standard queues cannot
-        if (queueName.endsWith(".fifo")) {
-            return true;
-        }
-        return false;
+        return queueName.endsWith(".fifo");
     }
 
     public String getAmazonAWSHost() {
@@ -182,10 +187,12 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * The duration (in seconds) that the received messages are hidden from subsequent retrieve requests after being retrieved
-     * by a ReceiveMessage request to set in the com.amazonaws.services.sqs.model.SetQueueAttributesRequest.
-     * This only make sense if its different from defaultVisibilityTimeout.
-     * It changes the queue visibility timeout attribute permanently.
+     * The duration (in seconds) that the received messages are hidden from
+     * subsequent retrieve requests after being retrieved by a ReceiveMessage
+     * request to set in the
+     * com.amazonaws.services.sqs.model.SetQueueAttributesRequest. This only
+     * make sense if its different from defaultVisibilityTimeout. It changes the
+     * queue visibility timeout attribute permanently.
      */
     public void setVisibilityTimeout(Integer visibilityTimeout) {
         this.visibilityTimeout = visibilityTimeout;
@@ -196,7 +203,8 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * A list of attribute names to receive when consuming.  Multiple names can be separated by comma.
+     * A list of attribute names to receive when consuming. Multiple names can
+     * be separated by comma.
      */
     public void setAttributeNames(String attributeNames) {
         this.attributeNames = attributeNames;
@@ -207,7 +215,8 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * A list of message attribute names to receive when consuming. Multiple names can be separated by comma.
+     * A list of message attribute names to receive when consuming. Multiple
+     * names can be separated by comma.
      */
     public void setMessageAttributeNames(String messageAttributeNames) {
         this.messageAttributeNames = messageAttributeNames;
@@ -240,7 +249,8 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * Define if you want to apply delaySeconds option to the queue or on single messages
+     * Define if you want to apply delaySeconds option to the queue or on single
+     * messages
      */
     public void setDelayQueue(boolean delayQueue) {
         this.delayQueue = delayQueue;
@@ -251,7 +261,8 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * The maximumMessageSize (in bytes) an SQS message can contain for this queue.
+     * The maximumMessageSize (in bytes) an SQS message can contain for this
+     * queue.
      */
     public void setMaximumMessageSize(Integer maximumMessageSize) {
         this.maximumMessageSize = maximumMessageSize;
@@ -262,7 +273,8 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * The messageRetentionPeriod (in seconds) a message will be retained by SQS for this queue.
+     * The messageRetentionPeriod (in seconds) a message will be retained by SQS
+     * for this queue.
      */
     public void setMessageRetentionPeriod(Integer messageRetentionPeriod) {
         this.messageRetentionPeriod = messageRetentionPeriod;
@@ -284,7 +296,8 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * Specify the policy that send message to DeadLetter queue. See detail at Amazon docs.
+     * Specify the policy that send message to DeadLetter queue. See detail at
+     * Amazon docs.
      */
     public void setRedrivePolicy(String redrivePolicy) {
         this.redrivePolicy = redrivePolicy;
@@ -295,8 +308,9 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * If enabled then a scheduled background task will keep extending the message visibility on SQS.
-     * This is needed if it takes a long time to process the message. If set to true defaultVisibilityTimeout must be set.
+     * If enabled then a scheduled background task will keep extending the
+     * message visibility on SQS. This is needed if it takes a long time to
+     * process the message. If set to true defaultVisibilityTimeout must be set.
      * See details at Amazon docs.
      */
     public void setExtendMessageVisibility(boolean extendMessageVisibility) {
@@ -308,7 +322,8 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * If you do not specify WaitTimeSeconds in the request, the queue attribute ReceiveMessageWaitTimeSeconds is used to determine how long to wait.
+     * If you do not specify WaitTimeSeconds in the request, the queue attribute
+     * ReceiveMessageWaitTimeSeconds is used to determine how long to wait.
      */
     public void setReceiveMessageWaitTimeSeconds(Integer receiveMessageWaitTimeSeconds) {
         this.receiveMessageWaitTimeSeconds = receiveMessageWaitTimeSeconds;
@@ -319,7 +334,8 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * Duration in seconds (0 to 20) that the ReceiveMessage action call will wait until a message is in the queue to include in the response.
+     * Duration in seconds (0 to 20) that the ReceiveMessage action call will
+     * wait until a message is in the queue to include in the response.
      */
     public void setWaitTimeSeconds(Integer waitTimeSeconds) {
         this.waitTimeSeconds = waitTimeSeconds;
@@ -330,7 +346,8 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * Specify the queue owner aws account id when you need to connect the queue with different account owner.
+     * Specify the queue owner aws account id when you need to connect the queue
+     * with different account owner.
      */
     public void setQueueOwnerAWSAccountId(String queueOwnerAWSAccountId) {
         this.queueOwnerAWSAccountId = queueOwnerAWSAccountId;
@@ -341,8 +358,10 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * Whether or not to send the DeleteMessage to the SQS queue if an exchange fails to get through a filter.
-     * If 'false' and exchange does not make it through a Camel filter upstream in the route, then don't send DeleteMessage.
+     * Whether or not to send the DeleteMessage to the SQS queue if an exchange
+     * fails to get through a filter. If 'false' and exchange does not make it
+     * through a Camel filter upstream in the route, then don't send
+     * DeleteMessage.
      */
     public void setDeleteIfFiltered(boolean deleteIfFiltered) {
         this.deleteIfFiltered = deleteIfFiltered;
@@ -353,7 +372,10 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * Specify the queue region which could be used with queueOwnerAWSAccountId to build the service URL.
+     * Specify the queue region which could be used with queueOwnerAWSAccountId
+     * to build the service URL. When using this parameter, the configuration
+     * will expect the capitalized name of the region (for example AP_EAST_1)
+     * You'll need to use the name Regions.EU_WEST_1.name()
      */
     public void setRegion(String region) {
         this.region = region;
@@ -364,7 +386,8 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * Allows you to use multiple threads to poll the sqs queue to increase throughput
+     * Allows you to use multiple threads to poll the sqs queue to increase
+     * throughput
      */
     public void setConcurrentConsumers(int concurrentConsumers) {
         this.concurrentConsumers = concurrentConsumers;
@@ -375,11 +398,23 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * To define the queueUrl explicitly. All other parameters, which would influence the queueUrl, are ignored.
-     * This parameter is intended to be used, to connect to a mock implementation of SQS, for testing purposes.
+     * To define the queueUrl explicitly. All other parameters, which would
+     * influence the queueUrl, are ignored. This parameter is intended to be
+     * used, to connect to a mock implementation of SQS, for testing purposes.
      */
     public void setQueueUrl(String queueUrl) {
         this.queueUrl = queueUrl;
+    }
+    
+    public Protocol getProxyProtocol() {
+        return proxyProtocol;
+    }
+
+    /**
+     * To define a proxy protocol when instantiating the SQS client
+     */
+    public void setProxyProtocol(Protocol proxyProtocol) {
+        this.proxyProtocol = proxyProtocol;
     }
 
     public String getProxyHost() {
@@ -409,7 +444,8 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * The ID of an AWS-managed customer master key (CMK) for Amazon SQS or a custom CMK.
+     * The ID of an AWS-managed customer master key (CMK) for Amazon SQS or a
+     * custom CMK.
      */
     public void setKmsMasterKeyId(String kmsMasterKeyId) {
         this.kmsMasterKeyId = kmsMasterKeyId;
@@ -420,9 +456,10 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * The length of time, in seconds, for which Amazon SQS can reuse a data key to encrypt or decrypt 
-     * messages before calling AWS KMS again. An integer representing seconds, between 60 seconds (1 minute) 
-     * and 86,400 seconds (24 hours). Default: 300 (5 minutes).
+     * The length of time, in seconds, for which Amazon SQS can reuse a data key
+     * to encrypt or decrypt messages before calling AWS KMS again. An integer
+     * representing seconds, between 60 seconds (1 minute) and 86,400 seconds
+     * (24 hours). Default: 300 (5 minutes).
      */
     public void setKmsDataKeyReusePeriodSeconds(Integer kmsDataKeyReusePeriodSeconds) {
         this.kmsDataKeyReusePeriodSeconds = kmsDataKeyReusePeriodSeconds;
@@ -440,9 +477,10 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * Only for FIFO queues. Strategy for setting the messageGroupId on the message.
-     * Can be one of the following options: *useConstant*, *useExchangeId*, *usePropertyValue*.
-     * For the *usePropertyValue* option, the value of property "CamelAwsMessageGroupId" will be used.
+     * Only for FIFO queues. Strategy for setting the messageGroupId on the
+     * message. Can be one of the following options: *useConstant*,
+     * *useExchangeId*, *usePropertyValue*. For the *usePropertyValue* option,
+     * the value of property "CamelAwsMessageGroupId" will be used.
      */
     public void setMessageGroupIdStrategy(String strategy) {
         if ("useConstant".equalsIgnoreCase(strategy)) {
@@ -456,6 +494,10 @@ public class SqsConfiguration implements Cloneable {
         }
     }
 
+    public void setMessageGroupIdStrategy(MessageGroupIdStrategy messageGroupIdStrategy) {
+        this.messageGroupIdStrategy = messageGroupIdStrategy;
+    }
+
     public MessageGroupIdStrategy getMessageGroupIdStrategy() {
         return messageGroupIdStrategy;
     }
@@ -465,9 +507,10 @@ public class SqsConfiguration implements Cloneable {
     }
 
     /**
-     * Only for FIFO queues. Strategy for setting the messageDeduplicationId on the message.
-     * Can be one of the following options: *useExchangeId*, *useContentBasedDeduplication*.
-     * For the *useContentBasedDeduplication* option, no messageDeduplicationId will be set on the message.
+     * Only for FIFO queues. Strategy for setting the messageDeduplicationId on
+     * the message. Can be one of the following options: *useExchangeId*,
+     * *useContentBasedDeduplication*. For the *useContentBasedDeduplication*
+     * option, no messageDeduplicationId will be set on the message.
      */
     public void setMessageDeduplicationIdStrategy(String strategy) {
         if ("useExchangeId".equalsIgnoreCase(strategy)) {
@@ -478,7 +521,11 @@ public class SqsConfiguration implements Cloneable {
             throw new IllegalArgumentException("Unrecognised MessageDeduplicationIdStrategy: " + strategy);
         }
     }
-    
+
+    public void setMessageDeduplicationIdStrategy(MessageDeduplicationIdStrategy messageDeduplicationIdStrategy) {
+        this.messageDeduplicationIdStrategy = messageDeduplicationIdStrategy;
+    }
+
     public SqsOperations getOperation() {
         return operation;
     }
@@ -489,7 +536,29 @@ public class SqsConfiguration implements Cloneable {
     public void setOperation(SqsOperations operation) {
         this.operation = operation;
     }
-    
+
+    public boolean isAutoCreateQueue() {
+        return autoCreateQueue;
+    }
+
+    /**
+     * Setting the autocreation of the queue
+     */
+    public void setAutoCreateQueue(boolean autoCreateQueue) {
+        this.autoCreateQueue = autoCreateQueue;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    /**
+     * The underlying protocol used to communicate with SQS
+     */
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
     // *************************************************
     //
     // *************************************************

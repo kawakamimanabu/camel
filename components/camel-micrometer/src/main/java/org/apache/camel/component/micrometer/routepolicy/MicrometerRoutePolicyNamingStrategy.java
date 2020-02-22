@@ -17,10 +17,12 @@
 package org.apache.camel.component.micrometer.routepolicy;
 
 import java.util.function.Predicate;
+
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tags;
 import org.apache.camel.Exchange;
 import org.apache.camel.Route;
+
 import static org.apache.camel.component.micrometer.MicrometerConstants.CAMEL_CONTEXT_TAG;
 import static org.apache.camel.component.micrometer.MicrometerConstants.DEFAULT_CAMEL_ROUTE_POLICY_METER_NAME;
 import static org.apache.camel.component.micrometer.MicrometerConstants.FAILED_TAG;
@@ -40,7 +42,7 @@ public interface MicrometerRoutePolicyNamingStrategy {
 
     default Tags getTags(Route route, Exchange exchange) {
         return Tags.of(
-                CAMEL_CONTEXT_TAG, route.getRouteContext().getCamelContext().getName(),
+                CAMEL_CONTEXT_TAG, route.getCamelContext().getName(),
                 SERVICE_NAME, MicrometerRoutePolicyService.class.getSimpleName(),
                 ROUTE_ID_TAG, route.getId(),
                 FAILED_TAG, Boolean.toString(exchange.isFailed())

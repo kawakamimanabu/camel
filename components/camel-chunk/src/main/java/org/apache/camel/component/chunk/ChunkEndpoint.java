@@ -72,11 +72,6 @@ public class ChunkEndpoint extends ResourceEndpoint {
     }
 
     @Override
-    public boolean isSingleton() {
-        return true;
-    }
-
-    @Override
     public ExchangePattern getExchangePattern() {
         return ExchangePattern.InOut;
     }
@@ -119,7 +114,6 @@ public class ChunkEndpoint extends ResourceEndpoint {
             Message out = exchange.getOut();
             out.setBody(newChunk.toString());
             out.setHeaders(exchange.getIn().getHeaders());
-            out.setAttachments(exchange.getIn().getAttachments());
         } else {
             exchange.getIn().removeHeader(ChunkConstants.CHUNK_RESOURCE_URI);
             ChunkEndpoint newEndpoint = getCamelContext().getEndpoint(CHUNK_ENDPOINT_URI_PREFIX + newResourceUri, ChunkEndpoint.class);
@@ -153,9 +147,7 @@ public class ChunkEndpoint extends ResourceEndpoint {
             return newChunk;
         } finally {
             resourceReader.close();
-            if (oldcl != null) {
-                Thread.currentThread().setContextClassLoader(oldcl);
-            }
+            Thread.currentThread().setContextClassLoader(oldcl);
         }
     }
 

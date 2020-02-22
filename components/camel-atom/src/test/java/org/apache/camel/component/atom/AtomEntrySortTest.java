@@ -16,7 +16,6 @@
  */
 package org.apache.camel.component.atom;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.apache.abdera.model.Entry;
@@ -33,7 +32,7 @@ public class AtomEntrySortTest extends CamelTestSupport {
     @Test
     public void testSortedEntries() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:sorted");
-        mock.expectsAscending(ExpressionBuilder.beanExpression("myBean", "getPubDate"));
+        mock.expectsAscending(ExpressionBuilder.beanExpression("myBean?method=getPubDate"));
         mock.expectedMessageCount(10);
         mock.setResultWaitTime(15000L);
         mock.assertIsSatisfied();
@@ -42,7 +41,7 @@ public class AtomEntrySortTest extends CamelTestSupport {
     @Test
     public void testUnSortedEntries() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:unsorted");
-        mock.expectsAscending(ExpressionBuilder.beanExpression("myBean", "getPubDate"));
+        mock.expectsAscending(ExpressionBuilder.beanExpression("myBean?method=getPubDate"));
         mock.expectedMessageCount(10);
         mock.setResultWaitTime(2000L);
         mock.assertIsNotSatisfied(2000L);
@@ -50,15 +49,15 @@ public class AtomEntrySortTest extends CamelTestSupport {
 
     @Override
     protected void bindToRegistry(Registry registry) throws Exception {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
         registry.bind("myBean", new MyBean());
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             public void configure() throws Exception {
-                from("atom:file:src/test/data/unsortedfeed.atom?splitEntries=true&sortEntries=true&consumer.delay=50").to("mock:sorted");
-                from("atom:file:src/test/data/unsortedfeed.atom?splitEntries=true&sortEntries=false&consumer.delay=50").to("mock:unsorted");
+                from("atom:file:src/test/data/unsortedfeed.atom?splitEntries=true&sortEntries=true&delay=50").to("mock:sorted");
+                from("atom:file:src/test/data/unsortedfeed.atom?splitEntries=true&sortEntries=false&delay=50").to("mock:unsorted");
             }
         };
     }

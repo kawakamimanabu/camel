@@ -17,7 +17,6 @@
 package org.apache.camel.model;
 
 import org.apache.camel.ContextTestSupport;
-import org.apache.camel.FailedToCreateRouteException;
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.Test;
 
@@ -34,7 +33,7 @@ public class StartingRoutesErrorReportedTest extends ContextTestSupport {
             });
             context.start();
             fail();
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             assertTrue(e.getMessage().startsWith("Failed to create route route1: Route(route1)[From[direct:start?foo=bar] -> [To[mock:result]... because of"));
         }
     }
@@ -50,7 +49,7 @@ public class StartingRoutesErrorReportedTest extends ContextTestSupport {
             });
             context.start();
             fail();
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             assertTrue(e.getMessage().startsWith("Failed to create route route2 at: >>> To[direct:result?foo=bar] <<< in route:"));
         }
     }
@@ -66,7 +65,7 @@ public class StartingRoutesErrorReportedTest extends ContextTestSupport {
             });
             context.start();
             fail();
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             assertTrue(e.getMessage().startsWith("Failed to create route route2 at: >>> To[direct:result?foo=bar] <<< in route:"));
         }
     }
@@ -77,14 +76,12 @@ public class StartingRoutesErrorReportedTest extends ContextTestSupport {
             context.addRoutes(new RouteBuilder() {
                 @Override
                 public void configure() throws Exception {
-                    from("direct:start").routeId("route3")
-                        .to("mock:foo")
-                        .bean("");
+                    from("direct:start").routeId("route3").to("mock:foo").bean("");
                 }
             });
             context.start();
             fail("Should have thrown exception");
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             assertTrue(e.getMessage().startsWith("Failed to create route route3 at: >>> Bean[ref:] <<< in route:"));
         }
     }
@@ -95,18 +92,16 @@ public class StartingRoutesErrorReportedTest extends ContextTestSupport {
             context.addRoutes(new RouteBuilder() {
                 @Override
                 public void configure() throws Exception {
-                    from("direct:start").routeId("route3")
-                        .unmarshal().jaxb()
-                        .log("Will never get here");
+                    from("direct:start").routeId("route3").unmarshal().jaxb().log("Will never get here");
                 }
             });
             context.start();
             fail("Should have thrown exception");
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             assertTrue(e.getMessage().contains("Ensure that the data format is valid and the associated Camel component is present on the classpath"));
         }
     }
-    
+
     @Override
     public boolean isUseRouteBuilder() {
         return false;

@@ -17,63 +17,101 @@
 package org.apache.camel.component.pulsar;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.NoTypeConversionAvailableException;
 import org.apache.camel.TypeConversionException;
+import org.apache.camel.component.pulsar.configuration.PulsarConfiguration;
 import org.apache.camel.component.pulsar.utils.message.PulsarMessageHeaders;
 import org.apache.camel.component.pulsar.utils.message.PulsarMessageUtils;
 import org.apache.camel.support.DefaultProducer;
+import org.apache.camel.util.CastUtils;
+import org.apache.camel.util.ObjectHelper;
 import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.ProducerBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.pulsar.client.api.TypedMessageBuilder;
 
 public class PulsarProducer extends DefaultProducer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PulsarProducer.class);
-
     private final PulsarEndpoint pulsarEndpoint;
+    private Producer<byte[]> producer;
 
     public PulsarProducer(PulsarEndpoint pulsarEndpoint) {
         super(pulsarEndpoint);
-
         this.pulsarEndpoint = pulsarEndpoint;
     }
 
     @Override
     public void process(final Exchange exchange) throws Exception {
         final Message message = exchange.getIn();
-        final String topic = pulsarEndpoint.getTopic();
-        final String producerName = topic + "-" + Thread.currentThread().getId();
 
-        final Map properties = message.getHeader(PulsarMessageHeaders.PROPERTIES, Map.class);
-
-        final ProducerBuilder<byte[]> producerBuilder = pulsarEndpoint
-            .getPulsarClient()
-            .newProducer()
-            .producerName(producerName)
-            .topic(topic);
-
-        if (properties != null && !properties.isEmpty()) {
-            producerBuilder.properties(properties);
-        }
-
-        final Producer<byte[]> producer = producerBuilder.create();
-
+        TypedMessageBuilder<byte[]> messageBuilder = producer.newMessage();
+        byte[] body;
         try {
-            byte[] body = exchange.getContext().getTypeConverter()
-                .mandatoryConvertTo(byte[].class, exchange, message.getBody());
-            producer.send(body);
-
+            body = exchange.getContext().getTypeConverter()
+                    .mandatoryConvertTo(byte[].class, exchange, message.getBody());
         } catch (NoTypeConversionAvailableException | TypeConversionException exception) {
-            LOGGER.warn("An error occurred while serializing to byte array, fall using fall back strategy :: {}", exception);
+            // fallback to try serialize the data
+            body = PulsarMessageUtils.serialize(message.getBody());
+        }
+        messageBuilder.value(body);
 
-            byte[] body = PulsarMessageUtils.serialize(message.getBody());
-
-            producer.send(body);
+        String key = exchange.getIn().getHeader(PulsarMessageHeaders.KEY_OUT, String.class);
+        if (ObjectHelper.isNotEmpty(key)) {
+            messageBuilder.key(key);
         }
 
-        producer.close();
+        Map<String, String> properties = CastUtils.cast(exchange.getIn().getHeader(PulsarMessageHeaders.PROPERTIES_OUT, Map.class));
+        if (ObjectHelper.isNotEmpty(properties)) {
+            messageBuilder.properties(properties);
+        }
+
+        Long eventTime = exchange.getIn().getHeader(PulsarMessageHeaders.EVENT_TIME_OUT, Long.class);
+        if (eventTime != null) {
+            messageBuilder.eventTime(eventTime);
+        }
+
+        messageBuilder.send();
+    }
+
+    private synchronized void createProducer() throws org.apache.pulsar.client.api.PulsarClientException {
+        if (producer == null) {
+            final String topicUri = pulsarEndpoint.getUri();
+            PulsarConfiguration configuration = pulsarEndpoint.getPulsarConfiguration();
+            String producerName = configuration.getProducerName();
+            final ProducerBuilder<byte[]> producerBuilder = pulsarEndpoint.getPulsarClient().newProducer().topic(topicUri)
+                .sendTimeout(configuration.getSendTimeoutMs(), TimeUnit.MILLISECONDS).blockIfQueueFull(configuration.isBlockIfQueueFull())
+                .maxPendingMessages(configuration.getMaxPendingMessages()).maxPendingMessagesAcrossPartitions(configuration.getMaxPendingMessagesAcrossPartitions())
+                .batchingMaxPublishDelay(configuration.getBatchingMaxPublishDelayMicros(), TimeUnit.MICROSECONDS).batchingMaxMessages(configuration.getMaxPendingMessages())
+                .enableBatching(configuration.isBatchingEnabled()).initialSequenceId(configuration.getInitialSequenceId()).compressionType(configuration.getCompressionType());
+            if (ObjectHelper.isNotEmpty(configuration.getMessageRouter())) {
+                producerBuilder.messageRouter(configuration.getMessageRouter());
+            } else {
+                producerBuilder.messageRoutingMode(configuration.getMessageRoutingMode());
+            }
+            if (producerName != null) {
+                producerBuilder.producerName(producerName);
+            }
+            producer = producerBuilder.create();
+        }
+    }
+
+    @Override
+    protected void doStart() throws Exception {
+        log.debug("Starting producer: {}", this);
+        if (producer == null) {
+            createProducer();
+        }
+    }
+
+    @Override
+    protected void doStop() throws Exception {
+        log.debug("Stopping producer: {}", this);
+        if (producer != null) {
+            producer.close();
+            producer = null;
+        }
     }
 }

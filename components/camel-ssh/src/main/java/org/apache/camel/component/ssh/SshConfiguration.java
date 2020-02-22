@@ -44,10 +44,12 @@ public class SshConfiguration implements Cloneable {
     private String pollCommand;
     @UriParam(label = "security")
     private KeyPairProvider keyPairProvider;
-    @UriParam(label = "security", defaultValue = KeyPairProvider.SSH_RSA)
-    private String keyType = KeyPairProvider.SSH_RSA;
+    @UriParam(label = "security")
+    private String keyType;
     @UriParam(label = "security")
     private String certResource;
+    @UriParam(label = "security", secret = true)
+    private String certResourcePassword;
     @UriParam(defaultValue = "30000")
     private long timeout = 30000;
     @UriParam()
@@ -60,7 +62,7 @@ public class SshConfiguration implements Cloneable {
     private String shellPrompt;
     @UriParam(label = "advanced", defaultValue = "100")
     private long sleepForShellPrompt;
-    
+
     public SshConfiguration() {
     }
 
@@ -202,8 +204,9 @@ public class SshConfiguration implements Cloneable {
 
     /**
      * Sets the key type to pass to the KeyPairProvider as part of authentication.
-     * KeyPairProvider.loadKey(...) will be passed this value. Defaults to
-     * "ssh-rsa".
+     * KeyPairProvider.loadKey(...) will be passed this value. From Camel 3.0.0 / 2.25.0,
+     * by default Camel will select the first available KeyPair that is loaded. Prior to
+     * this, a KeyType of 'ssh-rsa' was enforced by default.
      *
      * @param keyType
      *            String defining the type of KeyPair to use for authentication.
@@ -262,6 +265,20 @@ public class SshConfiguration implements Cloneable {
         this.certResource = certResource;
     }
 
+    public String getCertResourcePassword() {
+        return certResourcePassword;
+    }
+
+    /**
+     * Sets the password to use in loading certResource, if certResource is an encrypted key.
+     *
+     * @param certResourcePassword
+     *            String representing password use to load the certResource key
+     */
+    public void setCertResourcePassword(String certResourcePassword) {
+        this.certResourcePassword = certResourcePassword;
+    }
+
     public String getKnownHostsResource() {
         return knownHostsResource;
     }
@@ -290,7 +307,7 @@ public class SshConfiguration implements Cloneable {
     public void setFailOnUnknownHost(boolean failOnUnknownHost) {
         this.failOnUnknownHost = failOnUnknownHost;
     }
-    
+
     public String getChannelType() {
         return channelType;
     }
@@ -307,7 +324,7 @@ public class SshConfiguration implements Cloneable {
     public void setChannelType(String channelType) {
         this.channelType = channelType;
     }
-    
+
     public String getShellPrompt() {
         return shellPrompt;
     }
@@ -316,7 +333,7 @@ public class SshConfiguration implements Cloneable {
      * Sets the shellPrompt to be dropped when response is read after command execution
      *
      * @param shellPrompt
-     *            String defining ending string of command line which has to be dropped when response is 
+     *            String defining ending string of command line which has to be dropped when response is
      *            read after command execution.
      */
     public void setShellPrompt(String shellPrompt) {

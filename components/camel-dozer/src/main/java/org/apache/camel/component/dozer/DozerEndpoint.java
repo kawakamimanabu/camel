@@ -71,11 +71,6 @@ public class DozerEndpoint extends DefaultEndpoint {
         throw new UnsupportedOperationException("Consumer not supported for Dozer endpoints");
     }
 
-    @Override
-    public boolean isSingleton() {
-        return true;
-    }
-
     public Mapper getMapper() throws Exception {
         return mapper;
     }
@@ -115,6 +110,11 @@ public class DozerEndpoint extends DefaultEndpoint {
 
     protected void initDozerBeanContainerAndMapper() throws Exception {
         log.info("Configuring {}...", Mapper.class.getName());
+
+        // Validate endpoint parameters
+        if (configuration.getTargetModel() == null) {
+            throw new IllegalArgumentException("The targetModel parameter is required for dozer endpoints");
+        }
 
         if (mapper == null) {
             if (configuration.getMappingConfiguration() == null) {

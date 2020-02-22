@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.disruptor;
+
 import org.apache.camel.Exchange;
 import org.apache.camel.ShutdownRunningTask;
 import org.apache.camel.builder.RouteBuilder;
@@ -67,10 +68,5 @@ public class FileDisruptorShutdownCompleteAllTasksTest extends CamelTestSupport 
 
         // should route all 5
         assertEquals("Should complete all messages", 5, bar.getReceivedCounter());
-    }
-
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
     }
 }

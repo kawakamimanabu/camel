@@ -20,17 +20,16 @@ import java.io.File;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.PollingConsumer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
  */
 public class FtpPollingConsumerTest extends FtpServerTestSupport {
-
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
-    }
 
     private String getFtpUrl() {
         return "ftp://admin@localhost:" + getPort() + "/polling?password=admin";
@@ -56,7 +55,7 @@ public class FtpPollingConsumerTest extends FtpServerTestSupport {
         Thread.sleep(1000);
 
         File file = new File(FTP_ROOT_DIR + "/polling/bye.txt");
-        assertTrue("File should exist " + file, file.exists());
+        assertTrue(file.exists(), "File should exist " + file);
 
         consumer.stop();
     }

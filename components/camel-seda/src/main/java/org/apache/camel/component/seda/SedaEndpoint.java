@@ -29,6 +29,7 @@ import org.apache.camel.AsyncProcessor;
 import org.apache.camel.Component;
 import org.apache.camel.Consumer;
 import org.apache.camel.Exchange;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.MultipleConsumersSupport;
 import org.apache.camel.PollingConsumer;
 import org.apache.camel.Processor;
@@ -44,7 +45,6 @@ import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriPath;
 import org.apache.camel.support.DefaultEndpoint;
 import org.apache.camel.support.service.ServiceHelper;
-import org.apache.camel.util.SedaConstants;
 import org.apache.camel.util.URISupport;
 
 /**
@@ -87,6 +87,8 @@ public class SedaEndpoint extends DefaultEndpoint implements AsyncEndpoint, Brow
     @UriParam(label = "producer")
     private boolean blockWhenFull;
     @UriParam(label = "producer")
+    private boolean discardWhenFull;
+    @UriParam(label = "producer")
     private boolean failIfNoConsumers;
     @UriParam(label = "producer")
     private boolean discardIfNoConsumers;
@@ -126,10 +128,13 @@ public class SedaEndpoint extends DefaultEndpoint implements AsyncEndpoint, Brow
         return (SedaComponent) super.getComponent();
     }
 
+    @Override
     public Producer createProducer() throws Exception {
-        return new SedaProducer(this, getWaitForTaskToComplete(), getTimeout(), isBlockWhenFull(), getOfferTimeout());
+        return new SedaProducer(this, getWaitForTaskToComplete(), getTimeout(),
+                isBlockWhenFull(), isDiscardWhenFull(), getOfferTimeout());
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         if (getComponent() != null) {
             // all consumers must match having the same multipleConsumers options
@@ -193,6 +198,7 @@ public class SedaEndpoint extends DefaultEndpoint implements AsyncEndpoint, Brow
 
     /**
      * Get's the {@link QueueReference} for the this endpoint.
+     *
      * @return the reference, or <tt>null</tt> if no queue reference exists.
      */
     public synchronized QueueReference getQueueReference() {
@@ -235,7 +241,7 @@ public class SedaEndpoint extends DefaultEndpoint implements AsyncEndpoint, Brow
             }
             // create multicast processor
             multicastStarted = false;
-            consumerMulticastProcessor = getCamelContext().createMulticast(processors, multicastExecutor, false);
+            consumerMulticastProcessor = getCamelContext().adapt(ExtendedCamelContext.class).createMulticast(processors, multicastExecutor, false);
         }
     }
 
@@ -279,6 +285,21 @@ public class SedaEndpoint extends DefaultEndpoint implements AsyncEndpoint, Brow
     @ManagedAttribute(description = "Whether the caller will block sending to a full queue")
     public boolean isBlockWhenFull() {
         return blockWhenFull;
+    }
+
+    /**
+     * Whether a thread that sends messages to a full SEDA queue will be discarded.
+     * By default, an exception will be thrown stating that the queue is full.
+     * By enabling this option, the calling thread will give up sending and continue,
+     * meaning that the message was not sent to the SEDA queue.
+     */
+    public void setDiscardWhenFull(boolean discardWhenFull) {
+        this.discardWhenFull = discardWhenFull;
+    }
+
+    @ManagedAttribute(description = "Whether the caller will discard sending to a full queue")
+    public boolean isDiscardWhenFull() {
+        return discardWhenFull;
     }
 
     /**
@@ -333,12 +354,12 @@ public class SedaEndpoint extends DefaultEndpoint implements AsyncEndpoint, Brow
     public void setTimeout(long timeout) {
         this.timeout = timeout;
     }
-    
+
     @ManagedAttribute
     public long getOfferTimeout() {
         return offerTimeout;
     }
-    
+
     /**
      * offerTimeout (in milliseconds)  can be added to the block case when queue is full.
      * You can disable timeout by using 0 or a negative value.
@@ -415,17 +436,15 @@ public class SedaEndpoint extends DefaultEndpoint implements AsyncEndpoint, Brow
         this.purgeWhenStopping = purgeWhenStopping;
     }
 
-    public boolean isSingleton() {
-        return true;
-    }
-
     /**
      * Returns the current pending exchanges
      */
+    @Override
     public List<Exchange> getExchanges() {
         return new ArrayList<>(getQueue());
     }
 
+    @Override
     @ManagedAttribute
     public boolean isMultipleConsumersSupported() {
         return isMultipleConsumers();
@@ -484,6 +503,11 @@ public class SedaEndpoint extends DefaultEndpoint implements AsyncEndpoint, Brow
     protected void doStart() throws Exception {
         super.doStart();
 
+        if (discardWhenFull && blockWhenFull) {
+            throw new IllegalArgumentException("Cannot enable both discardWhenFull=true and blockWhenFull=true."
+                    + " You can only either discard or block when full.");
+        }
+
         // force creating queue when starting
         if (queue == null) {
             queue = getQueue();
@@ -496,7 +520,7 @@ public class SedaEndpoint extends DefaultEndpoint implements AsyncEndpoint, Brow
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         if (getConsumers().isEmpty()) {
             super.stop();
         } else {
@@ -505,7 +529,7 @@ public class SedaEndpoint extends DefaultEndpoint implements AsyncEndpoint, Brow
     }
 
     @Override
-    public void shutdown() throws Exception {
+    public void shutdown() {
         if (isShutdown()) {
             log.trace("Service already shut down");
             return;

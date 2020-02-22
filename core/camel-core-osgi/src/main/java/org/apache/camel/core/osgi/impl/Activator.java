@@ -93,6 +93,7 @@ public class Activator implements BundleActivator, BundleTrackerCustomizer<Objec
     // Map from package name to the capability we export for this package
     private final Map<String, BundleCapability> packageCapabilities = new HashMap<>();
 
+    @Override
     public void start(BundleContext context) throws Exception {
         LOG.info("Camel activator starting");
         cachePackageCapabilities(context);
@@ -103,6 +104,7 @@ public class Activator implements BundleActivator, BundleTrackerCustomizer<Objec
         LOG.info("Camel activator started");
     }
 
+    @Override
     public void stop(BundleContext context) throws Exception {
         LOG.info("Camel activator stopping");
         tracker.close();
@@ -127,6 +129,7 @@ public class Activator implements BundleActivator, BundleTrackerCustomizer<Objec
         }
     }
 
+    @Override
     public Object addingBundle(Bundle bundle, BundleEvent event) {
         LOG.debug("Bundle started: {}", bundle.getSymbolicName());
         if (extenderCapabilityWired(bundle)) {
@@ -164,9 +167,11 @@ public class Activator implements BundleActivator, BundleTrackerCustomizer<Objec
         return true;
     }
 
+    @Override
     public void modifiedBundle(Bundle bundle, BundleEvent event, Object object) {
     }
 
+    @Override
     public void removedBundle(Bundle bundle, BundleEvent event, Object object) {
         LOG.debug("Bundle stopped: {}", bundle.getSymbolicName());
         List<BaseService> r = resolvers.remove(bundle.getBundleId());
@@ -233,9 +238,40 @@ public class Activator implements BundleActivator, BundleTrackerCustomizer<Objec
             URL url1 = bundle.getEntry(META_INF_TYPE_CONVERTER);
             URL url2 = bundle.getEntry(META_INF_TYPE_CONVERTER_LOADER);
             URL url3 = bundle.getEntry(META_INF_FALLBACK_TYPE_CONVERTER);
-            if (url1 != null || url2 != null || url3 != null) {
+            if (url2 != null) {
+                LOG.debug("Found TypeConverterLoader in bundle {}", bundle.getSymbolicName());
+                Set<Class<?>> classes = new LinkedHashSet<>();
+                Set<String> packages = getConverterPackages(bundle.getEntry(META_INF_TYPE_CONVERTER_LOADER));
+
+                if (LOG.isTraceEnabled()) {
+                    LOG.trace("Found {} {} packages: {}", packages.size(), META_INF_TYPE_CONVERTER_LOADER, packages);
+                }
+                for (String pkg : packages) {
+
+                    if (StringHelper.isClassName(pkg)) {
+                        // its a FQN class name so load it directly
+                        LOG.trace("Loading {} class", pkg);
+                        try {
+                            Class<?> clazz = bundle.loadClass(pkg);
+                            BundleTypeConverterLoader bundleTypeConverterLoader =
+                                new BundleTypeConverterLoader(bundle, url3 != null);
+                            bundleTypeConverterLoader.setTypeConverterLoader((TypeConverterLoader)clazz.getDeclaredConstructor().newInstance());
+                            resolvers.add(bundleTypeConverterLoader);
+                            BundleTypeConverterLoader fallBackBundleTypeConverterLoader =
+                                new BundleTypeConverterLoader(bundle, url3 != null);
+                            // the class could be found and loaded so continue to next
+                            resolvers.add(fallBackBundleTypeConverterLoader);
+                            continue;
+                        } catch (Throwable t) {
+                            // Ignore
+                            LOG.trace("Failed to load " + pkg + " class due " + t.getMessage() + ". This exception will be ignored.", t);
+                        }
+                    }
+                }
+                    
+            } else if (url1 != null || url3 != null) {
                 LOG.debug("Found TypeConverter in bundle {}", bundle.getSymbolicName());
-                resolvers.add(new BundleTypeConverterLoader(bundle, url2 != null));
+                resolvers.add(new BundleTypeConverterLoader(bundle, url3 != null));
             }
         }
     }
@@ -295,10 +331,12 @@ public class Activator implements BundleActivator, BundleTrackerCustomizer<Objec
             this.components = components;
         }
 
+        @Override
         public Component resolveComponent(String name, CamelContext context) throws Exception {
             return createInstance(name, components.get(name), context);
         }
 
+        @Override
         public void register() {
             doRegister(ComponentResolver.class, "component", components.keySet());
         }
@@ -313,10 +351,12 @@ public class Activator implements BundleActivator, BundleTrackerCustomizer<Objec
             this.languages = languages;
         }
 
+        @Override
         public Language resolveLanguage(String name, CamelContext context) {
             return createInstance(name, languages.get(name), context);
         }
 
+        @Override
         public void register() {
             doRegister(LanguageResolver.class, "language", languages.keySet());
         }
@@ -333,11 +373,13 @@ public class Activator implements BundleActivator, BundleTrackerCustomizer<Objec
             this.path = path;
         }
 
+        @Override
         public Language resolveLanguage(String name, CamelContext context) {
             LanguageResolver resolver = createInstance(this.name, path, context);
             return resolver.resolveLanguage(name, context);
         }
 
+        @Override
         public void register() {
             doRegister(LanguageResolver.class, "resolver", name);
         }
@@ -379,7 +421,7 @@ public class Activator implements BundleActivator, BundleTrackerCustomizer<Objec
 
     protected static class BundleTypeConverterLoader extends BaseResolver<TypeConverter> implements TypeConverterLoader {
 
-        private final AnnotationTypeConverterLoader loader = new Loader();
+        private TypeConverterLoader loader = new Loader();
         private final Bundle bundle;
         private final boolean hasFallbackTypeConverter;
 
@@ -389,7 +431,12 @@ public class Activator implements BundleActivator, BundleTrackerCustomizer<Objec
             this.bundle = bundle;
             this.hasFallbackTypeConverter = hasFallbackTypeConverter;
         }
+        
+        public void setTypeConverterLoader(TypeConverterLoader typeConverterloader) {
+            this.loader = typeConverterloader;
+        }
 
+        @Override
         public synchronized void load(TypeConverterRegistry registry) throws TypeConverterLoaderException {
             // must be synchronized to ensure we don't load type converters concurrently
             // which cause Camel apps to fails in OSGi thereafter
@@ -400,6 +447,7 @@ public class Activator implements BundleActivator, BundleTrackerCustomizer<Objec
             }
         }
 
+        @Override
         public void register() {
             if (hasFallbackTypeConverter) {
                 // The FallbackTypeConverter should have a higher ranking
@@ -416,6 +464,7 @@ public class Activator implements BundleActivator, BundleTrackerCustomizer<Objec
                 super(null);
             }
 
+            @Override
             public void load(TypeConverterRegistry registry) throws TypeConverterLoaderException {
                 PackageScanFilter test = new AnnotatedWithPackageScanFilter(Converter.class, true);
                 Set<Class<?>> classes = new LinkedHashSet<>();
@@ -544,11 +593,11 @@ public class Activator implements BundleActivator, BundleTrackerCustomizer<Objec
             try {
                 Properties properties = loadProperties(url);
                 String classname = (String) properties.get("class");
-                Class<?> type = bundle.loadClass(classname);
+                Class type = bundle.loadClass(classname);
                 if (!this.type.isAssignableFrom(type)) {
                     throw new IllegalArgumentException("Type is not a " + this.type.getName() + " implementation. Found: " + type.getName());
                 }
-                return injector.newInstance((Class<T>) type);
+                return (T) injector.newInstance(type, false);
             } catch (ClassNotFoundException e) {
                 throw new IllegalArgumentException("Invalid URI, no " + this.type.getName() + " registered for scheme : " + name, e);
             }

@@ -17,6 +17,7 @@
 package org.apache.camel.component.cxf;
 
 import org.apache.camel.CamelContext;
+import org.apache.camel.Consumer;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
 import org.apache.camel.component.cxf.CxfEndpoint.CamelCxfClientImpl;
@@ -99,14 +100,16 @@ public class CxfEndpointTest extends Assert {
     @Test
     public void testCxfEndpointConfigurer() throws Exception {
         SimpleRegistry registry = new SimpleRegistry();
-        CxfEndpointConfigurer configurer = mock(CxfEndpointConfigurer.class);
+        CxfConfigurer configurer = mock(CxfConfigurer.class);
         Processor processor = mock(Processor.class);
         registry.bind("myConfigurer", configurer);
         CamelContext camelContext = new DefaultCamelContext(registry);
         CxfComponent cxfComponent = new CxfComponent(camelContext);
-        CxfEndpoint endpoint = (CxfEndpoint)cxfComponent.createEndpoint(routerEndpointURI + "&cxfEndpointConfigurer=#myConfigurer");
+        CxfEndpoint endpoint = (CxfEndpoint)cxfComponent.createEndpoint(routerEndpointURI + "&cxfConfigurer=#myConfigurer");
 
-        endpoint.createConsumer(processor);
+        Consumer consumer = endpoint.createConsumer(processor);
+        consumer.start();
+
         verify(configurer).configure(isA(AbstractWSDLBasedEndpointFactory.class));
         verify(configurer).configureServer(isA(Server.class));
         

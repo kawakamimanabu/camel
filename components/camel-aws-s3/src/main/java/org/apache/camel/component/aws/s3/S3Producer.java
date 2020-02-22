@@ -53,7 +53,6 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import com.amazonaws.services.s3.model.StorageClass;
 import com.amazonaws.services.s3.model.UploadPartRequest;
-
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
@@ -113,6 +112,9 @@ public class S3Producer extends DefaultProducer {
             case getObject:
                 getObject(getEndpoint().getS3Client(), exchange);
                 break;
+            case getObjectRange:
+                getObjectRange(getEndpoint().getS3Client(), exchange);
+                break;
             default:
                 throw new IllegalArgumentException("Unsupported operation");
             }
@@ -158,7 +160,7 @@ public class S3Producer extends DefaultProducer {
             // PutObjectRequest#setAccessControlList for more details
             initRequest.setAccessControlList(acl);
         }
-        
+
         if (getConfiguration().isUseAwsKMS()) {
             SSEAwsKeyManagementParams keyManagementParams;
             if (ObjectHelper.isNotEmpty(getConfiguration().getAwsKMSKeyId())) {
@@ -206,7 +208,7 @@ public class S3Producer extends DefaultProducer {
             message.setHeader(S3Constants.VERSION_ID, uploadResult.getVersionId());
         }
 
-        if (getConfiguration().isDeleteAfterWrite() && filePayload != null) {
+        if (getConfiguration().isDeleteAfterWrite()) {
             FileUtil.deleteFile(filePayload);
         }
     }
@@ -229,17 +231,21 @@ public class S3Producer extends DefaultProducer {
             is = new FileInputStream(filePayload);
         } else {
             is = exchange.getIn().getMandatoryBody(InputStream.class);
-            baos = determineLengthInputStream(is);
-            objectMetadata.setContentLength(baos.size());
-            is = new ByteArrayInputStream(baos.toByteArray());
+            if (objectMetadata.getContentLength() == 0 && ObjectHelper.isEmpty(exchange.getProperty(Exchange.CONTENT_LENGTH))) {
+                log.debug("The content length is not defined. It needs to be determined by reading the data into memory");
+                baos = determineLengthInputStream(is);
+                objectMetadata.setContentLength(baos.size());
+                is = new ByteArrayInputStream(baos.toByteArray());
+            } else {
+                if (ObjectHelper.isNotEmpty(exchange.getProperty(Exchange.CONTENT_LENGTH))) {
+                    objectMetadata.setContentLength(Long.valueOf(exchange.getProperty(Exchange.CONTENT_LENGTH, String.class)));
+                }
+            }
         }
 
-        String bucketName = exchange.getIn().getHeader(S3Constants.BUCKET_NAME, String.class);
-        if (bucketName == null) {
-            LOG.trace("Bucket name is not in header, using default one  [{}]...", getConfiguration().getBucketName());
-            bucketName = getConfiguration().getBucketName();
-        }
-        putObjectRequest = new PutObjectRequest(bucketName, determineKey(exchange), is, objectMetadata);
+        final String bucketName = determineBucketName(exchange);
+        final String key = determineKey(exchange);
+        putObjectRequest = new PutObjectRequest(bucketName, key, is, objectMetadata);
 
         String storageClass = determineStorageClass(exchange);
         if (storageClass != null) {
@@ -259,7 +265,7 @@ public class S3Producer extends DefaultProducer {
             // PutObjectRequest#setAccessControlList for more details
             putObjectRequest.setAccessControlList(acl);
         }
-        
+
         if (getConfiguration().isUseAwsKMS()) {
             SSEAwsKeyManagementParams keyManagementParams;
             if (ObjectHelper.isNotEmpty(getConfiguration().getAwsKMSKeyId())) {
@@ -269,7 +275,7 @@ public class S3Producer extends DefaultProducer {
             }
             putObjectRequest.setSSEAwsKeyManagementParams(keyManagementParams);
         }
-        
+
         LOG.trace("Put object [{}] from exchange [{}]...", putObjectRequest, exchange);
 
         PutObjectResult putObjectResult = getEndpoint().getS3Client().putObject(putObjectRequest);
@@ -292,29 +298,14 @@ public class S3Producer extends DefaultProducer {
     }
 
     private void copyObject(AmazonS3 s3Client, Exchange exchange) {
-        String bucketNameDestination;
-        String destinationKey;
-        String sourceKey;
-        String bucketName;
-        String versionId;
+        final String bucketName = determineBucketName(exchange);
+        final String sourceKey = determineKey(exchange);
+        final String destinationKey = exchange.getIn().getHeader(S3Constants.DESTINATION_KEY, String.class);
+        final String bucketNameDestination = exchange.getIn().getHeader(S3Constants.BUCKET_DESTINATION_NAME, String.class);
+        final String versionId = exchange.getIn().getHeader(S3Constants.VERSION_ID, String.class);
 
-        bucketName = exchange.getIn().getHeader(S3Constants.BUCKET_NAME, String.class);
-        if (ObjectHelper.isEmpty(bucketName)) {
-            bucketName = getConfiguration().getBucketName();
-        }
-        sourceKey = exchange.getIn().getHeader(S3Constants.KEY, String.class);
-        destinationKey = exchange.getIn().getHeader(S3Constants.DESTINATION_KEY, String.class);
-        bucketNameDestination = exchange.getIn().getHeader(S3Constants.BUCKET_DESTINATION_NAME, String.class);
-        versionId = exchange.getIn().getHeader(S3Constants.VERSION_ID, String.class);
-
-        if (ObjectHelper.isEmpty(bucketName)) {
-            throw new IllegalArgumentException("Bucket Name must be specified for copyObject Operation");
-        }
         if (ObjectHelper.isEmpty(bucketNameDestination)) {
             throw new IllegalArgumentException("Bucket Name Destination must be specified for copyObject Operation");
-        }
-        if (ObjectHelper.isEmpty(sourceKey)) {
-            throw new IllegalArgumentException("Source Key must be specified for copyObject Operation");
         }
         if (ObjectHelper.isEmpty(destinationKey)) {
             throw new IllegalArgumentException("Destination Key must be specified for copyObject Operation");
@@ -335,7 +326,7 @@ public class S3Producer extends DefaultProducer {
             }
             copyObjectRequest.setSSEAwsKeyManagementParams(keyManagementParams);
         }
-        
+
         CopyObjectResult copyObjectResult = s3Client.copyObject(copyObjectRequest);
 
         Message message = getMessageForResponse(exchange);
@@ -346,21 +337,9 @@ public class S3Producer extends DefaultProducer {
     }
 
     private void deleteObject(AmazonS3 s3Client, Exchange exchange) {
-        String sourceKey;
-        String bucketName;
+        final String bucketName = determineBucketName(exchange);
+        final String sourceKey = determineKey(exchange);
 
-        bucketName = exchange.getIn().getHeader(S3Constants.BUCKET_NAME, String.class);
-        if (ObjectHelper.isEmpty(bucketName)) {
-            bucketName = getConfiguration().getBucketName();
-        }
-        sourceKey = exchange.getIn().getHeader(S3Constants.KEY, String.class);
-
-        if (ObjectHelper.isEmpty(bucketName)) {
-            throw new IllegalArgumentException("Bucket Name must be specified for deleteObject Operation");
-        }
-        if (ObjectHelper.isEmpty(sourceKey)) {
-            throw new IllegalArgumentException("Source Key must be specified for deleteObject Operation");
-        }
         DeleteObjectRequest deleteObjectRequest;
         deleteObjectRequest = new DeleteObjectRequest(bucketName, sourceKey);
         s3Client.deleteObject(deleteObjectRequest);
@@ -377,46 +356,43 @@ public class S3Producer extends DefaultProducer {
     }
 
     private void deleteBucket(AmazonS3 s3Client, Exchange exchange) {
-        String bucketName;
-
-        bucketName = exchange.getIn().getHeader(S3Constants.BUCKET_NAME, String.class);
-        if (ObjectHelper.isEmpty(bucketName)) {
-            bucketName = getConfiguration().getBucketName();
-        }
+        final String bucketName = determineBucketName(exchange);
 
         DeleteBucketRequest deleteBucketRequest = new DeleteBucketRequest(bucketName);
         s3Client.deleteBucket(deleteBucketRequest);
     }
-    
+
     private void getObject(AmazonS3 s3Client, Exchange exchange) {
-        String bucketName;
-        String sourceKey;
-        bucketName = exchange.getIn().getHeader(S3Constants.BUCKET_NAME, String.class);
-        if (ObjectHelper.isEmpty(bucketName)) {
-            bucketName = getConfiguration().getBucketName();
-        }
-        sourceKey = exchange.getIn().getHeader(S3Constants.KEY, String.class);
-        if (ObjectHelper.isEmpty(bucketName)) {
-            throw new IllegalArgumentException("Bucket Name must be specified for getObject Operation");
-        }
-        if (ObjectHelper.isEmpty(sourceKey)) {
-            throw new IllegalArgumentException("Source Key must be specified for getObject Operation");
-        }
+        final String bucketName = determineBucketName(exchange);
+        final String sourceKey = determineKey(exchange);
+
         GetObjectRequest req = new GetObjectRequest(bucketName, sourceKey);
         S3Object res = s3Client.getObject(req);
-        
+
         Message message = getMessageForResponse(exchange);
         message.setBody(res);
     }
-    
-    private void listObjects(AmazonS3 s3Client, Exchange exchange) {
-        String bucketName;
 
-        bucketName = exchange.getIn().getHeader(S3Constants.BUCKET_NAME, String.class);
-        if (ObjectHelper.isEmpty(bucketName)) {
-            bucketName = getConfiguration().getBucketName();
+    private void getObjectRange(AmazonS3 s3Client, Exchange exchange) {
+        final String bucketName = determineBucketName(exchange);
+        final String sourceKey = determineKey(exchange);
+        final String rangeStart = exchange.getIn().getHeader(S3Constants.RANGE_START, String.class);
+        final String rangeEnd = exchange.getIn().getHeader(S3Constants.RANGE_END, String.class);
+
+        if (ObjectHelper.isEmpty(rangeStart) || ObjectHelper.isEmpty(rangeEnd)) {
+            throw new IllegalArgumentException("A Range start and range end header must be configured to perform a range get operation.");
         }
-        
+
+        GetObjectRequest req = new GetObjectRequest(bucketName, sourceKey).withRange(Long.parseLong(rangeStart), Long.parseLong(rangeEnd));
+        S3Object res = s3Client.getObject(req);
+
+        Message message = getMessageForResponse(exchange);
+        message.setBody(res);
+    }
+
+    private void listObjects(AmazonS3 s3Client, Exchange exchange) {
+        final String bucketName = determineBucketName(exchange);
+
         ObjectListing objectList = s3Client.listObjects(bucketName);
 
         Message message = getMessageForResponse(exchange);
@@ -489,8 +465,34 @@ public class S3Producer extends DefaultProducer {
         return objectMetadata;
     }
 
+    /**
+     * Reads the bucket name from the header of the given exchange. If not
+     * provided, it's read from the endpoint configuration.
+     *
+     * @param exchange The exchange to read the header from.
+     * @return The bucket name.
+     * @throws IllegalArgumentException if the header could not be determined.
+     */
+    private String determineBucketName(final Exchange exchange) {
+        String bucketName = exchange.getIn().getHeader(S3Constants.BUCKET_NAME, String.class);
+
+        if (ObjectHelper.isEmpty(bucketName)) {
+            bucketName = getConfiguration().getBucketName();
+            LOG.trace("AWS S3 Bucket name header is missing, using default one [{}]", bucketName);
+        }
+
+        if (bucketName == null) {
+            throw new IllegalArgumentException("AWS S3 Bucket name header is missing or not configured.");
+        }
+
+        return bucketName;
+    }
+
     private String determineKey(final Exchange exchange) {
         String key = exchange.getIn().getHeader(S3Constants.KEY, String.class);
+        if (ObjectHelper.isEmpty(key)) {
+            key = getConfiguration().getKeyName();
+        }
         if (key == null) {
             throw new IllegalArgumentException("AWS S3 Key header missing.");
         }
@@ -517,42 +519,35 @@ public class S3Producer extends DefaultProducer {
     }
 
     private void createDownloadLink(AmazonS3 s3Client, Exchange exchange) {
-        String bucketName = exchange.getIn().getHeader(S3Constants.BUCKET_NAME, String.class);
-        if (ObjectHelper.isEmpty(bucketName)) {
-            bucketName = getConfiguration().getBucketName();
-        }
-        
-        if (bucketName == null) {
-            throw new IllegalArgumentException("AWS S3 Bucket name header is missing.");
-        }
-        
+        final String bucketName = determineBucketName(exchange);
+
         String key = exchange.getIn().getHeader(S3Constants.KEY, String.class);
         if (key == null) {
             throw new IllegalArgumentException("AWS S3 Key header is missing.");
         }
-        
+
         Date expiration = new Date();
         long milliSeconds = expiration.getTime();
-        
+
         Long expirationMillis = exchange.getIn().getHeader(S3Constants.DOWNLOAD_LINK_EXPIRATION, Long.class);
         if (expirationMillis != null) {
             milliSeconds += expirationMillis;
         } else {
             milliSeconds += 1000 * 60 * 60; // Default: Add 1 hour.
         }
-        
+
         expiration.setTime(milliSeconds);
-        
+
         GeneratePresignedUrlRequest generatePresignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, key);
-        generatePresignedUrlRequest.setMethod(HttpMethod.GET); 
+        generatePresignedUrlRequest.setMethod(HttpMethod.GET);
         generatePresignedUrlRequest.setExpiration(expiration);
 
-        URL url = s3Client.generatePresignedUrl(generatePresignedUrlRequest); 
-        
+        URL url = s3Client.generatePresignedUrl(generatePresignedUrlRequest);
+
         Message message = getMessageForResponse(exchange);
         message.setHeader(S3Constants.DOWNLOAD_LINK, url.toString());
     }
-            
+
     protected S3Configuration getConfiguration() {
         return getEndpoint().getConfiguration();
     }
@@ -569,7 +564,7 @@ public class S3Producer extends DefaultProducer {
     public S3Endpoint getEndpoint() {
         return (S3Endpoint)super.getEndpoint();
     }
-    
+
     public static Message getMessageForResponse(final Exchange exchange) {
         if (exchange.getPattern().isOutCapable()) {
             Message out = exchange.getOut();

@@ -19,11 +19,13 @@ package ${package};
 import org.apache.camel.Consumer;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
-import org.apache.camel.impl.DefaultEndpoint;
+import org.apache.camel.support.DefaultEndpoint;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriEndpoint;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriPath;
+
+import java.util.concurrent.ExecutorService;
 
 /**
  * Represents a ${name} endpoint.
@@ -41,10 +43,6 @@ public class ${name}Endpoint extends DefaultEndpoint {
 
     public ${name}Endpoint(String uri, ${name}Component component) {
         super(uri, component);
-    }
-
-    public ${name}Endpoint(String endpointUri) {
-        super(endpointUri);
     }
 
     public Producer createProducer() throws Exception {
@@ -79,5 +77,10 @@ public class ${name}Endpoint extends DefaultEndpoint {
 
     public int getOption() {
         return option;
+    }
+
+    public ExecutorService createExecutor() {
+        // TODO: Delete me when you implementy your custom component
+        return getCamelContext().getExecutorServiceManager().newSingleThreadExecutor(this, "${name}Consumer");
     }
 }

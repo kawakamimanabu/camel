@@ -20,6 +20,7 @@ import java.util.Map;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.ContextTestSupport;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.NamedNode;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
@@ -38,7 +39,7 @@ public class CustomProcessorFactoryTest extends ContextTestSupport {
     protected CamelContext createCamelContext() throws Exception {
         CamelContext context = super.createCamelContext();
         // register our custom factory
-        context.setProcessorFactory(new MyFactory());
+        context.adapt(ExtendedCamelContext.class).setProcessorFactory(new MyFactory());
         return context;
     }
     // END SNIPPET: e1
@@ -69,14 +70,9 @@ public class CustomProcessorFactoryTest extends ContextTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:start")
-                    .setBody().constant("body not altered").to("mock:foo");
+                from("direct:start").setBody().constant("body not altered").to("mock:foo");
 
-                from("direct:foo")
-                    .split(body())
-                        .setBody().constant("body not altered").to("mock:split")
-                    .end()
-                    .to("mock:result");
+                from("direct:foo").split(body()).setBody().constant("body not altered").to("mock:split").end().to("mock:result");
             }
         };
     }
@@ -94,16 +90,17 @@ public class CustomProcessorFactoryTest extends ContextTestSupport {
         public Processor createProcessor(RouteContext routeContext, NamedNode definition) throws Exception {
             if (definition instanceof SplitDefinition) {
                 // add additional output to the splitter
-                SplitDefinition split = (SplitDefinition) definition;
+                SplitDefinition split = (SplitDefinition)definition;
                 split.addOutput(new ToDefinition("mock:extra"));
             }
 
             if (definition instanceof SetBodyDefinition) {
-                SetBodyDefinition set = (SetBodyDefinition) definition;
+                SetBodyDefinition set = (SetBodyDefinition)definition;
                 set.setExpression(new ConstantExpression("body was altered"));
             }
 
-            // return null to let the default implementation create the processor, we just wanted to alter the definition
+            // return null to let the default implementation create the
+            // processor, we just wanted to alter the definition
             // before the processor was created
             return null;
         }

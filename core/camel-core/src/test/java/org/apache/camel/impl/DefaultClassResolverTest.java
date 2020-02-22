@@ -19,6 +19,7 @@ package org.apache.camel.impl;
 import java.io.InputStream;
 import java.net.URL;
 
+import org.apache.camel.impl.engine.DefaultClassResolver;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -60,14 +61,14 @@ public class DefaultClassResolverTest extends Assert {
     }
 
     @Test
-    public void testResolveMandatoryClassType()throws Exception {
+    public void testResolveMandatoryClassType() throws Exception {
         DefaultClassResolver resolver = new DefaultClassResolver();
         Class<Integer> clazz = resolver.resolveMandatoryClass("java.lang.Integer", Integer.class);
         assertNotNull(clazz);
     }
 
     @Test
-    public void testResolveMandatorySimpleClassType()throws Exception {
+    public void testResolveMandatorySimpleClassType() throws Exception {
         DefaultClassResolver resolver = new DefaultClassResolver();
 
         Class<Byte> clazz = resolver.resolveMandatoryClass("Byte", Byte.class);
@@ -116,7 +117,7 @@ public class DefaultClassResolverTest extends Assert {
     }
 
     @Test
-    public void testResolveMandatoryClassNotFound()  {
+    public void testResolveMandatoryClassNotFound() {
         DefaultClassResolver resolver = new DefaultClassResolver();
         try {
             resolver.resolveMandatoryClass("com.FooBar");

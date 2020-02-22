@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.impl.engine.DurationRoutePolicy;
 import org.junit.Test;
 
 import static org.awaitility.Awaitility.await;
@@ -50,8 +51,7 @@ public class DurationRoutePolicyMaxMessagesTest extends ContextTestSupport {
                 DurationRoutePolicy policy = new DurationRoutePolicy();
                 policy.setMaxMessages(5);
 
-                from("timer:foo?period=100").routeId("foo").routePolicy(policy)
-                    .to("mock:foo");
+                from("timer:foo?period=100").routeId("foo").routePolicy(policy).to("mock:foo");
             }
         };
     }

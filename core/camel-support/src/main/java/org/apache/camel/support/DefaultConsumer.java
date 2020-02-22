@@ -20,6 +20,7 @@ import org.apache.camel.AsyncProcessor;
 import org.apache.camel.Consumer;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.Processor;
 import org.apache.camel.Route;
 import org.apache.camel.RouteAware;
@@ -55,10 +56,12 @@ public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAw
         return consumerToString;
     }
 
+    @Override
     public Route getRoute() {
         return route;
     }
 
+    @Override
     public void setRoute(Route route) {
         this.route = route;
     }
@@ -81,7 +84,7 @@ public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAw
             exchange.setFromRouteId(route.getId());
         }
 
-        UnitOfWork uow = endpoint.getCamelContext().getUnitOfWorkFactory().createUnitOfWork(exchange);
+        UnitOfWork uow = endpoint.getCamelContext().adapt(ExtendedCamelContext.class).getUnitOfWorkFactory().createUnitOfWork(exchange);
         exchange.setUnitOfWork(uow);
         uow.start();
         return uow;
@@ -100,10 +103,12 @@ public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAw
         UnitOfWorkHelper.doneUow(exchange.getUnitOfWork(), exchange);
     }
 
+    @Override
     public Endpoint getEndpoint() {
         return endpoint;
     }
 
+    @Override
     public Processor getProcessor() {
         return processor;
     }
@@ -132,11 +137,19 @@ public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAw
         this.exceptionHandler = exceptionHandler;
     }
 
+    @Override
+    protected void doInit() throws Exception {
+        log.debug("Init consumer: {}", this);
+        ServiceHelper.initService(processor);
+    }
+
+    @Override
     protected void doStop() throws Exception {
         log.debug("Stopping consumer: {}", this);
         ServiceHelper.stopService(processor);
     }
 
+    @Override
     protected void doStart() throws Exception {
         log.debug("Starting consumer: {}", this);
         ServiceHelper.startService(processor);

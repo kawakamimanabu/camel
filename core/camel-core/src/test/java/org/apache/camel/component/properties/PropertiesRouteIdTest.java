@@ -40,8 +40,7 @@ public class PropertiesRouteIdTest extends ContextTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:start").routeId("{{cool.name}}")
-                    .to("mock:result").id("{{cool.other.name}}");
+                from("direct:start").routeId("{{cool.name}}").to("mock:result").id("{{cool.other.name}}");
             }
         };
     }
@@ -49,7 +48,7 @@ public class PropertiesRouteIdTest extends ContextTestSupport {
     @Override
     protected CamelContext createCamelContext() throws Exception {
         CamelContext context = super.createCamelContext();
-        context.addComponent("properties", new PropertiesComponent("classpath:org/apache/camel/component/properties/myproperties.properties"));
+        context.getPropertiesComponent().setLocation("classpath:org/apache/camel/component/properties/myproperties.properties");
         return context;
     }
 

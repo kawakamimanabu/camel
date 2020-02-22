@@ -29,6 +29,7 @@ public class JdbcIdempotentRepository implements IdempotentRepository {
         this.jdbc = new JdbcTemplate(ds);
     }
 
+    @Override
     public boolean add(String key) {
         // check we already have it because eager option can have been turned on
         if (contains(key)) {
@@ -39,29 +40,35 @@ public class JdbcIdempotentRepository implements IdempotentRepository {
         return true;
     }
 
+    @Override
     public boolean contains(String key) {
         int numMatches = jdbc.queryForObject("SELECT count(0) FROM ProcessedPayments where paymentIdentifier = ?", Integer.class, key);
         return numMatches > 0;
     }
 
+    @Override
     public boolean remove(String key) {
         jdbc.update("DELETE FROM ProcessedPayments WHERE paymentIdentifier = ?", key);
         return true;
     }
 
+    @Override
     public boolean confirm(String key) {
         return true;
     }
     
+    @Override
     public void clear() {
         jdbc.update("DELETE * FROM ProcessedPayments");
     }
 
-    public void start() throws Exception {
+    @Override
+    public void start() {
         // noop
     }
 
-    public void stop() throws Exception {
+    @Override
+    public void stop() {
         // noop
     }
 }

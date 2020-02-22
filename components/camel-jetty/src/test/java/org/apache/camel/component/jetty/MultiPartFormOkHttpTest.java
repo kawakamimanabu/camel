@@ -25,6 +25,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
+import org.apache.camel.attachment.AttachmentMessage;
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.Test;
 
@@ -32,14 +33,11 @@ public class MultiPartFormOkHttpTest extends BaseJettyTest {
 
     private Request createMultipartRequest() throws Exception {
         MediaType mediaType = MediaType.parse("multipart/form-data; boundary=---011000010111000001101001");
-        RequestBody body = RequestBody.create(mediaType, "-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"test\"\r\n\r\nsome data here\r\n-----011000010111000001101001--");
-        Request request = new Request.Builder()
-            .url("http://localhost:" + getPort() + "/test")
-            .post(body)
-            .addHeader("content-type", "multipart/form-data; boundary=---011000010111000001101001")
-            .addHeader("cache-control", "no-cache")
-            .addHeader("postman-token", "a9fd95b6-04b9-ea7a-687e-ff828ea00774")
-            .build();
+        RequestBody body = RequestBody
+            .create(mediaType, "-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"test\"\r\n\r\nsome data here\r\n-----011000010111000001101001--");
+        Request request = new Request.Builder().url("http://localhost:" + getPort() + "/test").post(body)
+            .addHeader("content-type", "multipart/form-data; boundary=---011000010111000001101001").addHeader("cache-control", "no-cache")
+            .addHeader("postman-token", "a9fd95b6-04b9-ea7a-687e-ff828ea00774").build();
         return request;
     }
 
@@ -53,16 +51,18 @@ public class MultiPartFormOkHttpTest extends BaseJettyTest {
         assertEquals("Thanks", response.body().string());
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             public void configure() throws Exception {
                 from("jetty://http://localhost:{{port}}/test").process(new Processor() {
                     public void process(Exchange exchange) throws Exception {
-                        assertTrue("Should have attachment", exchange.getIn().hasAttachments());
+                        AttachmentMessage message = exchange.getMessage(AttachmentMessage.class);
+                        assertTrue("Should have attachment", message.hasAttachments());
 
-                        InputStream is = exchange.getIn().getAttachment("test").getInputStream();
+                        InputStream is = message.getAttachment("test").getInputStream();
                         assertNotNull(is);
-                        assertEquals("form-data; name=\"test\"", exchange.getIn().getAttachmentObject("test").getHeader("content-disposition"));
+                        assertEquals("form-data; name=\"test\"", message.getAttachmentObject("test").getHeader("content-disposition"));
                         String data = exchange.getContext().getTypeConverter().convertTo(String.class, exchange, is);
                         assertNotNull("Should have data", data);
                         assertEquals("some data here", data);

@@ -16,8 +16,6 @@
  */
 package org.apache.camel.component.pulsar;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.Endpoint;
@@ -27,20 +25,18 @@ import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.component.pulsar.utils.AutoConfiguration;
-import org.apache.camel.impl.JndiRegistry;
-import org.apache.camel.test.junit4.CamelTestSupport;
+import org.apache.camel.spi.Registry;
+import org.apache.camel.support.SimpleRegistry;
 import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.impl.ClientBuilderImpl;
-import org.junit.Rule;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.PulsarContainer;
 
-public class PulsarConcurrentConsumerInTest extends CamelTestSupport {
+public class PulsarConcurrentConsumerInTest extends PulsarTestSupport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PulsarConcurrentConsumerInTest.class);
 
@@ -48,14 +44,11 @@ public class PulsarConcurrentConsumerInTest extends CamelTestSupport {
     private static final String PRODUCER = "camel-producer";
     private static final int NUMBER_OF_CONSUMERS = 5;
 
-    @Rule
-    public PulsarContainer pulsarContainer = new PulsarContainer();
-
-    @EndpointInject(uri = "pulsar:" + TOPIC_URI + "?numberOfConsumers=5&subscriptionType=Shared"
-                          + "&subscriptionName=camel-subscription&consumerQueueSize=1&consumerNamePrefix=camel-consumer-")
+    @EndpointInject("pulsar:" + TOPIC_URI + "?numberOfConsumers=5&subscriptionType=Shared"
+                    + "&subscriptionName=camel-subscription&consumerQueueSize=1&consumerNamePrefix=camel-consumer-")
     private Endpoint from;
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint to;
 
     @Override
@@ -71,39 +64,39 @@ public class PulsarConcurrentConsumerInTest extends CamelTestSupport {
 
             @Override
             public void configure() {
-                from(from).to(to).unmarshal().string().process(processor);
+                from(from).to(to).process(processor);
             }
         };
     }
 
     @Override
-    protected JndiRegistry createRegistry() throws Exception {
-        JndiRegistry jndi = super.createRegistry();
+    protected Registry createCamelRegistry() throws Exception {
+        SimpleRegistry registry = new SimpleRegistry();
 
-        registerPulsarBeans(jndi);
+        registerPulsarBeans(registry);
 
-        return jndi;
+        return registry;
     }
 
-    private void registerPulsarBeans(final JndiRegistry jndi) throws PulsarClientException {
+    private void registerPulsarBeans(SimpleRegistry registry) throws PulsarClientException {
         PulsarClient pulsarClient = concurrentPulsarClient();
         AutoConfiguration autoConfiguration = new AutoConfiguration(null, null);
 
-        jndi.bind("pulsarClient", pulsarClient);
+        registry.bind("pulsarClient", pulsarClient);
         PulsarComponent comp = new PulsarComponent(context);
         comp.setAutoConfiguration(autoConfiguration);
         comp.setPulsarClient(pulsarClient);
-        jndi.bind("pulsar", comp);
+        registry.bind("pulsar", comp);
 
     }
 
     private PulsarClient concurrentPulsarClient() throws PulsarClientException {
-        return new ClientBuilderImpl().serviceUrl(pulsarContainer.getPulsarBrokerUrl()).ioThreads(2).listenerThreads(5).build();
+        return new ClientBuilderImpl().serviceUrl(getPulsarBrokerUrl()).ioThreads(5).listenerThreads(5).build();
     }
 
     @Test
     public void testMultipleMessageConsumedByClusterwithConcurrentConfiguration() throws Exception {
-        to.expectedMessageCount(NUMBER_OF_CONSUMERS);
+        to.expectedMinimumMessageCount(1);
 
         Producer<String> producer = concurrentPulsarClient().newProducer(Schema.STRING).producerName(PRODUCER).topic(TOPIC_URI).create();
 

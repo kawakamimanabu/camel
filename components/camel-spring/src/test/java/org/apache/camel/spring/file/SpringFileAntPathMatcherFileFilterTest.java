@@ -32,9 +32,9 @@ public class SpringFileAntPathMatcherFileFilterTest extends SpringRunWithTestSup
     protected String expectedBody = "Godday World";
     @Autowired
     protected ProducerTemplate template;
-    @EndpointInject(uri = "ref:myFileEndpoint")
+    @EndpointInject("ref:myFileEndpoint")
     protected Endpoint inputFile;
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     protected MockEndpoint result;
 
     @Test
@@ -50,6 +50,7 @@ public class SpringFileAntPathMatcherFileFilterTest extends SpringRunWithTestSup
         result.assertIsSatisfied();
     }
 
+    @Override
     @Before
     public void setUp() throws Exception {
         deleteDirectory("target/antpathmatcher");

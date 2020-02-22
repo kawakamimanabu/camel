@@ -25,7 +25,7 @@ import org.junit.Test;
 
 public class NatsConsumerMaxMessagesTest extends NatsTestSupport {
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     protected MockEndpoint mockResultEndpoint;
 
     @Test
@@ -51,8 +51,9 @@ public class NatsConsumerMaxMessagesTest extends NatsTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:send").to("nats://" + getNatsUrl() + "?topic=test");
-                from("nats://" + getNatsUrl() + "?topic=test&maxMessages=5").to(mockResultEndpoint);
+                from("direct:send").to("nats:test");
+
+                from("nats:test?maxMessages=5").to(mockResultEndpoint);
             }
         };
     }

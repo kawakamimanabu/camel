@@ -61,6 +61,7 @@ import org.jboss.shrinkwrap.impl.base.path.BasicPath;
 import org.jboss.shrinkwrap.resolver.api.maven.ConfigurableMavenResolverSystem;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.jboss.shrinkwrap.resolver.api.maven.MavenResolvedArtifact;
+import org.jboss.shrinkwrap.resolver.api.maven.PomEquippedResolveStage;
 import org.jboss.shrinkwrap.resolver.api.maven.ScopeType;
 import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenCoordinate;
 import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenCoordinates;
@@ -133,9 +134,10 @@ public final class ArquillianPackager {
         }
         if (version == null) {
             // It is missing when launching from IDE
-            List<MavenResolvedArtifact> resolved = Arrays.asList(resolver(config).loadPomFromFile("pom.xml").importCompileAndRuntimeDependencies().resolve().withoutTransitivity().asResolvedArtifact());
+            PomEquippedResolveStage pom = resolver(config).loadPomFromFile("pom.xml");
+            List<MavenResolvedArtifact> resolved = Arrays.asList(pom.importCompileAndRuntimeDependencies().resolve().withoutTransitivity().asResolvedArtifact());
             for (MavenResolvedArtifact dep : resolved) {
-                if (dep.getCoordinate().getGroupId().equals("org.apache.camel")) {
+                if (dep.getCoordinate().getGroupId().equals("org.apache.camel.springboot")) {
                     version = dep.getCoordinate().getVersion();
                     break;
                 }
@@ -227,13 +229,17 @@ public final class ArquillianPackager {
         resolvedScopes.addAll(scopes);
 
         List<MavenResolvedArtifact> runtimeDependencies = new LinkedList<>();
-        runtimeDependencies.addAll(Arrays.asList(resolver(config)
-                .loadPomFromFile(moduleSpringBootPom)
-                .importDependencies(resolvedScopes.toArray(new ScopeType[0]))
-                .addDependencies(additionalDependencies)
-                .resolve()
-                .withTransitivity()
-                .asResolvedArtifact()));
+        try {
+            runtimeDependencies.addAll(Arrays.asList(resolver(config)
+                    .loadPomFromFile(moduleSpringBootPom)
+                    .importDependencies(resolvedScopes.toArray(new ScopeType[0]))
+                    .addDependencies(additionalDependencies)
+                    .resolve()
+                    .withTransitivity()
+                    .asResolvedArtifact()));
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage(), e);
+        }
 
 
         List<MavenResolvedArtifact> dependencyArtifacts = runtimeDependencies; //merge(config, runtimeDependencies, testDependencies);
@@ -307,6 +313,7 @@ public final class ArquillianPackager {
         ignore.add("io.netty:netty:jar"); // an old version
         ignore.add("io.netty:netty-tcnative-boringssl-static");
         ignore.add("io.swagger:swagger-parser");
+        ignore.add("io.opencensus:opencensus-");
         ignore.add("io.opentracing.contrib:opentracing-");
         ignore.add("org.apache.commons");
         ignore.add("org.apache.curator");

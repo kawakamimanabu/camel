@@ -29,7 +29,6 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.dataformat.bindy.kvp.BindyKeyValuePairDataFormat;
 import org.apache.camel.dataformat.bindy.model.fix.withoutsection.Order;
-
 import org.junit.Test;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
@@ -46,13 +45,13 @@ public class BindySimpleKeyValuePairWithoutSectionMarshallDslTest extends Abstra
 
     private List<Map<String, Object>> models = new ArrayList<>();
 
-    @Produce(uri = URI_DIRECT_START)
+    @Produce(URI_DIRECT_START)
     private ProducerTemplate template;
 
-    @EndpointInject(uri = URI_MOCK_RESULT)
+    @EndpointInject(URI_MOCK_RESULT)
     private MockEndpoint result;
 
-    @EndpointInject(uri = URI_MOCK_ERROR)
+    @EndpointInject(URI_MOCK_ERROR)
     private MockEndpoint error;
 
     @Test
@@ -97,6 +96,7 @@ public class BindySimpleKeyValuePairWithoutSectionMarshallDslTest extends Abstra
 
         BindyKeyValuePairDataFormat orderBindyDataFormat = new BindyKeyValuePairDataFormat(org.apache.camel.dataformat.bindy.model.fix.withoutsection.Order.class);
 
+        @Override
         public void configure() {
 
             // default should errors go to mock:error

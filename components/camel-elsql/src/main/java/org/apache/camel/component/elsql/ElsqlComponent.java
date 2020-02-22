@@ -17,6 +17,7 @@
 package org.apache.camel.component.elsql;
 
 import java.util.Map;
+
 import javax.sql.DataSource;
 
 import com.opengamma.elsql.ElSqlConfig;
@@ -25,7 +26,8 @@ import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.annotations.Component;
 import org.apache.camel.support.CamelContextHelper;
 import org.apache.camel.support.DefaultComponent;
-import org.apache.camel.support.IntrospectionSupport;
+import org.apache.camel.support.PropertyBindingSupport;
+import org.apache.camel.util.PropertiesHelper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 @Component("elsql")
@@ -62,7 +64,8 @@ public class ElsqlComponent extends DefaultComponent {
         }
 
         NamedParameterJdbcTemplate jdbcTemplate = new NamedParameterJdbcTemplate(target);
-        IntrospectionSupport.setProperties(jdbcTemplate, parameters, "template.");
+        Map<String, Object> params = PropertiesHelper.extractProperties(parameters, "template.");
+        PropertyBindingSupport.bindProperties(getCamelContext(), jdbcTemplate, params);
 
         String elsqlName = remaining;
         String resUri = resourceUri;

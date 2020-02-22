@@ -37,7 +37,7 @@ public class SpringFileRouteTest extends SpringRunWithTestSupport {
     protected ProducerTemplate template;
     @Autowired
     protected Endpoint inputFile;
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     protected MockEndpoint result;
 
     @Test
@@ -54,6 +54,7 @@ public class SpringFileRouteTest extends SpringRunWithTestSupport {
         result.assertIsSatisfied();
     }
 
+    @Override
     @Before
     public void setUp() throws Exception {
         deleteDirectory("target/test-default-inbox");

@@ -33,10 +33,10 @@ import org.junit.Test;
 // START SNIPPET: example
 public class JmsFilterTest extends CamelTestSupport {
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     protected MockEndpoint resultEndpoint;
 
-    @Produce(uri = "direct:start")
+    @Produce("direct:start")
     protected ProducerTemplate template;
 
     @Test
@@ -59,6 +59,7 @@ public class JmsFilterTest extends CamelTestSupport {
         resultEndpoint.assertIsSatisfied();
     }
     
+    @Override
     protected CamelContext createCamelContext() throws Exception {
         CamelContext camelContext = super.createCamelContext();
 

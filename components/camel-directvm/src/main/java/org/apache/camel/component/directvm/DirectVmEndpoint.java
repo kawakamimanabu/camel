@@ -20,7 +20,6 @@ import org.apache.camel.AsyncEndpoint;
 import org.apache.camel.Consumer;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
-import org.apache.camel.component.direct.DirectConsumer;
 import org.apache.camel.spi.HeaderFilterStrategy;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriEndpoint;
@@ -73,11 +72,6 @@ public class DirectVmEndpoint extends DefaultEndpoint implements AsyncEndpoint {
         Consumer answer = new DirectVmConsumer(this, new DirectVmProcessor(processor, this));
         configureConsumer(answer);
         return answer;
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     public DirectVmConsumer getConsumer() {

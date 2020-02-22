@@ -21,10 +21,10 @@ import org.apache.camel.DelegateProcessor;
 import org.apache.camel.Processor;
 import org.apache.camel.Route;
 import org.apache.camel.builder.NotifyBuilder;
-import org.apache.camel.impl.EventDrivenConsumerRoute;
-import org.apache.camel.processor.DeadLetterChannel;
-import org.apache.camel.processor.DefaultErrorHandler;
+import org.apache.camel.impl.engine.EventDrivenConsumerRoute;
 import org.apache.camel.processor.Pipeline;
+import org.apache.camel.processor.errorhandler.DeadLetterChannel;
+import org.apache.camel.processor.errorhandler.DefaultErrorHandler;
 import org.apache.camel.spring.spi.TransactionErrorHandler;
 import org.apache.camel.test.spring.CamelSpringTestSupport;
 import org.apache.xbean.spring.context.ClassPathXmlApplicationContext;
@@ -39,6 +39,7 @@ import org.springframework.context.support.AbstractXmlApplicationContext;
  */
 public abstract class AbstractTransactionTest extends CamelSpringTestSupport {
 
+    @Override
     @After
     public void tearDown() throws Exception {
         super.tearDown();
@@ -47,6 +48,7 @@ public abstract class AbstractTransactionTest extends CamelSpringTestSupport {
         template = null;
     }
 
+    @Override
     protected AbstractXmlApplicationContext createApplicationContext() {
         return new ClassPathXmlApplicationContext("org/apache/camel/component/jms/tx/JavaDSLTransactionTest.xml");
     }

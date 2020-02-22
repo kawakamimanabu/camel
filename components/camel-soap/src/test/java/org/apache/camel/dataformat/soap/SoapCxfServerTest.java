@@ -41,7 +41,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
 public class SoapCxfServerTest extends RouteBuilder {
-    @Produce(uri = "direct:camelClient")
+    @Produce("direct:camelClient")
     CustomerService customerServiceProxy;
 
     @Test
@@ -68,6 +68,7 @@ public class SoapCxfServerTest extends RouteBuilder {
         }
     }
 
+    @Override
     public void configure() throws Exception {
         String jaxbPackage = GetCustomersByName.class.getPackage().getName();
         ElementNameStrategy elNameStrat = new ServiceInterfaceStrategy(CustomerService.class, true);

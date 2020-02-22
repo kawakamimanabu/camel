@@ -24,17 +24,18 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class SpringMarshalDomainObjectJSONTest extends MarshalDomainObjectJSONTest {
 
+    @Override
     protected CamelContext createCamelContext() throws Exception {
         setUseRouteBuilder(false);
 
         final AbstractXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("org/apache/camel/dataformat/xstream/SpringMarshalDomainObjectJSONTest.xml");
         setCamelContextService(new Service() {
-            public void start() throws Exception {
+            public void start() {
                 applicationContext.start();
 
             }
 
-            public void stop() throws Exception {
+            public void stop() {
                 applicationContext.stop();
             }
         });

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.file;
+
 import java.io.File;
 import java.util.List;
 
@@ -37,11 +38,6 @@ public class FileBrowsableEndpointTest extends ContextTestSupport {
         super.setUp();
     }
 
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
-    }
-
     @Test
     public void testBrowsableNoFiles() throws Exception {
         BrowsableEndpoint browse = context.getEndpoint("file:target/data/browse?initialDelay=0&delay=10", BrowsableEndpoint.class);
@@ -59,7 +55,7 @@ public class FileBrowsableEndpointTest extends ContextTestSupport {
         FileEndpoint endpoint = context.getEndpoint("file:target/data/browse?initialDelay=0&delay=10", FileEndpoint.class);
         assertNotNull(endpoint);
 
-        MemoryIdempotentRepository repo = (MemoryIdempotentRepository) endpoint.getInProgressRepository();
+        MemoryIdempotentRepository repo = (MemoryIdempotentRepository)endpoint.getInProgressRepository();
         assertEquals(0, repo.getCacheSize());
 
         List<Exchange> list = endpoint.getExchanges();
@@ -84,7 +80,7 @@ public class FileBrowsableEndpointTest extends ContextTestSupport {
         FileEndpoint endpoint = context.getEndpoint("file:target/data/browse?initialDelay=0&delay=10&sortBy=file:name", FileEndpoint.class);
         assertNotNull(endpoint);
 
-        MemoryIdempotentRepository repo = (MemoryIdempotentRepository) endpoint.getInProgressRepository();
+        MemoryIdempotentRepository repo = (MemoryIdempotentRepository)endpoint.getInProgressRepository();
         assertEquals(0, repo.getCacheSize());
 
         List<Exchange> list = endpoint.getExchanges();
@@ -113,7 +109,7 @@ public class FileBrowsableEndpointTest extends ContextTestSupport {
         FileEndpoint endpoint = context.getEndpoint("file:target/data/browse?initialDelay=0&delay=10&recursive=true&sortBy=file:name", FileEndpoint.class);
         assertNotNull(endpoint);
 
-        MemoryIdempotentRepository repo = (MemoryIdempotentRepository) endpoint.getInProgressRepository();
+        MemoryIdempotentRepository repo = (MemoryIdempotentRepository)endpoint.getInProgressRepository();
         assertEquals(0, repo.getCacheSize());
 
         List<Exchange> list = endpoint.getExchanges();

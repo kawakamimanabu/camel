@@ -29,10 +29,10 @@ import org.junit.Test;
 
 public class ShiroAuthenticationBase64Test extends CamelTestSupport {
 
-    @EndpointInject(uri = "mock:success")
+    @EndpointInject("mock:success")
     protected MockEndpoint successEndpoint;
 
-    @EndpointInject(uri = "mock:authenticationException")
+    @EndpointInject("mock:authenticationException")
     protected MockEndpoint failureEndpoint;
 
     private byte[] passPhrase = {
@@ -71,6 +71,7 @@ public class ShiroAuthenticationBase64Test extends CamelTestSupport {
         failureEndpoint.assertIsSatisfied();
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         final ShiroSecurityPolicy securityPolicy = new ShiroSecurityPolicy("src/test/resources/securityconfig.ini", passPhrase);
         securityPolicy.setBase64(true);
@@ -98,6 +99,7 @@ public class ShiroAuthenticationBase64Test extends CamelTestSupport {
             setBase64(true);
         }
         
+        @Override
         public void process(Exchange exchange) throws Exception {
             super.process(exchange);
             exchange.getIn().setBody("Beatle Mania");

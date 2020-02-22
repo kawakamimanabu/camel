@@ -20,11 +20,9 @@ import javax.jms.ConnectionFactory;
 
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.jms.JmsComponent;
-import org.apache.camel.impl.JndiRegistry;
-import org.apache.camel.impl.StringDataFormat;
 import org.apache.camel.itest.CamelJmsTestHelper;
-import org.apache.camel.spi.DataFormat;
 import org.apache.camel.spi.Registry;
+import org.apache.camel.support.SimpleRegistry;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,11 +73,11 @@ public class HttpAsyncDslTest extends CamelTestSupport {
     }
 
     @Override
-    protected JndiRegistry createRegistry() throws Exception {
-        JndiRegistry jndi =  super.createRegistry();
-        jndi.bind("validateOrder", new MyValidateOrderBean());
-        jndi.bind("handleOrder", new MyHandleOrderBean());
-        return jndi;
+    protected Registry createCamelRegistry() throws Exception {
+        Registry registry =  new SimpleRegistry();
+        registry.bind("validateOrder", new MyValidateOrderBean());
+        registry.bind("handleOrder", new MyHandleOrderBean());
+        return registry;
     }
 
     @Override
@@ -97,9 +95,6 @@ public class HttpAsyncDslTest extends CamelTestSupport {
             @Override
             public void configure() throws Exception {
                 // START SNIPPET: e1
-                // just a unit test but imaging using your own data format that does complex
-                // and CPU heavy processing for decrypting the message
-                DataFormat mySecureDataFormat = new StringDataFormat("iso-8859-1");
 
                 // list on the JMS queue for new orders
                 from("jms:queue:order")
@@ -113,7 +108,7 @@ public class HttpAsyncDslTest extends CamelTestSupport {
                     // use a pool of 20 threads for the point forward
                     .threads(20)
                     // do some CPU heavy processing of the message (we simulate and delay just 500 ms)
-                    .unmarshal(mySecureDataFormat).delay(500).to("bean:handleOrder").to("mock:order");
+                    .delay(500).to("bean:handleOrder").to("mock:order");
                 // END SNIPPET: e1
             }
         };

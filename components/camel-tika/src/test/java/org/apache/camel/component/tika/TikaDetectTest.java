@@ -24,7 +24,6 @@ import org.apache.camel.Predicate;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.junit4.CamelTestSupport;
-
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.containsString;
@@ -32,7 +31,7 @@ import static org.hamcrest.Matchers.instanceOf;
 
 public class TikaDetectTest extends CamelTestSupport {
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     protected MockEndpoint resultEndpoint;
 
     @Test

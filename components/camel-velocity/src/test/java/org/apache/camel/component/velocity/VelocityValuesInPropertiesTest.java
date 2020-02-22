@@ -26,7 +26,7 @@ import org.junit.Test;
 
 public class VelocityValuesInPropertiesTest extends CamelTestSupport {
     
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint mock;
 
     @Test
@@ -45,6 +45,7 @@ public class VelocityValuesInPropertiesTest extends CamelTestSupport {
         mock.assertIsSatisfied();
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             public void configure() throws Exception {

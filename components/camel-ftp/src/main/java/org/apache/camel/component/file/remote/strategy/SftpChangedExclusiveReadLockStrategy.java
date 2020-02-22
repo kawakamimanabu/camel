@@ -16,7 +16,6 @@
  */
 package org.apache.camel.component.file.remote.strategy;
 
-import java.util.Date;
 import java.util.List;
 
 import com.jcraft.jsch.ChannelSftp;
@@ -46,6 +45,7 @@ public class SftpChangedExclusiveReadLockStrategy implements GenericFileExclusiv
         // noop
     }
 
+    @Override
     public boolean acquireExclusiveReadLock(GenericFileOperations<ChannelSftp.LsEntry> operations, GenericFile<ChannelSftp.LsEntry> file, Exchange exchange) throws Exception {
         boolean exclusive = false;
 
@@ -54,7 +54,7 @@ public class SftpChangedExclusiveReadLockStrategy implements GenericFileExclusiv
         long lastModified = Long.MIN_VALUE;
         long length = Long.MIN_VALUE;
         StopWatch watch = new StopWatch();
-        long startTime = new Date().getTime();
+        long startTime = System.currentTimeMillis();
 
         while (!exclusive) {
             // timeout check

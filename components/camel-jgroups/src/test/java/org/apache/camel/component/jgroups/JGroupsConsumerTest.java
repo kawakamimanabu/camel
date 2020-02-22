@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.jgroups;
+
 import org.apache.camel.EndpointInject;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
@@ -38,7 +39,7 @@ public class JGroupsConsumerTest extends CamelTestSupport {
 
     // Routes fixture
 
-    @EndpointInject(uri = "mock:test")
+    @EndpointInject("mock:test")
     MockEndpoint mockEndpoint;
 
     @Override

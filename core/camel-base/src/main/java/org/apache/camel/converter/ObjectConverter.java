@@ -27,7 +27,7 @@ import org.apache.camel.support.ObjectHelper;
  * Some core java.lang based <a
  * href="http://camel.apache.org/type-converter.html">Type Converters</a>
  */
-@Converter(loader = true)
+@Converter(generateLoader = true)
 public final class ObjectConverter {
 
     /**
@@ -44,7 +44,10 @@ public final class ObjectConverter {
     @Converter
     public static boolean toBool(Object value) {
         Boolean answer = toBoolean(value);
-        return answer != null && answer;
+        if (answer == null) {
+            throw new IllegalArgumentException("Cannot convert type: " + value.getClass().getName() + " to boolean");
+        }
+        return answer;
     }
 
     /**
@@ -120,9 +123,9 @@ public final class ObjectConverter {
     public static Class<?> toClass(String value, Exchange exchange) {
         // prefer to use class resolver API
         if (exchange != null) {
-            return exchange.getContext().getClassResolver().resolveClass((String) value);
+            return exchange.getContext().getClassResolver().resolveClass(value);
         } else {
-            return org.apache.camel.util.ObjectHelper.loadClass((String) value);
+            return org.apache.camel.util.ObjectHelper.loadClass(value);
         }
     }
 
@@ -259,7 +262,7 @@ public final class ObjectConverter {
 
     @Converter
     public static Boolean toBoolean(String value) {
-        return Boolean.parseBoolean(value);
+        return org.apache.camel.util.ObjectHelper.toBoolean(value);
     }
 
 }

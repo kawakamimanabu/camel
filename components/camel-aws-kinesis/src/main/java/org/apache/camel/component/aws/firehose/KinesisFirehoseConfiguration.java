@@ -16,8 +16,8 @@
  */
 package org.apache.camel.component.aws.firehose;
 
+import com.amazonaws.Protocol;
 import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehose;
-
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriParam;
@@ -34,13 +34,16 @@ public class KinesisFirehoseConfiguration implements Cloneable {
     private String accessKey;
     @UriParam(label = "security", secret = true, description = "Amazon AWS Secret Key")
     private String secretKey;
-    @UriParam(description = "The region in which Kinesis client needs to work")
+    @UriParam(description = "The region in which Kinesis client needs to work. When using this parameter, the configuration will expect the capitalized name of the region (for example AP_EAST_1)" 
+              + "You'll need to use the name Regions.EU_WEST_1.name()")
     private String region;
     @UriParam(description = "Amazon Kinesis Firehose client to use for all requests for this endpoint")
     private AmazonKinesisFirehose amazonKinesisFirehoseClient;
-    @UriParam(description = "To define a proxy host when instantiating the DDBStreams client")
+    @UriParam(enums = "HTTP,HTTPS", defaultValue = "HTTPS", description = "To define a proxy protocol when instantiating the Kinesis Firehose client")
+    private Protocol proxyProtocol = Protocol.HTTPS;
+    @UriParam(description = "To define a proxy host when instantiating the Kinesis Firehose client")
     private String proxyHost;
-    @UriParam(description = "To define a proxy port when instantiating the DDBStreams client")
+    @UriParam(description = "To define a proxy port when instantiating the Kinesis Firehose client")
     private Integer proxyPort;
     
     public void setAmazonKinesisFirehoseClient(AmazonKinesisFirehose client) {
@@ -82,6 +85,14 @@ public class KinesisFirehoseConfiguration implements Cloneable {
     public void setRegion(String region) {
         this.region = region;
     }
+
+    public Protocol getProxyProtocol() {
+        return proxyProtocol;
+    }
+
+    public void setProxyProtocol(Protocol proxyProtocol) {
+        this.proxyProtocol = proxyProtocol;
+    }    
 
     public String getProxyHost() {
         return proxyHost;

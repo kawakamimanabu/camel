@@ -16,9 +16,9 @@
  */
 package org.apache.camel.component.aws.sns;
 
+import com.amazonaws.Protocol;
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sqs.AmazonSQS;
-
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriParams;
@@ -36,6 +36,8 @@ public class SnsConfiguration implements Cloneable {
     private String accessKey;
     @UriParam(label = "security", secret = true)
     private String secretKey;
+    @UriParam(enums = "HTTP,HTTPS", defaultValue = "HTTPS")
+    private Protocol proxyProtocol = Protocol.HTTPS;
     @UriParam
     private String proxyHost;
     @UriParam
@@ -46,6 +48,12 @@ public class SnsConfiguration implements Cloneable {
     private String queueUrl;
     @UriParam
     private boolean subscribeSNStoSQS;
+    @UriParam
+    private String kmsMasterKeyId;
+    @UriParam
+    private boolean serverSideEncryptionEnabled;
+    @UriParam(defaultValue = "true")
+    private boolean autoCreateTopic = true;
 
     // Producer only properties
     @UriParam
@@ -56,13 +64,14 @@ public class SnsConfiguration implements Cloneable {
     private String messageStructure;
     @UriParam
     private String region;
-    
+
     public String getSubject() {
         return subject;
     }
 
     /**
-     * The subject which is used if the message header 'CamelAwsSnsSubject' is not present.
+     * The subject which is used if the message header 'CamelAwsSnsSubject' is
+     * not present.
      */
     public void setSubject(String subject) {
         this.subject = subject;
@@ -122,7 +131,7 @@ public class SnsConfiguration implements Cloneable {
     public void setTopicName(String topicName) {
         this.topicName = topicName;
     }
-    
+
     public String getPolicy() {
         return policy;
     }
@@ -145,6 +154,17 @@ public class SnsConfiguration implements Cloneable {
         this.messageStructure = messageStructure;
     }
     
+    public Protocol getProxyProtocol() {
+        return proxyProtocol;
+    }
+
+    /**
+     * To define a proxy protocol when instantiating the SNS client
+     */
+    public void setProxyProtocol(Protocol proxyProtocol) {
+        this.proxyProtocol = proxyProtocol;
+    }
+
     public String getProxyHost() {
         return proxyHost;
     }
@@ -166,13 +186,14 @@ public class SnsConfiguration implements Cloneable {
     public void setProxyPort(Integer proxyPort) {
         this.proxyPort = proxyPort;
     }
-    
+
     public String getRegion() {
         return region;
     }
 
     /**
-     * The region in which SNS client needs to work
+     * The region in which SNS client needs to work. When using this parameter, the configuration will expect the capitalized name of the region (for example AP_EAST_1)
+     * You'll need to use the name Regions.EU_WEST_1.name()
      */
     public void setRegion(String region) {
         this.region = region;
@@ -210,7 +231,41 @@ public class SnsConfiguration implements Cloneable {
     public void setSubscribeSNStoSQS(boolean subscribeSNStoSQS) {
         this.subscribeSNStoSQS = subscribeSNStoSQS;
     }
-    
+
+    public String getKmsMasterKeyId() {
+        return kmsMasterKeyId;
+    }
+
+    /**
+     * The ID of an AWS-managed customer master key (CMK) for Amazon SNS or a
+     * custom CMK.
+     */
+    public void setKmsMasterKeyId(String kmsMasterKeyId) {
+        this.kmsMasterKeyId = kmsMasterKeyId;
+    }
+
+    public boolean isServerSideEncryptionEnabled() {
+        return serverSideEncryptionEnabled;
+    }
+
+    /**
+     * Define if Server Side Encryption is enabled or not on the topic
+     */
+    public void setServerSideEncryptionEnabled(boolean serverSideEncryptionEnabled) {
+        this.serverSideEncryptionEnabled = serverSideEncryptionEnabled;
+    }
+
+    public boolean isAutoCreateTopic() {
+        return autoCreateTopic;
+    }
+
+    /**
+     * Setting the autocreation of the topic
+     */
+    public void setAutoCreateTopic(boolean autoCreateTopic) {
+        this.autoCreateTopic = autoCreateTopic;
+    }
+
     // *************************************************
     //
     // *************************************************

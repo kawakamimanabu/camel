@@ -17,7 +17,9 @@
 package org.apache.camel.component.file.remote;
 
 import org.apache.camel.Exchange;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  *
@@ -37,11 +39,6 @@ public class ConsumerTemplateFtpShutdownTest extends FtpServerTestSupport {
         
         consumer.doneUoW(exchange);
         consumer.stop();
-    }
-
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
     }
 
 }

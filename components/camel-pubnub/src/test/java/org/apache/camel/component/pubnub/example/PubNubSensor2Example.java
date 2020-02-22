@@ -22,7 +22,6 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.pubnub.api.models.consumer.pubsub.PNMessageResult;
-
 import org.apache.camel.EndpointInject;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
@@ -81,7 +80,7 @@ public final class PubNubSensor2Example {
         }
 
         public static class DataProcessorBean {
-            @EndpointInject(uri = "pubnub:iot?uuid=master&subscribeKey=" + PUBNUB_SUBSCRIBE_KEY)
+            @EndpointInject("pubnub:iot?uuid=master&subscribeKey=" + PUBNUB_SUBSCRIBE_KEY)
             private static ProducerTemplate template;
 
             public static String getUnicastChannelOfDevice() {

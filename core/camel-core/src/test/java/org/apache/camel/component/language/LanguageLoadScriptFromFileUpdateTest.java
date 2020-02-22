@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.language;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -32,6 +33,9 @@ public class LanguageLoadScriptFromFileUpdateTest extends ContextTestSupport {
 
     @Test
     public void testLanguage() throws Exception {
+        // create script to start with
+        template.sendBodyAndHeader("file:target/data/script", "Hello ${body}", Exchange.FILE_NAME, "myscript.txt");
+
         getMockEndpoint("mock:result").expectedBodiesReceived("Hello World", "Bye World");
 
         template.sendBody("direct:start", "World");
@@ -47,14 +51,12 @@ public class LanguageLoadScriptFromFileUpdateTest extends ContextTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                // create script to start with
-                template.sendBodyAndHeader("file:target/data/script", "Hello ${body}", Exchange.FILE_NAME, "myscript.txt");
 
                 // START SNIPPET: e1
                 from("direct:start")
-                    // the script will be loaded on each message, as we disabled cache
-                    .to("language:simple:file:target/data/script/myscript.txt?contentCache=false")
-                    .to("mock:result");
+                    // the script will be loaded on each message, as we disabled
+                    // cache
+                    .to("language:simple:file:target/data/script/myscript.txt?contentCache=false").to("mock:result");
                 // END SNIPPET: e1
             }
         };

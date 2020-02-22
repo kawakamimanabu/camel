@@ -15,17 +15,18 @@
  * limitations under the License.
  */
 package org.apache.camel.processor;
+
 import java.io.File;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.RuntimeCamelException;
-import org.apache.camel.StringSource;
 import org.apache.camel.ValidationException;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.support.processor.validation.NoXmlBodyValidationException;
 import org.apache.camel.support.processor.validation.SchemaValidationException;
 import org.apache.camel.support.processor.validation.ValidatingProcessor;
+import org.apache.camel.util.xml.StringSource;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -50,27 +51,19 @@ public class ValidatingProcessorTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:valid");
         mock.expectedMessageCount(1);
 
-        String xml = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>"
-            + "<user xmlns=\"http://foo.com/bar\">"
-            + "  <id>1</id>"
-            + "  <username>davsclaus</username>"
-            + "</user>";
+        String xml = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>" + "<user xmlns=\"http://foo.com/bar\">" + "  <id>1</id>" + "  <username>davsclaus</username>" + "</user>";
 
         template.sendBody("direct:start", xml);
 
         assertMockEndpointsSatisfied();
     }
-    
+
     @Test
     public void testStringSourceMessage() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:valid");
         mock.expectedMessageCount(1);
 
-        String xml = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>"
-            + "<user xmlns=\"http://foo.com/bar\">"
-            + "  <id>1</id>"
-            + "  <username>davsclaus</username>"
-            + "</user>";
+        String xml = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>" + "<user xmlns=\"http://foo.com/bar\">" + "  <id>1</id>" + "  <username>davsclaus</username>" + "</user>";
 
         template.sendBody("direct:start", new StringSource(xml));
 
@@ -82,11 +75,7 @@ public class ValidatingProcessorTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:valid");
         mock.expectedMessageCount(2);
 
-        String xml = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>"
-            + "<user xmlns=\"http://foo.com/bar\">"
-            + "  <id>1</id>"
-            + "  <username>davsclaus</username>"
-            + "</user>";
+        String xml = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>" + "<user xmlns=\"http://foo.com/bar\">" + "  <id>1</id>" + "  <username>davsclaus</username>" + "</user>";
 
         template.sendBody("direct:start", xml);
         template.sendBody("direct:start", xml);
@@ -99,10 +88,7 @@ public class ValidatingProcessorTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:invalid");
         mock.expectedMessageCount(1);
 
-        String xml = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>"
-            + "<user xmlns=\"http://foo.com/bar\">"
-            + "  <username>someone</username>"
-            + "</user>";
+        String xml = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>" + "<user xmlns=\"http://foo.com/bar\">" + "  <username>someone</username>" + "</user>";
 
         try {
             template.sendBody("direct:start", xml);
@@ -120,10 +106,7 @@ public class ValidatingProcessorTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:invalid");
         mock.expectedMessageCount(1);
 
-        String xml = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>"
-            + "user xmlns=\"http://foo.com/bar\">"
-            + "  <id>1</id>"
-            + "  <username>davsclaus</username>";
+        String xml = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>" + "user xmlns=\"http://foo.com/bar\">" + "  <id>1</id>" + "  <username>davsclaus</username>";
 
         try {
             template.sendBody("direct:start", xml);
@@ -169,6 +152,7 @@ public class ValidatingProcessorTest extends ContextTestSupport {
         }
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() {
         return new RouteBuilder() {
             public void configure() {
@@ -176,9 +160,7 @@ public class ValidatingProcessorTest extends ContextTestSupport {
 
                 onException(ValidationException.class).to("mock:invalid");
 
-                from("direct:start").
-                    process(validating).
-                    to("mock:valid");
+                from("direct:start").process(validating).to("mock:valid");
             }
         };
     }

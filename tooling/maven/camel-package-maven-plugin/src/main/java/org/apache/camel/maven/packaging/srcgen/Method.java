@@ -24,7 +24,10 @@ import java.util.Objects;
 public class Method {
     String name;
     GenericType returnType;
+    boolean isDefault;
     boolean isPublic;
+    boolean isProtected;
+    boolean isStatic;
     boolean isConstructor;
     String body;
     List<Param> parameters = new ArrayList<>();
@@ -34,6 +37,23 @@ public class Method {
 
     public Method setPublic() {
         isPublic = true;
+        isProtected = false;
+        return this;
+    }
+
+    public Method setProtected() {
+        isPublic = false;
+        isProtected = true;
+        return this;
+    }
+
+    public Method setStatic() {
+        isStatic = true;
+        return this;
+    }
+
+    public Method setDefault() {
+        isDefault = true;
         return this;
     }
 

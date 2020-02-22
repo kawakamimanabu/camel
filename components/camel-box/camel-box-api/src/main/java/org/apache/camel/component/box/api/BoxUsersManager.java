@@ -26,7 +26,6 @@ import com.box.sdk.BoxFolder;
 import com.box.sdk.BoxUser;
 import com.box.sdk.CreateUserParams;
 import com.box.sdk.EmailAlias;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -349,9 +348,9 @@ public class BoxUsersManager {
                 throw new IllegalArgumentException("Parameter 'sourceUserId' can not be null");
             }
 
-            BoxUser user = new BoxUser(boxConnection, userId);
+            BoxUser user = new BoxUser(boxConnection, sourceUserId);
 
-            return user.moveFolderToUser(sourceUserId);
+            return user.transferContent(userId);
         } catch (BoxAPIException e) {
             throw new RuntimeException(
                     String.format("Box API returned the error code %d\n\n%s", e.getResponseCode(), e.getResponse()), e);

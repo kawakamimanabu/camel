@@ -58,6 +58,7 @@ public class GenericFileProducer<T> extends DefaultProducer {
         return FileUtil.normalizePath(name);
     }
 
+    @Override
     public void process(Exchange exchange) throws Exception {
         // store any existing file header which we want to keep and propagate
         final String existing = exchange.getIn().getHeader(Exchange.FILE_NAME, String.class);
@@ -105,13 +106,13 @@ public class GenericFileProducer<T> extends DefaultProducer {
         log.trace("Processing file: {} for exchange: {}", target, exchange);
 
         try {
-            preWriteCheck();
+            preWriteCheck(exchange);
 
             // should we write to a temporary name and then afterwards rename to real target
             boolean writeAsTempAndRename = ObjectHelper.isNotEmpty(endpoint.getTempFileName());
             String tempTarget = null;
             // remember if target exists to avoid checking twice
-            Boolean targetExists;
+            boolean targetExists;
             if (writeAsTempAndRename) {
                 // compute temporary name with the temp prefix
                 tempTarget = createTempFileName(exchange, target);
@@ -263,7 +264,7 @@ public class GenericFileProducer<T> extends DefaultProducer {
     /**
      * Perform any actions that need to occur before we write such as connecting to an FTP server etc.
      */
-    public void preWriteCheck() throws Exception {
+    public void preWriteCheck(Exchange exchange) throws Exception {
         // nothing needed to check
     }
 

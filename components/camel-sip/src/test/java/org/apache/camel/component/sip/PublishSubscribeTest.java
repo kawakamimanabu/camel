@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.sip;
+
 import javax.sip.message.Request;
 
 import org.apache.camel.EndpointInject;
@@ -35,21 +36,21 @@ public class PublishSubscribeTest extends CamelTestSupport {
     private int port2;
     private int port3;
 
-    @EndpointInject(uri = "mock:neverland")
+    @EndpointInject("mock:neverland")
     private MockEndpoint unreachableEndpoint;
 
-    @EndpointInject(uri = "mock:notification")
+    @EndpointInject("mock:notification")
     private MockEndpoint resultEndpoint;
 
-    @Produce(uri = "direct:start")
+    @Produce("direct:start")
     private ProducerTemplate producerTemplate;
 
     @Override
     @Before
     public void setUp() throws Exception {
-        port1 = AvailablePortFinder.getNextAvailable(17189);
-        port2 = AvailablePortFinder.getNextAvailable(port1 + 1);
-        port3 = AvailablePortFinder.getNextAvailable(port2 + 1);
+        port1 = AvailablePortFinder.getNextAvailable();
+        port2 = AvailablePortFinder.getNextAvailable();
+        port3 = AvailablePortFinder.getNextAvailable();
 
         super.setUp();
     }

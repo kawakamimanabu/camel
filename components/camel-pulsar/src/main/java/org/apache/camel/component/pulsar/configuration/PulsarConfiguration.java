@@ -16,18 +16,24 @@
  */
 package org.apache.camel.component.pulsar.configuration;
 
+import java.util.concurrent.TimeUnit;
+
+import org.apache.camel.component.pulsar.PulsarMessageReceipt;
 import org.apache.camel.component.pulsar.utils.consumers.SubscriptionType;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriParams;
+import org.apache.pulsar.client.api.CompressionType;
+import org.apache.pulsar.client.api.MessageRouter;
+import org.apache.pulsar.client.api.MessageRoutingMode;
 
 import static org.apache.camel.component.pulsar.utils.consumers.SubscriptionType.EXCLUSIVE;
 
 @UriParams
 public class PulsarConfiguration {
 
-    @UriParam(label = "consumer", defaultValue = "subscription")
+    @UriParam(label = "consumer", defaultValue = "subs")
     private String subscriptionName = "subs";
-    @UriParam(label = "consumer", enums = "EXCLUSIVE, SHARED, FAILOVER", defaultValue = "EXCLUSIVE")
+    @UriParam(label = "consumer", defaultValue = "EXCLUSIVE")
     private SubscriptionType subscriptionType = EXCLUSIVE;
     @UriParam(label = "consumer", defaultValue = "1")
     private int numberOfConsumers = 1;
@@ -35,10 +41,39 @@ public class PulsarConfiguration {
     private int consumerQueueSize = 10;
     @UriParam(label = "consumer", defaultValue = "sole-consumer")
     private String consumerName = "sole-consumer";
-    @UriParam(label = "producer", defaultValue = "default-producer")
-    private String producerName = "default-producer";
+    @UriParam(label = "producer")
+    private String producerName;
     @UriParam(label = "consumer", defaultValue = "cons")
     private String consumerNamePrefix = "cons";
+    @UriParam(label = "consumer", defaultValue = "false")
+    private boolean allowManualAcknowledgement;
+    @UriParam(label = "consumer", defaultValue = "10000")
+    private long ackTimeoutMillis = 10000;
+    @UriParam(label = "consumer", defaultValue = "100")
+    private long ackGroupTimeMillis = 100;
+    @UriParam(label = "producer", description = "Send timeout in milliseconds", defaultValue = "30000")
+    private int sendTimeoutMs = 30000;
+    @UriParam(label = "producer", description = "Whether to block the producing thread if pending messages queue is full or to throw a ProducerQueueIsFullError", defaultValue = "false")
+    private boolean blockIfQueueFull;
+    @UriParam(label = "producer", description = "Size of the pending massages queue. When the queue is full, by default, any further sends will fail unless blockIfQueueFull=true", defaultValue = "1000")
+    private int maxPendingMessages = 1000;
+    @UriParam(label = "producer", description = "The maximum number of pending messages for partitioned topics. The maxPendingMessages value will be reduced if "
+                                                + "(number of partitions * maxPendingMessages) exceeds this value. Partitioned topics have a pending message queue for each partition.", defaultValue = "50000")
+    private int maxPendingMessagesAcrossPartitions = 50000;
+    @UriParam(label = "producer", description = "The maximum time period within which the messages sent will be batched if batchingEnabled is true.", defaultValue = "1000")
+    private long batchingMaxPublishDelayMicros = TimeUnit.MILLISECONDS.toMicros(1);
+    @UriParam(label = "producer", description = "The maximum size to batch messages.", defaultValue = "1000")
+    private int batchingMaxMessages = 1000;
+    @UriParam(label = "producer", description = "Control whether automatic batching of messages is enabled for the producer.", defaultValue = "true")
+    private boolean batchingEnabled = true;
+    @UriParam(label = "producer", description = "The first message published will have a sequence Id of initialSequenceId  1.", defaultValue = "-1")
+    private long initialSequenceId = -1;
+    @UriParam(label = "producer", description = "Compression type to use", defaultValue = "NONE")
+    private CompressionType compressionType = CompressionType.NONE;
+    @UriParam(label = "producer", description = "Message Routing Mode to use", defaultValue = "RoundRobinPartition")
+    private MessageRoutingMode messageRoutingMode = MessageRoutingMode.RoundRobinPartition;
+    @UriParam(label = "producer", description = "Custom Message Router to use")
+    private MessageRouter messageRouter;
 
     public String getSubscriptionName() {
         return subscriptionName;
@@ -46,7 +81,6 @@ public class PulsarConfiguration {
 
     /**
      * Name of the subscription to use
-     * @param subscriptionName
      */
     public void setSubscriptionName(String subscriptionName) {
         this.subscriptionName = subscriptionName;
@@ -57,8 +91,8 @@ public class PulsarConfiguration {
     }
 
     /**
-     * Type of the subscription [EXCLUSIVE|SHARED|FAILOVER], defaults to EXCLUSIVE
-     * @param subscriptionType
+     * Type of the subscription [EXCLUSIVE|SHARED|FAILOVER], defaults to
+     * EXCLUSIVE
      */
     public void setSubscriptionType(SubscriptionType subscriptionType) {
         this.subscriptionType = subscriptionType;
@@ -70,7 +104,6 @@ public class PulsarConfiguration {
 
     /**
      * Number of consumers - defaults to 1
-     * @param numberOfConsumers
      */
     public void setNumberOfConsumers(int numberOfConsumers) {
         this.numberOfConsumers = numberOfConsumers;
@@ -82,7 +115,6 @@ public class PulsarConfiguration {
 
     /**
      * Size of the consumer queue - defaults to 10
-     * @param consumerQueueSize
      */
     public void setConsumerQueueSize(int consumerQueueSize) {
         this.consumerQueueSize = consumerQueueSize;
@@ -94,7 +126,6 @@ public class PulsarConfiguration {
 
     /**
      * Name of the consumer when subscription is EXCLUSIVE
-     * @param consumerName
      */
     public void setConsumerName(String consumerName) {
         this.consumerName = consumerName;
@@ -105,8 +136,7 @@ public class PulsarConfiguration {
     }
 
     /**
-     * Name of the producer
-     * @param producerName
+     * Name of the producer. If unset, lets Pulsar select a unique identifier.
      */
     public void setProducerName(String producerName) {
         this.producerName = producerName;
@@ -117,10 +147,196 @@ public class PulsarConfiguration {
     }
 
     /**
-     * Prefix to add to consumer names when a SHARED or FAILOVER subscription is used
-     * @param consumerNamePrefix
+     * Prefix to add to consumer names when a SHARED or FAILOVER subscription is
+     * used
      */
     public void setConsumerNamePrefix(String consumerNamePrefix) {
         this.consumerNamePrefix = consumerNamePrefix;
     }
+
+    public boolean isAllowManualAcknowledgement() {
+        return allowManualAcknowledgement;
+    }
+
+    /**
+     * Whether to allow manual message acknowledgements.
+     * <p/>
+     * If this option is enabled, then messages are not immediately acknowledged
+     * after being consumed. Instead, an instance of
+     * {@link PulsarMessageReceipt} is stored as a header on the
+     * {@link org.apache.camel.Exchange}. Messages can then be acknowledged
+     * using {@link PulsarMessageReceipt} at any time before the ackTimeout
+     * occurs.
+     */
+    public void setAllowManualAcknowledgement(boolean allowManualAcknowledgement) {
+        this.allowManualAcknowledgement = allowManualAcknowledgement;
+    }
+
+    public long getAckTimeoutMillis() {
+        return ackTimeoutMillis;
+    }
+
+    /**
+     * Timeout for unacknowledged messages in milliseconds - defaults to 10000
+     */
+    public void setAckTimeoutMillis(long ackTimeoutMillis) {
+        this.ackTimeoutMillis = ackTimeoutMillis;
+    }
+
+    public long getAckGroupTimeMillis() {
+        return ackGroupTimeMillis;
+    }
+
+    /**
+     * Group the consumer acknowledgments for the specified time in milliseconds
+     * - defaults to 100
+     */
+    public void setAckGroupTimeMillis(long ackGroupTimeMillis) {
+        this.ackGroupTimeMillis = ackGroupTimeMillis;
+    }
+
+    /**
+     * Send timeout in milliseconds. Defaults to 30,000ms (30 seconds)
+     */
+    public void setSendTimeoutMs(int sendTimeoutMs) {
+        this.sendTimeoutMs = sendTimeoutMs;
+    }
+
+    public int getSendTimeoutMs() {
+        return sendTimeoutMs;
+    }
+
+    /**
+     * Set whether the send and asyncSend operations should block when the
+     * outgoing message queue is full. If set to false, send operations will
+     * immediately fail with ProducerQueueIsFullError when there is no space
+     * left in the pending queue. Default is false.
+     */
+    public void setBlockIfQueueFull(boolean blockIfQueueFull) {
+        this.blockIfQueueFull = blockIfQueueFull;
+    }
+
+    public boolean isBlockIfQueueFull() {
+        return blockIfQueueFull;
+    }
+
+    /**
+     * Set the max size of the queue holding the messages pending to receive an
+     * acknowledgment from the broker. Default is 1000.
+     */
+    public void setMaxPendingMessages(int maxPendingMessages) {
+        this.maxPendingMessages = maxPendingMessages;
+    }
+
+    public int getMaxPendingMessages() {
+        return maxPendingMessages;
+    }
+
+    /**
+     * Set the number of max pending messages across all the partitions. Default
+     * is 50000.
+     */
+    public void setMaxPendingMessagesAcrossPartitions(int maxPendingMessagesAcrossPartitions) {
+        this.maxPendingMessagesAcrossPartitions = maxPendingMessagesAcrossPartitions;
+    }
+
+    public int getMaxPendingMessagesAcrossPartitions() {
+        return maxPendingMessagesAcrossPartitions;
+    }
+
+    /**
+     * Set the time period within which the messages sent will be batched if
+     * batch messages are enabled. If set to a non zero value, messages will be
+     * queued until either:
+     * <ul>
+     * <li>this time interval expires</li>
+     * <li>the max number of messages in a batch is reached
+     * </ul>
+     * Default is 1ms.
+     */
+    public void setBatchingMaxPublishDelayMicros(long batchingMaxPublishDelayMicros) {
+        this.batchingMaxPublishDelayMicros = batchingMaxPublishDelayMicros;
+    }
+
+    public long getBatchingMaxPublishDelayMicros() {
+        return batchingMaxPublishDelayMicros;
+    }
+
+    /**
+     * Set the maximum number of messages permitted in a batch. Default 1,000.
+     */
+    public void setBatchingMaxMessages(int batchingMaxMessages) {
+        this.batchingMaxMessages = batchingMaxMessages;
+    }
+
+    public int getBatchingMaxMessages() {
+        return batchingMaxMessages;
+    }
+
+    /**
+     * Control whether automatic batching of messages is enabled for the
+     * producer. Default is true.
+     */
+    public void setBatchingEnabled(boolean batchingEnabled) {
+        this.batchingEnabled = batchingEnabled;
+    }
+
+    public boolean isBatchingEnabled() {
+        return batchingEnabled;
+    }
+
+    /**
+     * Set the baseline for the sequence ids for messages published by the
+     * producer. First message will be using (initialSequenceId 1) as its
+     * sequence id and subsequent messages will be assigned incremental sequence
+     * ids, if not otherwise specified.
+     */
+    public void setInitialSequenceId(long initialSequenceId) {
+        this.initialSequenceId = initialSequenceId;
+    }
+
+    public long getInitialSequenceId() {
+        return initialSequenceId;
+    }
+
+    /**
+     * Set the compression type for the producer.
+     */
+    public void setCompressionType(String compressionType) {
+        this.compressionType = CompressionType.valueOf(compressionType.toUpperCase());
+    }
+
+    /**
+     * Set the compression type for the producer.
+     */
+    public void setCompressionType(CompressionType compressionType) {
+        this.compressionType = compressionType;
+    }
+
+    public CompressionType getCompressionType() {
+        return compressionType;
+    }
+
+    /**
+     * Set the message routing mode for the producer.
+     */
+    public MessageRoutingMode getMessageRoutingMode() {
+        return messageRoutingMode;
+    }
+
+    public void setMessageRoutingMode(MessageRoutingMode messageRoutingMode) {
+        this.messageRoutingMode = messageRoutingMode;
+    }
+
+    /**
+     * Set a custom Message Router.
+     */
+    public MessageRouter getMessageRouter() {
+        return messageRouter;
+    }
+
+    public void setMessageRouter(MessageRouter messageRouter) {
+        this.messageRouter = messageRouter;
+    }
+
 }

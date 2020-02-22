@@ -24,7 +24,8 @@ import org.apache.camel.Route;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.impl.EventDrivenConsumerRoute;
+import org.apache.camel.impl.engine.EventDrivenConsumerRoute;
+import org.apache.camel.processor.errorhandler.DefaultErrorHandler;
 import org.junit.Test;
 
 /**
@@ -40,7 +41,8 @@ public class DefaultErrorHandlerTest extends ContextTestSupport {
         Processor processor = unwrap(consumerRoute.getProcessor());
         Pipeline pipeline = assertIsInstanceOf(Pipeline.class, processor);
 
-        // there should be a default error handler in front of each processor in this pipeline
+        // there should be a default error handler in front of each processor in
+        // this pipeline
         for (Processor child : pipeline.getProcessors()) {
             Channel channel = assertIsInstanceOf(Channel.class, child);
             assertNotNull("There should be an error handler", channel.getErrorHandler());
@@ -69,7 +71,7 @@ public class DefaultErrorHandlerTest extends ContextTestSupport {
         } catch (RuntimeCamelException e) {
             // expected
         }
-        
+
         assertMockEndpointsSatisfied();
     }
 

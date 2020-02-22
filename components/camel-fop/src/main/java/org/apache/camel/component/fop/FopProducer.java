@@ -31,7 +31,8 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.support.DefaultProducer;
-import org.apache.camel.support.IntrospectionSupport;
+import org.apache.camel.support.PropertyBindingSupport;
+import org.apache.camel.util.PropertiesHelper;
 import org.apache.fop.apps.FOPException;
 import org.apache.fop.apps.FOUserAgent;
 import org.apache.fop.apps.Fop;
@@ -51,6 +52,7 @@ public class FopProducer extends DefaultProducer {
         this.outputFormat = outputFormat;
     }
 
+    @Override
     public void process(Exchange exchange) throws Exception {
         FOUserAgent userAgent = fopFactory.newFOUserAgent();
         Map<String, Object> headers = exchange.getIn().getHeaders();
@@ -97,28 +99,27 @@ public class FopProducer extends DefaultProducer {
     }
 
     @SuppressWarnings("unchecked")
-    private void setEncryptionParameters(FOUserAgent userAgent, Map<String, Object> headers)
-        throws Exception {
-        Map<String, Object> encryptionParameters = IntrospectionSupport
+    private void setEncryptionParameters(FOUserAgent userAgent, Map<String, Object> headers) {
+        Map<String, Object> encryptionParameters = PropertiesHelper
             .extractProperties(headers, FopConstants.CAMEL_FOP_ENCRYPT);
         if (!encryptionParameters.isEmpty()) {
             PDFEncryptionParams encryptionParams = new PDFEncryptionParams();
-            IntrospectionSupport.setProperties(encryptionParams, encryptionParameters);
+            PropertyBindingSupport.bindProperties(getEndpoint().getCamelContext(), encryptionParams, encryptionParameters);
             userAgent.getRendererOptions().put("encryption-params", encryptionParams);
         }
     }
 
     private void setUserAgentRendererOptions(FOUserAgent userAgent, Map<String, Object> headers) {
-        Map<String, Object> parameters = IntrospectionSupport.extractProperties(headers, FopConstants.CAMEL_FOP_RENDERER_OPTIONS);
+        Map<String, Object> parameters = PropertiesHelper.extractProperties(headers, FopConstants.CAMEL_FOP_RENDERER_OPTIONS);
         if (!parameters.isEmpty()) {
             userAgent.getRendererOptions().putAll(parameters);
         }
     }
 
-    private void setRenderParameters(FOUserAgent userAgent, Map<String, Object> headers) throws Exception {
-        Map<String, Object> parameters = IntrospectionSupport.extractProperties(headers, FopConstants.CAMEL_FOP_RENDER);
+    private void setRenderParameters(FOUserAgent userAgent, Map<String, Object> headers) {
+        Map<String, Object> parameters = PropertiesHelper.extractProperties(headers, FopConstants.CAMEL_FOP_RENDER);
         if (!parameters.isEmpty()) {
-            IntrospectionSupport.setProperties(userAgent, parameters);
+            PropertyBindingSupport.bindProperties(getEndpoint().getCamelContext(), userAgent, parameters);
         }
     }
     

@@ -32,12 +32,16 @@ public abstract class LanguageSupport implements Language, IsSingleton, CamelCon
 
     public static final String RESOURCE = "resource:";
 
+    private static final String[] SIMPLE_FUNCTION_START = new String[]{"${", "$simple{"};
+
     private CamelContext camelContext;
 
+    @Override
     public CamelContext getCamelContext() {
         return camelContext;
     }
 
+    @Override
     public void setCamelContext(CamelContext camelContext) {
         this.camelContext = camelContext;
     }
@@ -73,4 +77,18 @@ public abstract class LanguageSupport implements Language, IsSingleton, CamelCon
         }
         return expression;
     }
+
+    /**
+     * Does the expression include a simple function.
+     *
+     * @param expression the expression
+     * @return <tt>true</tt> if one or more simple function is included in the expression
+     */
+    public static boolean hasSimpleFunction(String expression) {
+        if (expression != null) {
+            return expression.contains(SIMPLE_FUNCTION_START[0]) || expression.contains(SIMPLE_FUNCTION_START[1]);
+        }
+        return false;
+    }
+
 }

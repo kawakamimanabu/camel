@@ -17,7 +17,6 @@
 package org.apache.camel.processor;
 
 import org.apache.camel.ContextTestSupport;
-import org.apache.camel.FailedToCreateRouteException;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.spi.ThreadPoolProfile;
 import org.junit.Test;
@@ -34,9 +33,7 @@ public class ThreadsInvalidConfigTest extends ContextTestSupport {
             @Override
             public void configure() throws Exception {
                 context.getExecutorServiceManager().registerThreadPoolProfile(threadPoolProfile);
-                from("direct:start")
-                        .threads().executorServiceRef(threadPoolProfile.getId())
-                        .to("mock:test");
+                from("direct:start").threads().executorServiceRef(threadPoolProfile.getId()).to("mock:test");
             }
         });
     }
@@ -48,12 +45,10 @@ public class ThreadsInvalidConfigTest extends ContextTestSupport {
                 @Override
                 public void configure() throws Exception {
                     context.getExecutorServiceManager().registerThreadPoolProfile(threadPoolProfile);
-                    from("direct:start")
-                            .threads().executorServiceRef(threadPoolProfile.getId()).threadName("foo")
-                            .to("mock:test");
+                    from("direct:start").threads().executorServiceRef(threadPoolProfile.getId()).threadName("foo").to("mock:test");
                 }
             });
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             assertTrue(e.getCause() instanceof IllegalArgumentException);
             assertTrue(e.getCause().getMessage().startsWith("ThreadName"));
             return;
@@ -67,9 +62,7 @@ public class ThreadsInvalidConfigTest extends ContextTestSupport {
             @Override
             public void configure() throws Exception {
                 context.getExecutorServiceManager().registerThreadPoolProfile(threadPoolProfile);
-                from("direct:start")
-                        .threads().threadName("foo")
-                        .to("mock:test");
+                from("direct:start").threads().threadName("foo").to("mock:test");
             }
         });
     }
@@ -81,12 +74,10 @@ public class ThreadsInvalidConfigTest extends ContextTestSupport {
                 @Override
                 public void configure() throws Exception {
                     context.getExecutorServiceManager().registerThreadPoolProfile(threadPoolProfile);
-                    from("direct:start")
-                            .threads().executorServiceRef(threadPoolProfile.getId()).poolSize(1)
-                            .to("mock:test");
+                    from("direct:start").threads().executorServiceRef(threadPoolProfile.getId()).poolSize(1).to("mock:test");
                 }
             });
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             assertTrue(e.getCause() instanceof IllegalArgumentException);
             assertTrue(e.getCause().getMessage().startsWith("PoolSize"));
             return;
@@ -101,12 +92,10 @@ public class ThreadsInvalidConfigTest extends ContextTestSupport {
                 @Override
                 public void configure() throws Exception {
                     context.getExecutorServiceManager().registerThreadPoolProfile(threadPoolProfile);
-                    from("direct:start")
-                            .threads().executorServiceRef(threadPoolProfile.getId()).maxPoolSize(1)
-                            .to("mock:test");
+                    from("direct:start").threads().executorServiceRef(threadPoolProfile.getId()).maxPoolSize(1).to("mock:test");
                 }
             });
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             assertTrue(e.getCause() instanceof IllegalArgumentException);
             assertTrue(e.getCause().getMessage().startsWith("MaxPoolSize"));
             return;
@@ -121,12 +110,10 @@ public class ThreadsInvalidConfigTest extends ContextTestSupport {
                 @Override
                 public void configure() throws Exception {
                     context.getExecutorServiceManager().registerThreadPoolProfile(threadPoolProfile);
-                    from("direct:start")
-                            .threads().executorServiceRef(threadPoolProfile.getId()).keepAliveTime(1)
-                            .to("mock:test");
+                    from("direct:start").threads().executorServiceRef(threadPoolProfile.getId()).keepAliveTime(1).to("mock:test");
                 }
             });
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             assertTrue(e.getCause() instanceof IllegalArgumentException);
             assertTrue(e.getCause().getMessage().startsWith("KeepAliveTime"));
             return;
@@ -141,12 +128,10 @@ public class ThreadsInvalidConfigTest extends ContextTestSupport {
                 @Override
                 public void configure() throws Exception {
                     context.getExecutorServiceManager().registerThreadPoolProfile(threadPoolProfile);
-                    from("direct:start")
-                            .threads().executorServiceRef(threadPoolProfile.getId()).maxQueueSize(1)
-                            .to("mock:test");
+                    from("direct:start").threads().executorServiceRef(threadPoolProfile.getId()).maxQueueSize(1).to("mock:test");
                 }
             });
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             assertTrue(e.getCause() instanceof IllegalArgumentException);
             assertTrue(e.getCause().getMessage().startsWith("MaxQueueSize"));
             return;
@@ -161,12 +146,10 @@ public class ThreadsInvalidConfigTest extends ContextTestSupport {
                 @Override
                 public void configure() throws Exception {
                     context.getExecutorServiceManager().registerThreadPoolProfile(threadPoolProfile);
-                    from("direct:start")
-                            .threads().executorServiceRef(threadPoolProfile.getId()).rejectedPolicy(Abort)
-                            .to("mock:test");
+                    from("direct:start").threads().executorServiceRef(threadPoolProfile.getId()).rejectedPolicy(Abort).to("mock:test");
                 }
             });
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             assertTrue(e.getCause() instanceof IllegalArgumentException);
             assertTrue(e.getCause().getMessage().startsWith("RejectedPolicy"));
             return;

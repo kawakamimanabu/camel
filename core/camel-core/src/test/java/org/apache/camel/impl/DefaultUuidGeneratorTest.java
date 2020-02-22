@@ -16,6 +16,7 @@
  */
 package org.apache.camel.impl;
 
+import org.apache.camel.impl.engine.DefaultUuidGenerator;
 import org.apache.camel.util.StopWatch;
 import org.apache.camel.util.TimeUtils;
 import org.junit.Assert;
@@ -24,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DefaultUuidGeneratorTest extends Assert {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(DefaultUuidGeneratorTest.class);
 
     @Test

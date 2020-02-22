@@ -18,8 +18,8 @@ package org.apache.camel.component.rss;
 
 import java.util.Date;
 
-import com.sun.syndication.feed.synd.SyndEntry;
-import com.sun.syndication.feed.synd.SyndFeed;
+import com.rometools.rome.feed.synd.SyndEntry;
+import com.rometools.rome.feed.synd.SyndFeed;
 import org.apache.camel.Body;
 import org.apache.camel.builder.ExpressionBuilder;
 import org.apache.camel.builder.RouteBuilder;
@@ -33,7 +33,7 @@ public class RssEntrySortTest extends CamelTestSupport {
     @Test
     public void testSortedEntries() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:sorted");
-        mock.expectsAscending(ExpressionBuilder.beanExpression("myBean", "getPubDate"));
+        mock.expectsAscending(ExpressionBuilder.beanExpression("myBean?method=getPubDate"));
         mock.expectedMessageCount(10);
         mock.setResultWaitTime(15000L);
         mock.assertIsSatisfied();
@@ -42,7 +42,7 @@ public class RssEntrySortTest extends CamelTestSupport {
     @Test
     public void testUnSortedEntries() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:unsorted");
-        mock.expectsAscending(ExpressionBuilder.beanExpression("myBean", "getPubDate"));
+        mock.expectsAscending(ExpressionBuilder.beanExpression("myBean?method=getPubDate"));
         mock.expectedMessageCount(10);
         mock.setResultWaitTime(2000L);
         mock.assertIsNotSatisfied(2000L);
@@ -53,11 +53,12 @@ public class RssEntrySortTest extends CamelTestSupport {
         registry.bind("myBean", new MyBean());
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             public void configure() throws Exception {
-                from("rss:file:src/test/data/rss20.xml?splitEntries=true&sortEntries=true&consumer.delay=50").to("mock:sorted");
-                from("rss:file:src/test/data/rss20.xml?splitEntries=true&sortEntries=false&consumer.delay=50").to("mock:unsorted");
+                from("rss:file:src/test/data/rss20.xml?splitEntries=true&sortEntries=true&delay=50").to("mock:sorted");
+                from("rss:file:src/test/data/rss20.xml?splitEntries=true&sortEntries=false&delay=50").to("mock:unsorted");
             }
         };
     }
@@ -65,7 +66,7 @@ public class RssEntrySortTest extends CamelTestSupport {
     public static class MyBean {
         public Date getPubDate(@Body Object body) {
             SyndFeed feed = (SyndFeed) body;
-            SyndEntry syndEntry = (SyndEntry) feed.getEntries().get(0);
+            SyndEntry syndEntry = feed.getEntries().get(0);
             Date date = syndEntry.getUpdatedDate();
             if (date == null) {
                 date = syndEntry.getPublishedDate();

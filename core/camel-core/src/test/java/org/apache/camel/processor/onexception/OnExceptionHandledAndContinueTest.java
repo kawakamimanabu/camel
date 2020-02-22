@@ -17,7 +17,6 @@
 package org.apache.camel.processor.onexception;
 
 import org.apache.camel.ContextTestSupport;
-import org.apache.camel.FailedToCreateRouteException;
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.Test;
 
@@ -36,16 +35,13 @@ public class OnExceptionHandledAndContinueTest extends ContextTestSupport {
                 // should not be allowed
                 onException(IllegalArgumentException.class).continued(true).handled(true);
 
-                from("direct:start")
-                    .to("mock:start")
-                    .throwException(new IllegalArgumentException("Forced"))
-                    .to("mock:result");
+                from("direct:start").to("mock:start").throwException(new IllegalArgumentException("Forced")).to("mock:result");
             }
         });
         try {
             context.start();
             fail("Should thrown an exception");
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             assertIsInstanceOf(IllegalArgumentException.class, e.getCause());
             assertTrue(e.getCause().getMessage().startsWith("Only one of handled or continued is allowed to be configured"));
         }

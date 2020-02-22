@@ -21,6 +21,7 @@ import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
 import javax.enterprise.inject.spi.Annotated;
 
 class AnnotatedDecorator implements Annotated {
@@ -70,9 +71,14 @@ class AnnotatedDecorator implements Annotated {
     private <T extends Annotation> T getDecoratingAnnotation(Class<T> annotationType) {
         for (Annotation annotation : annotations) {
             if (annotationType.isAssignableFrom(annotation.annotationType())) {
-                return (T) annotation;
+                return (T)annotation;
             }
         }
         return null;
+    }
+
+    @Override
+    public <T extends Annotation> Set<T> getAnnotations(Class<T> annotationType) {
+        return decorated.getAnnotations(annotationType);
     }
 }

@@ -30,15 +30,19 @@ import org.junit.Test;
 
 public class JettySimulateFailoverRoundRobinTest extends CamelTestSupport {
 
-    private static int port1 = AvailablePortFinder.getNextAvailable(23041);
-    private static int port2 = AvailablePortFinder.getNextAvailable(23042);
-    private static int port3 = AvailablePortFinder.getNextAvailable(23043);
-    private static int port4 = AvailablePortFinder.getNextAvailable(23044);
+    private static int port1 = AvailablePortFinder.getNextAvailable();
+    private static int port2 = AvailablePortFinder.getNextAvailable();
+    private static int port3 = AvailablePortFinder.getNextAvailable();
+    private static int port4 = AvailablePortFinder.getNextAvailable();
 
     private String bad = "jetty:http://localhost:" + port1 + "/bad";
     private String bad2 = "jetty:http://localhost:" + port2 + "/bad2";
     private String good = "jetty:http://localhost:" + port3 + "/good";
     private String good2 = "jetty:http://localhost:" + port4 + "/good2";
+    private String hbad = "http://localhost:" + port1 + "/bad";
+    private String hbad2 = "http://localhost:" + port2 + "/bad2";
+    private String hgood = "http://localhost:" + port3 + "/good";
+    private String hgood2 = "http://localhost:" + port4 + "/good2";
 
     @Test
     public void testJettySimulateFailoverRoundRobin() throws Exception {
@@ -71,7 +75,7 @@ public class JettySimulateFailoverRoundRobinTest extends CamelTestSupport {
             @Override
             public void configure() throws Exception {
                 from("direct:start")
-                    .process(new MyFailoverLoadBalancer(template, bad, bad2, good, good2));
+                    .process(new MyFailoverLoadBalancer(template, hbad, hbad2, hgood, hgood2));
 
                 from(bad)
                     .to("mock:bad")
@@ -124,6 +128,7 @@ public class JettySimulateFailoverRoundRobinTest extends CamelTestSupport {
             this.endpoints = new ArrayList<>(Arrays.asList(endpoints));
         }
 
+        @Override
         public void process(Exchange exchange) throws Exception {
             boolean done = false;
             while (!done) {

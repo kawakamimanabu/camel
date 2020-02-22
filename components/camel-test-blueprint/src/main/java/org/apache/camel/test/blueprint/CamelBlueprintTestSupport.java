@@ -21,6 +21,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.Enumeration;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -45,6 +47,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.component.properties.PropertiesComponent;
 import org.apache.camel.model.ModelCamelContext;
 import org.apache.camel.test.junit4.CamelTestSupport;
+import org.apache.camel.util.IOHelper;
 import org.apache.camel.util.KeyValueHolder;
 import org.junit.After;
 import org.junit.Before;
@@ -119,7 +122,7 @@ public abstract class CamelBlueprintTestSupport extends CamelTestSupport {
         Properties initialConfiguration = new Properties();
         String pid = setConfigAdminInitialConfiguration(initialConfiguration);
         if (pid != null) {
-            configAdminPidFiles = new String[][] {{prepareInitialConfigFile(initialConfiguration), pid}};
+            configAdminPidFiles = new String[][]{{prepareInitialConfigFile(initialConfiguration), pid}};
         }
 
         final String symbolicName = getClass().getSimpleName();
@@ -129,7 +132,7 @@ public abstract class CamelBlueprintTestSupport extends CamelTestSupport {
         boolean expectReload = expectBlueprintContainerReloadOnConfigAdminUpdate();
 
         // must register override properties early in OSGi containers
-        Properties extra = useOverridePropertiesWithPropertiesComponent();
+        extra = useOverridePropertiesWithPropertiesComponent();
         if (extra != null) {
             answer.registerService(PropertiesComponent.OVERRIDE_PROPERTIES, extra, null);
         }
@@ -338,7 +341,6 @@ public abstract class CamelBlueprintTestSupport extends CamelTestSupport {
         return new KeyValueHolder<>(name, new KeyValueHolder<>(service, dict));
     }
 
-
     /**
      * Creates a holder for the given service, which make it easier to use {@link #addServicesOnStartup(java.util.Map)}
      */
@@ -427,6 +429,9 @@ public abstract class CamelBlueprintTestSupport extends CamelTestSupport {
      * Return the location(s) of the bundle descriptors from the classpath.
      * Separate multiple locations by comma, or return a single location.
      * <p/>
+     * Only one CamelContext is supported per blueprint bundle,
+     * so if you have multiple XML files then only one of them should have <tt>&lt;camelContext&gt</tt>.
+     * <p/>
      * For example override this method and return <tt>OSGI-INF/blueprint/camel-context.xml</tt>
      *
      * @return the location of the bundle descriptor file.
@@ -502,7 +507,7 @@ public abstract class CamelBlueprintTestSupport extends CamelTestSupport {
             throw new IllegalArgumentException("getCamelContextCreationTimeout cannot return a negative value.");
         }
         // must override context so we use the correct one in testing
-        context = (ModelCamelContext) answer;
+        context = answer.adapt(ModelCamelContext.class);
         return answer;
     }
    
@@ -525,18 +530,16 @@ public abstract class CamelBlueprintTestSupport extends CamelTestSupport {
 
     /**
      * Create a temporary File with persisted configuration for ConfigAdmin
-     * @param initialConfiguration
-     * @return
      */
     private String prepareInitialConfigFile(Properties initialConfiguration) throws IOException {
         File dir = new File("target/etc");
         dir.mkdirs();
-        File cfg = File.createTempFile("properties-", ".cfg", dir);
+        File cfg = Files.createTempFile(dir.toPath(), "properties-", ".cfg").toFile();
         FileWriter writer = new FileWriter(cfg);
         try {
             initialConfiguration.store(writer, null);
         } finally {
-            writer.close();
+            IOHelper.close(writer);
         }
         return cfg.getAbsolutePath();
     }

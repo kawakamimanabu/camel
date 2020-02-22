@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.Serializable;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -29,10 +30,7 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 
-import static javax.ws.rs.client.Entity.entity;
-
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
-
 import org.apache.camel.component.bonita.api.filter.BonitaAuthFilter;
 import org.apache.camel.component.bonita.api.filter.JsonClientFilter;
 import org.apache.camel.component.bonita.api.model.FileInput;
@@ -41,6 +39,8 @@ import org.apache.camel.component.bonita.api.model.UploadFileResponse;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.ext.multipart.AttachmentBuilder;
 import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
+
+import static javax.ws.rs.client.Entity.entity;
 
 public class BonitaAPIUtil {
 
@@ -67,7 +67,7 @@ public class BonitaAPIUtil {
             .resolveTemplate("processName", processDefinition.getName())
             .resolveTemplate("processVersion", processDefinition.getVersion());
 
-        File tempFile = File.createTempFile("tempFile", ".tmp");
+        File tempFile = Files.createTempFile("tempFile", ".tmp").toFile();
         FileOutputStream fos = new FileOutputStream(tempFile);
         fos.write(file.getContent());
         fos.close();

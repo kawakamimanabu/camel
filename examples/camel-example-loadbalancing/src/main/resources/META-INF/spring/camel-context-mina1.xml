@@ -30,8 +30,8 @@
   <camelContext xmlns="http://camel.apache.org/schema/spring">
 
     <route id="mina1">
-      <from uri="mina2:tcp://localhost:9991"/>
-      <setHeader headerName="minaServer">
+      <from uri="mina:tcp://localhost:9991"/>
+      <setHeader name="minaServer">
         <constant>localhost:9991</constant>
       </setHeader>
       <bean ref="service" method="updateReport"/>

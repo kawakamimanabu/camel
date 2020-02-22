@@ -24,16 +24,13 @@ import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriPath;
 import org.apache.camel.support.DefaultEndpoint;
 
-@UriEndpoint(firstVersion = "2.23.0", scheme = "websocket-jsr356", title = "Javax Websocket", syntax = "websocket-jsr356:/resourceUri", label = "jsr356")
+@UriEndpoint(firstVersion = "2.23.0", scheme = "websocket-jsr356", title = "Javax Websocket", syntax = "websocket-jsr356:websocketPathOrUri", label = "jsr356")
 public class JSR356Endpoint extends DefaultEndpoint {
     @UriPath(description = "If a path (/foo) it will deploy locally the endpoint, " + "if an uri it will connect to the corresponding server")
     private String websocketPathOrUri;
 
     @UriParam(description = "Used when the endpoint is in client mode to populate a pool of sessions")
     private int sessionCount = 1;
-
-    @UriParam(description = "the servlet context to use (represented by its path)")
-    private String context;
 
     private final JSR356WebSocketComponent component;
 
@@ -49,17 +46,12 @@ public class JSR356Endpoint extends DefaultEndpoint {
 
     @Override
     public Consumer createConsumer(final Processor processor) {
-        return new JSR356Consumer(this, processor, sessionCount, context);
+        return new JSR356Consumer(this, processor, sessionCount);
     }
 
     @Override
     public Producer createProducer() {
         return new JSR356Producer(this, sessionCount);
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     public int getSessionCount() {

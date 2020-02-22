@@ -30,7 +30,7 @@ import org.apache.camel.SSLContextParametersAware;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.annotations.Component;
 import org.apache.camel.support.HeaderFilterStrategyComponent;
-import org.apache.camel.support.IntrospectionSupport;
+import org.apache.camel.util.PropertiesHelper;
 import org.apache.camel.util.StringHelper;
 
 /**
@@ -50,7 +50,6 @@ public class MailComponent extends HeaderFilterStrategyComponent implements SSLC
     }
 
     public MailComponent(MailConfiguration configuration) {
-        super();
         this.configuration = configuration;
     }
 
@@ -99,13 +98,8 @@ public class MailComponent extends HeaderFilterStrategyComponent implements SSLC
             endpoint.setSortTerm(st);
         }
 
-        endpoint.setContentTypeResolver(contentTypeResolver);
-        setEndpointHeaderFilterStrategy(endpoint);
-        setProperties(endpoint.getConfiguration(), parameters);
-        setProperties(endpoint, parameters);
-
         // special for searchTerm.xxx options
-        Map<String, Object> sstParams = IntrospectionSupport.extractProperties(parameters, "searchTerm.");
+        Map<String, Object> sstParams = PropertiesHelper.extractProperties(parameters, "searchTerm.");
         if (!sstParams.isEmpty()) {
             // use SimpleSearchTerm as POJO to store the configuration and then convert that to the actual SearchTerm
             SimpleSearchTerm sst = new SimpleSearchTerm();
@@ -113,6 +107,11 @@ public class MailComponent extends HeaderFilterStrategyComponent implements SSLC
             SearchTerm st = MailConverters.toSearchTerm(sst, getCamelContext().getTypeConverter());
             endpoint.setSearchTerm(st);
         }
+
+        endpoint.setContentTypeResolver(contentTypeResolver);
+        setEndpointHeaderFilterStrategy(endpoint);
+        setProperties(endpoint.getConfiguration(), parameters);
+        setProperties(endpoint, parameters);
 
         // sanity check that we know the mail server
         StringHelper.notEmpty(config.getHost(), "host");
