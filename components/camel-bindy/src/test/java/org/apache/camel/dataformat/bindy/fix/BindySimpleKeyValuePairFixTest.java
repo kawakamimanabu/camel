@@ -34,7 +34,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
-
 @ContextConfiguration
 public class BindySimpleKeyValuePairFixTest extends AbstractJUnit4SpringContextTests {
     private static final String[] FIX_REQUESTS = new String[] {
@@ -48,10 +47,10 @@ public class BindySimpleKeyValuePairFixTest extends AbstractJUnit4SpringContextT
         "37=3 38=6 40=bread \r\n"
     };
 
-    @Produce(uri = "direct:fix")
+    @Produce("direct:fix")
     private ProducerTemplate template;
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint mock;
 
     @Test

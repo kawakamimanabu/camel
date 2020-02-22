@@ -24,7 +24,7 @@ import javax.xml.bind.annotation.XmlTransient;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
 import org.apache.camel.ProducerTemplate;
-import org.apache.camel.impl.DefaultProducerTemplate;
+import org.apache.camel.impl.engine.DefaultProducerTemplate;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.support.service.ServiceHelper;
 
@@ -41,6 +41,7 @@ public abstract class AbstractCamelProducerTemplateFactoryBean extends AbstractC
     @XmlAttribute @Metadata(description = "Sets a custom maximum cache size to use in the backing cache pools.")
     private Integer maximumCacheSize;
 
+    @Override
     public ProducerTemplate getObject() throws Exception {
         CamelContext context = getCamelContext();
         if (defaultEndpoint != null) {
@@ -64,10 +65,12 @@ public abstract class AbstractCamelProducerTemplateFactoryBean extends AbstractC
         return template;
     }
 
+    @Override
     public Class<DefaultProducerTemplate> getObjectType() {
         return DefaultProducerTemplate.class;
     }
 
+    @Override
     public void destroy() throws Exception {
         ServiceHelper.stopService(template);
     }

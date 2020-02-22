@@ -61,15 +61,14 @@ public class HttpProxyIntegrationTest extends AbstractSalesforceTestBase {
     private static Server server;
     private static int httpProxyPort;
 
-    private static final AtomicBoolean WENT_TORUGH_PROXY = new AtomicBoolean();
+    private static final AtomicBoolean WENT_THROUGH_PROXY = new AtomicBoolean();
 
     @Parameter(0)
     public Consumer<SalesforceComponent> configurationMethod;
 
     @Parameters
     public static Iterable<Consumer<SalesforceComponent>> methods() {
-        return Arrays.asList(HttpProxyIntegrationTest::configureProxyViaComponentProperties,
-            HttpProxyIntegrationTest::configureProxyViaClientPropertiesMap);
+        return Arrays.asList(HttpProxyIntegrationTest::configureProxyViaComponentProperties, HttpProxyIntegrationTest::configureProxyViaClientPropertiesMap);
     }
 
     @Test
@@ -77,19 +76,19 @@ public class HttpProxyIntegrationTest extends AbstractSalesforceTestBase {
         doTestGetVersions("");
         doTestGetVersions("Xml");
 
-        assertTrue("Should have gone through the test proxy", WENT_TORUGH_PROXY.get());
+        assertTrue("Should have gone through the test proxy", WENT_THROUGH_PROXY.get());
     }
 
     @SuppressWarnings("unchecked")
     private void doTestGetVersions(String suffix) throws Exception {
         // test getVersions doesn't need a body
         // assert expected result
-        Object o = template().requestBody("direct:getVersions" + suffix, (Object) null);
+        Object o = template().requestBody("direct:getVersions" + suffix, (Object)null);
         List<Version> versions = null;
         if (o instanceof Versions) {
-            versions = ((Versions) o).getVersions();
+            versions = ((Versions)o).getVersions();
         } else {
-            versions = (List<Version>) o;
+            versions = (List<Version>)o;
         }
         assertNotNull(versions);
         LOG.debug("Versions: {}", versions);
@@ -105,8 +104,7 @@ public class HttpProxyIntegrationTest extends AbstractSalesforceTestBase {
         connector.setHost(HTTP_PROXY_HOST);
         server.addConnector(connector);
 
-        final String authenticationString = "Basic "
-            + B64Code.encode(HTTP_PROXY_USER_NAME + ":" + HTTP_PROXY_PASSWORD, StringUtil.__ISO_8859_1);
+        final String authenticationString = "Basic " + B64Code.encode(HTTP_PROXY_USER_NAME + ":" + HTTP_PROXY_PASSWORD, StringUtil.__ISO_8859_1);
 
         ConnectHandler connectHandler = new ConnectHandler() {
             @Override
@@ -120,7 +118,7 @@ public class HttpProxyIntegrationTest extends AbstractSalesforceTestBase {
                     return false;
                 }
                 LOG.info("Request contains required header " + PROXY_AUTHORIZATION);
-                WENT_TORUGH_PROXY.set(true);
+                WENT_THROUGH_PROXY.set(true);
                 return true;
             }
         };
@@ -137,7 +135,7 @@ public class HttpProxyIntegrationTest extends AbstractSalesforceTestBase {
     protected void createComponent() throws Exception {
 
         super.createComponent();
-        final SalesforceComponent salesforce = (SalesforceComponent) context().getComponent("salesforce");
+        final SalesforceComponent salesforce = (SalesforceComponent)context().getComponent("salesforce");
 
         // set HTTP client properties
         final HashMap<String, Object> properties = new HashMap<>();
@@ -163,12 +161,10 @@ public class HttpProxyIntegrationTest extends AbstractSalesforceTestBase {
             public void configure() throws Exception {
 
                 // testGetVersion
-                from("direct:getVersions")
-                    .to("salesforce:getVersions");
+                from("direct:getVersions").to("salesforce:getVersions");
 
                 // allow overriding format per endpoint
-                from("direct:getVersionsXml")
-                    .to("salesforce:getVersions?format=XML");
+                from("direct:getVersionsXml").to("salesforce:getVersions?format=XML");
 
             }
         };

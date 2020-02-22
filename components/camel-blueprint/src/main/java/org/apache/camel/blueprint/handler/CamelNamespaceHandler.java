@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+
 import javax.xml.bind.Binder;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -62,10 +63,9 @@ import org.apache.camel.blueprint.CamelContextFactoryBean;
 import org.apache.camel.blueprint.CamelEndpointFactoryBean;
 import org.apache.camel.blueprint.CamelRestContextFactoryBean;
 import org.apache.camel.blueprint.CamelRouteContextFactoryBean;
-import org.apache.camel.builder.xml.Namespaces;
 import org.apache.camel.core.xml.AbstractCamelFactoryBean;
-import org.apache.camel.impl.CamelPostProcessorHelper;
-import org.apache.camel.impl.DefaultCamelContextNameStrategy;
+import org.apache.camel.impl.engine.CamelPostProcessorHelper;
+import org.apache.camel.impl.engine.DefaultCamelContextNameStrategy;
 import org.apache.camel.model.AggregateDefinition;
 import org.apache.camel.model.CatchDefinition;
 import org.apache.camel.model.DataFormatDefinition;
@@ -73,7 +73,7 @@ import org.apache.camel.model.ExpressionNode;
 import org.apache.camel.model.ExpressionSubElementDefinition;
 import org.apache.camel.model.FromDefinition;
 import org.apache.camel.model.MarshalDefinition;
-import org.apache.camel.model.ModelCamelContext;
+import org.apache.camel.model.Model;
 import org.apache.camel.model.OnExceptionDefinition;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.model.ResequenceDefinition;
@@ -95,6 +95,8 @@ import org.apache.camel.spi.LanguageResolver;
 import org.apache.camel.spi.NamespaceAware;
 import org.apache.camel.spi.PropertiesComponent;
 import org.apache.camel.support.ObjectHelper;
+import org.apache.camel.support.builder.Namespaces;
+import org.apache.camel.support.builder.xml.NamespacesHelper;
 import org.apache.camel.support.jsse.KeyStoreParameters;
 import org.apache.camel.support.jsse.SSLContextParameters;
 import org.apache.camel.support.jsse.SecureRandomParameters;
@@ -176,6 +178,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
         }
     }
 
+    @Override
     public URL getSchemaLocation(String namespace) {
         if (BLUEPRINT_NS.equals(namespace)) {
             return getClass().getClassLoader().getResource("camel-blueprint.xsd");
@@ -183,11 +186,13 @@ public class CamelNamespaceHandler implements NamespaceHandler {
         return null;
     }
 
+    @Override
     @SuppressWarnings({"rawtypes"})
     public Set<Class> getManagedClasses() {
         return new HashSet<>(Arrays.asList(BlueprintCamelContext.class));
     }
 
+    @Override
     public Metadata parse(Element element, ParserContext context) {
         LOG.trace("Parsing element {}", element);
 
@@ -254,10 +259,6 @@ public class CamelNamespaceHandler implements NamespaceHandler {
         CamelContextFactoryBean ccfb = (CamelContextFactoryBean) value;
         ccfb.setImplicitId(implicitId);
 
-        // The properties component is always used / created by the CamelContextFactoryBean
-        // so we need to ensure that the resolver is ready to use
-        ComponentMetadata propertiesComponentResolver = getComponentResolverReference(context, "properties");
-
         MutablePassThroughMetadata factory = context.createMetadata(MutablePassThroughMetadata.class);
         factory.setId(".camelBlueprint.passThrough." + contextId);
         factory.setObject(new PassThroughCallable<>(value));
@@ -270,7 +271,6 @@ public class CamelNamespaceHandler implements NamespaceHandler {
         factory2.setDestroyMethod("destroy");
         factory2.addProperty("blueprintContainer", createRef(context, "blueprintContainer"));
         factory2.addProperty("bundleContext", createRef(context, "blueprintBundleContext"));
-        factory2.addDependsOn(propertiesComponentResolver.getId());
         // We need to add other components which the camel context dependsOn
         if (org.apache.camel.util.ObjectHelper.isNotEmpty(ccfb.getDependsOn())) {
             factory2.setDependsOn(Arrays.asList(ccfb.getDependsOn().split(" |,")));
@@ -342,7 +342,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
                 if (object instanceof NamespaceAware) {
                     NamespaceAware namespaceAware = (NamespaceAware) object;
                     if (namespaces == null) {
-                        namespaces = new Namespaces(element);
+                        namespaces = NamespacesHelper.namespaces(element);
                     }
                     namespaces.configure(namespaceAware);
                 }
@@ -389,7 +389,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
         // lets inject the namespaces into any namespace aware POJOs
         injectNamespaces(element, binder);
 
-        LOG.trace("Parsing RouteContext done, returning {}", element, ctx);
+        LOG.trace("Parsing RouteContext {} done, returning {}", element, ctx);
         return ctx;
     }
 
@@ -430,7 +430,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
         // lets inject the namespaces into any namespace aware POJOs
         injectNamespaces(element, binder);
 
-        LOG.trace("Parsing RestContext done, returning {}", element, ctx);
+        LOG.trace("Parsing RestContext {} done, returning {}", element, ctx);
         return ctx;
     }
 
@@ -471,7 +471,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
         // must be lazy as we want CamelContext to be activated first
         ctx.setActivation(ACTIVATION_LAZY);
 
-        LOG.trace("Parsing endpoint done, returning {}", element, ctx);
+        LOG.trace("Parsing endpoint {} done, returning {}", element, ctx);
         return ctx;
     }
 
@@ -660,6 +660,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
         return (BlueprintContainer) ptm.getObject();
     }
 
+    @Override
     public ComponentMetadata decorate(Node node, ComponentMetadata component, ParserContext context) {
         return null;
     }
@@ -687,7 +688,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
 
     private static ComponentMetadata getDataformatResolverReference(ParserContext context, String dataformat) {
         // we cannot resolve dataformat names using property placeholders at this point in time
-        if (dataformat.startsWith(PropertiesComponent.DEFAULT_PREFIX_TOKEN)) {
+        if (dataformat.startsWith(PropertiesComponent.PREFIX_TOKEN)) {
             return null;
         }
         ComponentDefinitionRegistry componentDefinitionRegistry = context.getComponentDefinitionRegistry();
@@ -721,7 +722,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
 
     private static ComponentMetadata getLanguageResolverReference(ParserContext context, String language) {
         // we cannot resolve language names using property placeholders at this point in time
-        if (language.startsWith(PropertiesComponent.DEFAULT_PREFIX_TOKEN)) {
+        if (language.startsWith(PropertiesComponent.PREFIX_TOKEN)) {
             return null;
         }
         ComponentDefinitionRegistry componentDefinitionRegistry = context.getComponentDefinitionRegistry();
@@ -755,7 +756,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
 
     private static ComponentMetadata getComponentResolverReference(ParserContext context, String component) {
         // we cannot resolve component names using property placeholders at this point in time
-        if (component.startsWith(PropertiesComponent.DEFAULT_PREFIX_TOKEN)) {
+        if (component.startsWith(PropertiesComponent.PREFIX_TOKEN)) {
             return null;
         }
         ComponentDefinitionRegistry componentDefinitionRegistry = context.getComponentDefinitionRegistry();
@@ -795,6 +796,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
             this.value = value;
         }
 
+        @Override
         public T call() throws Exception {
             return value;
         }
@@ -822,6 +824,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
             return null;
         }
 
+        @Override
         public Object beforeInit(Object bean, String beanName, BeanCreator beanCreator, BeanMetadata beanMetadata) {
             LOG.trace("Before init of bean: {} -> {}", beanName, bean);
             // prefer to inject later in afterInit
@@ -840,23 +843,23 @@ public class CamelNamespaceHandler implements NamespaceHandler {
                 Field[] fields = clazz.getDeclaredFields();
                 for (Field field : fields) {
                     PropertyInject propertyInject = field.getAnnotation(PropertyInject.class);
-                    if (propertyInject != null && matchContext(propertyInject.context())) {
+                    if (propertyInject != null) {
                         injectFieldProperty(field, propertyInject.value(), propertyInject.defaultValue(), bean, beanName);
                     }
 
                     BeanInject beanInject = field.getAnnotation(BeanInject.class);
-                    if (beanInject != null && matchContext(beanInject.context())) {
+                    if (beanInject != null) {
                         injectFieldBean(field, beanInject.value(), bean, beanName);
                     }
 
                     EndpointInject endpointInject = field.getAnnotation(EndpointInject.class);
-                    if (endpointInject != null && matchContext(endpointInject.context())) {
+                    if (endpointInject != null) {
                         String uri = endpointInject.value().isEmpty() ? endpointInject.uri() : endpointInject.value();
                         injectField(field, uri, endpointInject.property(), bean, beanName);
                     }
 
                     Produce produce = field.getAnnotation(Produce.class);
-                    if (produce != null && matchContext(produce.context())) {
+                    if (produce != null) {
                         String uri = produce.value().isEmpty() ? produce.uri() : produce.value();
                         injectField(field, uri, produce.property(), bean, beanName);
                     }
@@ -909,23 +912,23 @@ public class CamelNamespaceHandler implements NamespaceHandler {
 
         protected void setterInjection(Method method, Object bean, String beanName) {
             PropertyInject propertyInject = method.getAnnotation(PropertyInject.class);
-            if (propertyInject != null && matchContext(propertyInject.context())) {
+            if (propertyInject != null) {
                 setterPropertyInjection(method, propertyInject.value(), propertyInject.defaultValue(), bean, beanName);
             }
 
             BeanInject beanInject = method.getAnnotation(BeanInject.class);
-            if (beanInject != null && matchContext(beanInject.context())) {
+            if (beanInject != null) {
                 setterBeanInjection(method, beanInject.value(), bean, beanName);
             }
 
             EndpointInject endpointInject = method.getAnnotation(EndpointInject.class);
-            if (endpointInject != null && matchContext(endpointInject.context())) {
+            if (endpointInject != null) {
                 String uri = endpointInject.value().isEmpty() ? endpointInject.uri() : endpointInject.value();
                 setterInjection(method, bean, beanName, uri, endpointInject.property());
             }
 
             Produce produce = method.getAnnotation(Produce.class);
-            if (produce != null && matchContext(produce.context())) {
+            if (produce != null) {
                 String uri = produce.value().isEmpty() ? produce.uri() : produce.value();
                 setterInjection(method, bean, beanName, uri, produce.property());
             }
@@ -933,42 +936,37 @@ public class CamelNamespaceHandler implements NamespaceHandler {
 
         protected void setterPropertyInjection(Method method, String propertyValue, String propertyDefaultValue, Object bean, String beanName) {
             Class<?>[] parameterTypes = method.getParameterTypes();
-            if (parameterTypes != null) {
-                if (parameterTypes.length != 1) {
-                    LOG.warn("Ignoring badly annotated method for injection due to incorrect number of parameters: {}", method);
-                } else {
-                    String propertyName = org.apache.camel.util.ObjectHelper.getPropertyName(method);
-                    Object value = getInjectionPropertyValue(parameterTypes[0], propertyValue, propertyDefaultValue, propertyName, bean, beanName);
-                    ObjectHelper.invokeMethod(method, bean, value);
-                }
+            if (parameterTypes.length != 1) {
+                LOG.warn("Ignoring badly annotated method for injection due to incorrect number of parameters: {}", method);
+            } else {
+                String propertyName = org.apache.camel.util.ObjectHelper.getPropertyName(method);
+                Object value = getInjectionPropertyValue(parameterTypes[0], propertyValue, propertyDefaultValue, propertyName, bean, beanName);
+                ObjectHelper.invokeMethod(method, bean, value);
             }
         }
 
         protected void setterBeanInjection(Method method, String name, Object bean, String beanName) {
             Class<?>[] parameterTypes = method.getParameterTypes();
-            if (parameterTypes != null) {
-                if (parameterTypes.length != 1) {
-                    LOG.warn("Ignoring badly annotated method for injection due to incorrect number of parameters: {}", method);
-                } else {
-                    Object value = getInjectionBeanValue(parameterTypes[0], name);
-                    ObjectHelper.invokeMethod(method, bean, value);
-                }
+            if (parameterTypes.length != 1) {
+                LOG.warn("Ignoring badly annotated method for injection due to incorrect number of parameters: {}", method);
+            } else {
+                Object value = getInjectionBeanValue(parameterTypes[0], name);
+                ObjectHelper.invokeMethod(method, bean, value);
             }
         }
 
         protected void setterInjection(Method method, Object bean, String beanName, String endpointUri, String endpointProperty) {
             Class<?>[] parameterTypes = method.getParameterTypes();
-            if (parameterTypes != null) {
-                if (parameterTypes.length != 1) {
-                    LOG.warn("Ignoring badly annotated method for injection due to incorrect number of parameters: {}", method);
-                } else {
-                    String propertyName = org.apache.camel.util.ObjectHelper.getPropertyName(method);
-                    Object value = getInjectionValue(parameterTypes[0], endpointUri, endpointProperty, propertyName, bean, beanName);
-                    ObjectHelper.invokeMethod(method, bean, value);
-                }
+            if (parameterTypes.length != 1) {
+                LOG.warn("Ignoring badly annotated method for injection due to incorrect number of parameters: {}", method);
+            } else {
+                String propertyName = org.apache.camel.util.ObjectHelper.getPropertyName(method);
+                Object value = getInjectionValue(parameterTypes[0], endpointUri, endpointProperty, propertyName, bean, beanName);
+                ObjectHelper.invokeMethod(method, bean, value);
             }
         }
 
+        @Override
         public Object afterInit(Object bean, String beanName, BeanCreator beanCreator, BeanMetadata beanMetadata) {
             LOG.trace("After init of bean: {} -> {}", beanName, bean);
             // we cannot inject CamelContextAware beans as the CamelContext may not be ready
@@ -978,9 +976,11 @@ public class CamelNamespaceHandler implements NamespaceHandler {
             return bean;
         }
 
+        @Override
         public void beforeDestroy(Object bean, String beanName) {
         }
 
+        @Override
         public void afterDestroy(Object bean, String beanName) {
         }
 
@@ -1016,6 +1016,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
             this.blueprintContainer = blueprintContainer;
         }
 
+        @Override
         public void process(ComponentDefinitionRegistry componentDefinitionRegistry) {
             CamelContextFactoryBean ccfb = (CamelContextFactoryBean) blueprintContainer.getComponentInstance(".camelBlueprint.factory." + camelContextName);
             CamelContext camelContext = ccfb.getContext();
@@ -1025,13 +1026,13 @@ public class CamelNamespaceHandler implements NamespaceHandler {
             Set<String> dataformats = new HashSet<>();
 
             // regular camel routes
-            for (RouteDefinition rd : camelContext.adapt(ModelCamelContext.class).getRouteDefinitions()) {
+            for (RouteDefinition rd : camelContext.getExtension(Model.class).getRouteDefinitions()) {
                 findInputComponents(rd.getInput(), components, languages, dataformats);
                 findOutputComponents(rd.getOutputs(), components, languages, dataformats);
             }
 
             // rest services can have embedded routes or a singular to
-            for (RestDefinition rd : camelContext.adapt(ModelCamelContext.class).getRestDefinitions()) {
+            for (RestDefinition rd : camelContext.getExtension(Model.class).getRestDefinitions()) {
                 for (VerbDefinition vd : rd.getVerbs()) {
                     Object o = vd.getToOrRoute();
                     if (o instanceof RouteDefinition) {
@@ -1186,7 +1187,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
 
         private void findUriComponent(String uri, Set<String> components) {
             // if the uri is a placeholder then skip it
-            if (uri == null || uri.startsWith(PropertiesComponent.DEFAULT_PREFIX_TOKEN)) {
+            if (uri == null || uri.startsWith(PropertiesComponent.PREFIX_TOKEN)) {
                 return;
             }
 
@@ -1211,15 +1212,12 @@ public class CamelNamespaceHandler implements NamespaceHandler {
                     URI u = new URI(uri);
                     Map<String, Object> parameters = URISupport.parseParameters(u);
                     Object value = parameters.get("scheduler");
-                    if (value == null) {
-                        value = parameters.get("consumer.scheduler");
-                    }
                     if (value != null) {
-                        // the scheduler can be quartz2 or spring based, so add reference to camel component
+                        // the scheduler can be quartz or spring based, so add reference to camel component
                         // from these components os blueprint knows about the requirement
                         String name = value.toString();
-                        if ("quartz2".equals(name)) {
-                            components.add("quartz2");
+                        if ("quartz".equals(name)) {
+                            components.add("quartz");
                         } else if ("spring".equals(name)) {
                             components.add("spring-event");
                         }

@@ -16,46 +16,31 @@
  */
 package org.apache.camel.component.aws.lambda;
 
+import com.amazonaws.Protocol;
 import com.amazonaws.services.lambda.AWSLambda;
-
 import org.apache.camel.RuntimeCamelException;
-import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriParams;
-import org.apache.camel.spi.UriPath;
 
 @UriParams
 public class LambdaConfiguration implements Cloneable {
 
-    @UriPath
-    @Metadata(required = true)
-    private String function;
-    @UriParam
-    @Metadata(required = true)
-    private LambdaOperations operation;
+    @UriParam(defaultValue = "invokeFunction")
+    private LambdaOperations operation = LambdaOperations.invokeFunction;
     @UriParam(label = "security", secret = true)
     private String accessKey;
     @UriParam(label = "security", secret = true)
     private String secretKey;
     @UriParam(label = "producer")
     private String region;
+    @UriParam(label = "proxy", enums = "HTTP,HTTPS", defaultValue = "HTTPS")
+    private Protocol proxyProtocol = Protocol.HTTPS;
     @UriParam(label = "proxy")
     private String proxyHost;
     @UriParam(label = "proxy")
     private Integer proxyPort;
     @UriParam(label = "advanced")
     private AWSLambda awsLambdaClient;
-
-    public String getFunction() {
-        return function;
-    }
-
-    /**
-     * Name of the Lambda function.
-     */
-    public void setFunction(String function) {
-        this.function = function;
-    }
 
     public AWSLambda getAwsLambdaClient() {
         return awsLambdaClient;
@@ -95,7 +80,8 @@ public class LambdaConfiguration implements Cloneable {
     }
 
     /**
-     * Amazon AWS Region
+     * Amazon AWS Region. When using this parameter, the configuration will expect the capitalized name of the region (for example AP_EAST_1)
+     * You'll need to use the name Regions.EU_WEST_1.name()
      */
     public void setRegion(String region) {
         this.region = region;
@@ -110,6 +96,17 @@ public class LambdaConfiguration implements Cloneable {
      */
     public void setOperation(LambdaOperations operation) {
         this.operation = operation;
+    }
+    
+    public Protocol getProxyProtocol() {
+        return proxyProtocol;
+    }
+
+    /**
+     * To define a proxy protocol when instantiating the Lambda client
+     */
+    public void setProxyProtocol(Protocol proxyProtocol) {
+        this.proxyProtocol = proxyProtocol;
     }
 
     public String getProxyHost() {

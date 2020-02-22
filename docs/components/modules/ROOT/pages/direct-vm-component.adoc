@@ -1,15 +1,20 @@
 [[direct-vm-component]]
-== Direct VM Component
+= Direct VM Component
+:page-source: components/camel-directvm/src/main/docs/direct-vm-component.adoc
 
-*Available as of Camel version 2.10*
+*Since Camel 2.10*
 
-The *direct-vm:* component provides direct, synchronous invocation of
+// HEADER START
+*Both producer and consumer is supported*
+// HEADER END
+
+The Direct-Vm component provides direct, synchronous invocation of
 any consumers in the JVM when a producer sends a message exchange. +
  This endpoint can be used to connect existing routes in the same camel
 context, as well from other camel contexts in the *same* JVM.
 
-This component differs from the <<direct-component,Direct>> component in
-that <<direct-vm-component,Direct-VM>> supports communication across
+This component differs from the xref:direct-component.adoc[Direct] component in
+that xref:direct-vm-component.adoc[Direct-VM] supports communication across
 CamelContext instances - so you can use this mechanism to communicate
 across web applications (provided that camel-core.jar is on the
 system/boot classpath).
@@ -25,9 +30,9 @@ bundles, the camel routes will use +
  the same thread. That autorises to develop applications using
 Transactions - Tx.
 
-image:camel-direct-vm.png[image]
+image::camel-direct-vm.png[image]
 
-=== URI format
+== URI format
 
 [source]
 ----
@@ -36,12 +41,12 @@ direct-vm:someName
 
 Where *someName* can be any string to uniquely identify the endpoint
 
-=== Options
+== Options
 
 
 
 // component options: START
-The Direct VM component supports 5 options, which are listed below.
+The Direct VM component supports 7 options, which are listed below.
 
 
 
@@ -52,7 +57,9 @@ The Direct VM component supports 5 options, which are listed below.
 | *timeout* (producer) | The timeout value to use if block is enabled. | 30000 | long
 | *headerFilterStrategy* (advanced) | Sets a HeaderFilterStrategy that will only be applied on producer endpoints (on both directions: request and response). Default value: none. |  | HeaderFilterStrategy
 | *propagateProperties* (advanced) | Whether to propagate or not properties from the producer side to the consumer side, and vice versa. Default value: true. | true | boolean
-| *resolveProperty Placeholders* (advanced) | Whether the component should resolve property placeholders on itself when starting. Only properties which are of String type can use property placeholders. | true | boolean
+| *basicPropertyBinding* (advanced) | Whether the component should use basic property binding (Camel 2.x) or the newer property binding with additional capabilities | false | boolean
+| *lazyStartProducer* (producer) | Whether the producer should be started lazy (on the first message). By starting lazy you can use this to allow CamelContext and routes to startup in situations where a producer may otherwise fail during starting and cause the route to fail being started. By deferring this startup to be lazy then the startup failure can be handled during routing messages via Camel's routing error handlers. Beware that when the first message is processed then creating and starting the producer may take a little time and prolong the total processing time of the processing. | false | boolean
+| *bridgeErrorHandler* (consumer) | Allows for bridging the consumer to the Camel routing Error Handler, which mean any exceptions occurred while the consumer is trying to pickup incoming messages, or the likes, will now be processed as a message and handled by the routing Error Handler. By default the consumer will use the org.apache.camel.spi.ExceptionHandler to deal with exceptions, that will be logged at WARN or ERROR level and ignored. | false | boolean
 |===
 // component options: END
 
@@ -68,7 +75,7 @@ direct-vm:name
 
 with the following path and query parameters:
 
-==== Path Parameters (1 parameters):
+=== Path Parameters (1 parameters):
 
 
 [width="100%",cols="2,5,^1,2",options="header"]
@@ -78,7 +85,7 @@ with the following path and query parameters:
 |===
 
 
-==== Query Parameters (9 parameters):
+=== Query Parameters (11 parameters):
 
 
 [width="100%",cols="2,5,^1,2",options="header"]
@@ -89,15 +96,17 @@ with the following path and query parameters:
 | *exchangePattern* (consumer) | Sets the exchange pattern when the consumer creates an exchange. |  | ExchangePattern
 | *block* (producer) | If sending a message to a direct endpoint which has no active consumer, then we can tell the producer to block and wait for the consumer to become active. | true | boolean
 | *failIfNoConsumers* (producer) | Whether the producer should fail by throwing an exception, when sending to a Direct-VM endpoint with no active consumers. | false | boolean
+| *lazyStartProducer* (producer) | Whether the producer should be started lazy (on the first message). By starting lazy you can use this to allow CamelContext and routes to startup in situations where a producer may otherwise fail during starting and cause the route to fail being started. By deferring this startup to be lazy then the startup failure can be handled during routing messages via Camel's routing error handlers. Beware that when the first message is processed then creating and starting the producer may take a little time and prolong the total processing time of the processing. | false | boolean
 | *timeout* (producer) | The timeout value to use if block is enabled. | 30000 | long
 | *headerFilterStrategy* (producer) | Sets a HeaderFilterStrategy that will only be applied on producer endpoints (on both directions: request and response). Default value: none. |  | HeaderFilterStrategy
+| *basicPropertyBinding* (advanced) | Whether the endpoint should use basic property binding (Camel 2.x) or the newer property binding with additional capabilities | false | boolean
 | *propagateProperties* (advanced) | Whether to propagate or not properties from the producer side to the consumer side, and vice versa. Default value: true. | true | boolean
 | *synchronous* (advanced) | Sets whether synchronous processing should be strictly used, or Camel is allowed to use asynchronous processing (if supported). | false | boolean
 |===
 // endpoint options: END
 
 
-=== Samples
+== Samples
 
 In the route below we use the direct component to link the two routes
 together:
@@ -135,8 +144,3 @@ And the sample using spring DSL:
 </route>
 ----
 
-=== See Also
-
-* <<direct-component,Direct>>
-* <<seda-component,SEDA>>
-* <<vm-component,VM>>

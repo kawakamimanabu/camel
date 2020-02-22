@@ -52,6 +52,11 @@ public class HystrixProcessorCommand extends HystrixCommand {
 
     @Override
     protected Message getFallback() {
+        // if bad request then break-out
+        if (exchange.getException() instanceof HystrixBadRequestException) {
+            return null;
+        }
+
         // guard by lock as the run command can be running concurrently in case hystrix caused a timeout which
         // can cause the fallback timer to trigger this fallback at the same time the run command may be running
         // after its processor.process method which could cause both threads to mutate the state on the exchange
@@ -99,7 +104,7 @@ public class HystrixProcessorCommand extends HystrixCommand {
             exchange.setException(e);
         }
 
-        return exchange.hasOut() ? exchange.getOut() : exchange.getIn();
+        return exchange.getMessage();
     }
 
     @Override
@@ -117,6 +122,15 @@ public class HystrixProcessorCommand extends HystrixCommand {
             copy.setException(e);
         }
 
+        // if hystrix execution timeout is enabled and fallback is enabled and a timeout occurs
+        // then a hystrix timer thread executes the fallback so we can stop run() execution
+        if (getProperties().executionTimeoutEnabled().get()
+                && getProperties().fallbackEnabled().get()
+                && isCommandTimedOut.get() == TimedOutStatus.TIMED_OUT) {
+            LOG.debug("Exiting run command due to a hystrix execution timeout in processing exchange: {}", exchange);
+            return null;
+        }
+
         // when a hystrix timeout occurs then a hystrix timer thread executes the fallback
         // and therefore we need this thread to not do anymore if fallback is already in process
         if (fallbackInUse.get()) {
@@ -129,7 +143,6 @@ public class HystrixProcessorCommand extends HystrixCommand {
         Exception camelExchangeException = copy.getException();
 
         synchronized (lock) {
-
             // when a hystrix timeout occurs then a hystrix timer thread executes the fallback
             // and therefore we need this thread to not do anymore if fallback is already in process
             if (fallbackInUse.get()) {
@@ -146,7 +159,8 @@ public class HystrixProcessorCommand extends HystrixCommand {
             // special for HystrixBadRequestException which should not trigger fallback
             if (camelExchangeException instanceof HystrixBadRequestException) {
                 LOG.debug("Running processor: {} with exchange: {} done as bad request", processor, exchange);
-                return exchange.hasOut() ? exchange.getOut() : exchange.getIn();
+                exchange.setException(camelExchangeException);
+                throw camelExchangeException;
             }
 
             // copy the result before its regarded as success
@@ -160,7 +174,7 @@ public class HystrixProcessorCommand extends HystrixCommand {
             }
 
             LOG.debug("Running processor: {} with exchange: {} done", processor, exchange);
-            return exchange.hasOut() ? exchange.getOut() : exchange.getIn();
+            return exchange.getMessage();
         }
     }
 

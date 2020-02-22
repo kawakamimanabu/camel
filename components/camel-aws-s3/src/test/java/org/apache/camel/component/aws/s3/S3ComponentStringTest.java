@@ -19,7 +19,6 @@ package org.apache.camel.component.aws.s3;
 import java.io.File;
 
 import com.amazonaws.services.s3.model.PutObjectRequest;
-
 import org.apache.camel.BindToRegistry;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.Exchange;
@@ -36,11 +35,11 @@ public class S3ComponentStringTest extends CamelTestSupport {
 
     @BindToRegistry("amazonS3Client")
     AmazonS3ClientMock client = new AmazonS3ClientMock();
-    
-    @EndpointInject(uri = "direct:sendString")
+
+    @EndpointInject("direct:sendString")
     ProducerTemplate templateSendString;
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     MockEndpoint result;
 
     File testFile;

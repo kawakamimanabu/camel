@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.assertEquals;
 
-public class JGroupsRaftClusteredRoutePolicyTest extends JGroupsRaftClusterAbastractTest {
+public class JGroupsRaftClusteredRoutePolicyTest extends JGroupsRaftClusterAbstractTest {
     private static final Logger LOG = LoggerFactory.getLogger(JGroupsRaftClusteredRoutePolicyTest.class);
 
     private ArrayList<CamelContext> lcc = new ArrayList<>();

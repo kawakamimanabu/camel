@@ -21,17 +21,17 @@ import java.io.File;
 import org.apache.camel.CamelExecutionException;
 import org.apache.camel.Exchange;
 import org.apache.camel.component.file.GenericFileOperationFailedException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.apache.camel.test.junit5.TestSupport.assertIsInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class FtpProducerTempFileExistIssueTest extends FtpServerTestSupport {
 
     private String getFtpUrl() {
         return "ftp://admin@localhost:" + getPort() + "/tempprefix/?password=admin";
-    }
-
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
     }
 
     @Test

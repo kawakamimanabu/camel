@@ -23,7 +23,7 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.core.xml.AbstractCamelRedeliveryPolicyFactoryBean;
-import org.apache.camel.processor.RedeliveryPolicy;
+import org.apache.camel.processor.errorhandler.RedeliveryPolicy;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spring.util.CamelContextResolverHelper;
 import org.springframework.beans.factory.FactoryBean;
@@ -46,6 +46,7 @@ public class CamelRedeliveryPolicyFactoryBean extends AbstractCamelRedeliveryPol
         return CamelContextResolverHelper.getCamelContextWithId(applicationContext, camelContextId);
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }

@@ -105,7 +105,8 @@ public class BlueprintCamelContext extends DefaultCamelContext implements Servic
         this.bundleStateService = bundleStateService;
     }
    
-    public void doInit() {
+    @Override
+    public void doInit() throws Exception {
         log.trace("init {}", this);
         // add service listener so we can be notified when blueprint container is done
         // and we would be ready to start CamelContext
@@ -172,7 +173,7 @@ public class BlueprintCamelContext extends DefaultCamelContext implements Servic
                 break;
             }
 
-            log.debug("Received BlueprintEvent[replay={} type={} bundle={}] %s", event.isReplay(), eventTypeString, event.getBundle().getSymbolicName(), event);
+            log.debug("Received BlueprintEvent[replay={} type={} bundle={}] {}", event.isReplay(), eventTypeString, event.getBundle().getSymbolicName(), event);
         }
 
         if (!event.isReplay() && this.getBundleContext().getBundle().getBundleId() == event.getBundle().getBundleId()) {
@@ -182,13 +183,6 @@ public class BlueprintCamelContext extends DefaultCamelContext implements Servic
                     this.maybeStart();
                 } catch (Exception startEx) {
                     log.error("Error occurred during starting CamelContext: {}", this.getName(), startEx);
-                }
-            } else if (event.getType() == BlueprintEvent.DESTROYING) {
-                try {
-                    log.info("Stopping CamelContext: {}", this.getName());
-                    this.stop();
-                } catch (Exception stopEx) {
-                    log.error("Error occurred during stopping CamelContext: {}", this.getName(), stopEx);
                 }
             }
         }
@@ -234,7 +228,7 @@ public class BlueprintCamelContext extends DefaultCamelContext implements Servic
     }
 
     @Override
-    public void start() throws Exception {
+    public void start() {
         final ClassLoader original = Thread.currentThread().getContextClassLoader();
         try {
             // let's set a more suitable TCCL while starting the context

@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -29,6 +28,8 @@ import java.util.UUID;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.DeleteMessageRequest;
 import com.amazonaws.services.sqs.model.DeleteMessageResult;
+import com.amazonaws.services.sqs.model.ListQueuesRequest;
+import com.amazonaws.services.sqs.model.ListQueuesResult;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
@@ -58,6 +59,7 @@ public class SqsProducer extends DefaultProducer {
         }
     }
 
+    @Override
     public void process(Exchange exchange) throws Exception {
         SqsOperations operation = determineOperation(exchange);
         if (ObjectHelper.isEmpty(operation)) {
@@ -69,6 +71,9 @@ public class SqsProducer extends DefaultProducer {
                 break;
             case deleteMessage:
                 deleteMessage(getClient(), exchange);
+                break;
+            case listQueues:
+                listQueues(getClient(), exchange);
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported operation");
@@ -96,11 +101,11 @@ public class SqsProducer extends DefaultProducer {
 
     private void sendBatchMessage(AmazonSQS amazonSQS, Exchange exchange) {
         SendMessageBatchRequest request = new SendMessageBatchRequest(getQueueUrl());
-        Collection<SendMessageBatchRequestEntry> entries = new ArrayList<SendMessageBatchRequestEntry>();
+        Collection<SendMessageBatchRequestEntry> entries = new ArrayList<>();
         if (exchange.getIn().getBody() instanceof Iterable) {
             Iterable c = exchange.getIn().getBody(Iterable.class);
-            for (Iterator iterator = c.iterator(); iterator.hasNext();) {
-                String object = (String) iterator.next();
+            for (Object o : c) {
+                String object = (String)o;
                 SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
                 entry.setId(UUID.randomUUID().toString());
                 entry.setMessageAttributes(translateAttributes(exchange.getIn().getHeaders(), exchange));
@@ -120,7 +125,7 @@ public class SqsProducer extends DefaultProducer {
             message.setBody(result);
         }
     }
-    
+
     private void deleteMessage(AmazonSQS amazonSQS, Exchange exchange) {
         String receiptHandle = exchange.getIn().getHeader(SqsConstants.RECEIPT_HANDLE, String.class);
         DeleteMessageRequest request = new DeleteMessageRequest();
@@ -129,8 +134,17 @@ public class SqsProducer extends DefaultProducer {
             throw new IllegalArgumentException("Receipt Handle must be specified for the operation deleteMessage");
         }
         request.setReceiptHandle(receiptHandle);
-        DeleteMessageResult result = new DeleteMessageResult();
-        result = amazonSQS.deleteMessage(request);
+        DeleteMessageResult result = amazonSQS.deleteMessage(request);
+        Message message = getMessageForResponse(exchange);
+        message.setBody(result);
+    }
+
+    private void listQueues(AmazonSQS amazonSQS, Exchange exchange) {
+        ListQueuesRequest request = new ListQueuesRequest();
+        if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(SqsConstants.SQS_QUEUE_PREFIX))) {
+            request.setQueueNamePrefix(exchange.getIn().getHeader(SqsConstants.SQS_QUEUE_PREFIX, String.class));
+        }
+        ListQueuesResult result = amazonSQS.listQueues(request);
         Message message = getMessageForResponse(exchange);
         message.setBody(result);
     }
@@ -258,7 +272,7 @@ public class SqsProducer extends DefaultProducer {
                         dataType = "Number";
                     }
                     mav.setDataType(dataType);
-                    mav.withStringValue(((Number)value).toString());
+                    mav.withStringValue(value.toString());
                     result.put(entry.getKey(), mav);
                 } else if (value instanceof Date) {
                     MessageAttributeValue mav = new MessageAttributeValue();

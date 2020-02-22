@@ -1,13 +1,13 @@
 [[ProducerTemplate-ProducerTemplate]]
-=== ProducerTemplate
+= ProducerTemplate
 
 The ProducerTemplate interface allows you to send message exchanges to
 endpoints in a variety of different ways to make it easy to work with
-Camel link:endpoint.adoc[Endpoint] instances from Java code.
+Camel xref:endpoint.adoc[Endpoint] instances from Java code.
 
 It can be configured with a default endpoint if you just want to send
 lots of messages to the same endpoint; or you can specify an
-link:endpoint.adoc[Endpoint] or uri as the first parameter.
+xref:endpoint.adoc[Endpoint] or uri as the first parameter.
 
 The `sendBody()` method allows you to send any object to an endpoint
 easily.
@@ -32,7 +32,7 @@ You can also supply an `Exchange` or a `Processor` to customize the exchange.
 
 
 [[ProducerTemplate-requestmethods]]
-==== `request*()` methods
+== `request*()` methods
 
 The `send*()` methods use the default Message Exchange Pattern (InOnly,
 InOut etc) as the endpoint. If you want to explicitly perform a
@@ -54,9 +54,9 @@ String ret = template.requestBody("cxf:bean:HelloWorldService", "<hello/>", Stri
 
 
 [[ProducerTemplate-Fluentinterface]]
-==== Fluent interface
+== Fluent interface
 
-*Available as of Camel 2.18.0*
+*Since Camel 2.18.0*
 
 The FluentProducerTemplate provides a fluent syntax to
 ProducerTemplate.
@@ -99,5 +99,5 @@ Object result = FluentProducerTemplate.on(context)
     .withBody("the body")
     .to("direct:start")
     .request();
- 
+ 
 ----

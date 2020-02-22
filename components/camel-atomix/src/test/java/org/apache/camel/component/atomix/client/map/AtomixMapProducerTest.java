@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.atomix.client.map;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -40,7 +41,7 @@ public class AtomixMapProducerTest extends AtomixClientTestSupport {
     private static final String MAP_NAME = UUID.randomUUID().toString();
     private DistributedMap<Object, Object> map;
 
-    @EndpointInject(uri = "direct:start")
+    @EndpointInject("direct:start")
     private FluentProducerTemplate fluent;
 
     // ************************************

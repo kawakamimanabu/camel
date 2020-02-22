@@ -26,6 +26,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
+
 import static org.junit.Assert.assertNotNull;
 
 @ContextConfiguration(
@@ -33,7 +34,7 @@ import static org.junit.Assert.assertNotNull;
         loader = CamelSpringDelegatingTestContextLoader.class)
 public class LoadingRawCamelConfigurationTest extends AbstractJUnit4SpringContextTests {
 
-    @EndpointInject(uri = "mock:rawConfigTest")
+    @EndpointInject("mock:rawConfigTest")
     MockEndpoint moduleMockEndpoint;
 
     @Test

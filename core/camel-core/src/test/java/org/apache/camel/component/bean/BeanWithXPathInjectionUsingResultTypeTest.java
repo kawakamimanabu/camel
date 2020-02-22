@@ -19,7 +19,7 @@ package org.apache.camel.component.bean;
 import javax.naming.Context;
 
 import org.apache.camel.ContextTestSupport;
-import org.apache.camel.language.XPath;
+import org.apache.camel.language.xpath.XPath;
 import org.apache.camel.support.jndi.JndiContext;
 import org.junit.Test;
 
@@ -45,8 +45,7 @@ public class BeanWithXPathInjectionUsingResultTypeTest extends ContextTestSuppor
         public String ab;
         public String abText;
 
-        public void read(@XPath("//a/b/text()") String ab,
-                         @XPath(value = "concat('a',//a/b)", resultType = String.class) String abText) {
+        public void read(@XPath("//a/b/text()") String ab, @XPath(value = "concat('a',//a/b)", resultType = String.class) String abText) {
             this.ab = ab;
             this.abText = abText;
         }

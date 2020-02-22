@@ -23,7 +23,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
@@ -326,6 +325,7 @@ public final class AnnotationProcessorHelper {
         try {
             Filer filer = processingEnv.getFiler();
             FileObject resource = filer.createResource(StandardLocation.CLASS_OUTPUT, packageName, fileName);
+            log(processingEnv, "Writing file: " + packageName + "/" + fileName);
             try (Writer w = resource.openWriter(); PrintWriter writer = new PrintWriter(w)) {
                 handler.accept(writer);
             }

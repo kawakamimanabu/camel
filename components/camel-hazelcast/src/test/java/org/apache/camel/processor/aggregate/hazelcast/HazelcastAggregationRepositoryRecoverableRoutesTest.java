@@ -23,7 +23,6 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.Test;
 
-
 public class HazelcastAggregationRepositoryRecoverableRoutesTest extends HazelcastAggregationRepositoryCamelTestSupport {
 
     private static final String REPO_NAME = "routeTestRepo";
@@ -32,16 +31,16 @@ public class HazelcastAggregationRepositoryRecoverableRoutesTest extends Hazelca
     private static final String DIRECT_ONE = "direct:one";
     private static final String DIRECT_TWO = "direct:two";
 
-    @EndpointInject(uri = MOCK_GOTCHA)
+    @EndpointInject(MOCK_GOTCHA)
     private MockEndpoint mockGotcha;
 
-    @EndpointInject(uri = MOCK_FAILURE)
+    @EndpointInject(MOCK_FAILURE)
     private MockEndpoint mockFailure;
 
-    @Produce(uri = DIRECT_ONE)
+    @Produce(DIRECT_ONE)
     private ProducerTemplate produceOne;
 
-    @Produce(uri = DIRECT_TWO)
+    @Produce(DIRECT_TWO)
     private ProducerTemplate produceTwo;
 
     @Test

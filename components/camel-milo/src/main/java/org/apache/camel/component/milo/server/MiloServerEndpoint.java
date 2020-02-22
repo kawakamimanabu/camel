@@ -69,12 +69,9 @@ public class MiloServerEndpoint extends DefaultEndpoint {
 
     @Override
     public Consumer createConsumer(final Processor processor) throws Exception {
-        return new MiloServerConsumer(this, processor, this.item);
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
+        MiloServerConsumer consumer = new MiloServerConsumer(this, processor, this.item);
+        configureConsumer(consumer);
+        return consumer;
     }
 
     /**

@@ -16,15 +16,15 @@
  */
 package org.apache.camel.component.file.remote;
 
-import org.apache.camel.impl.JndiRegistry;
+import org.apache.camel.BindToRegistry;
 import org.apache.camel.support.jsse.KeyManagersParameters;
 import org.apache.camel.support.jsse.KeyStoreParameters;
 import org.apache.camel.support.jsse.SSLContextParameters;
 import org.apache.camel.support.jsse.TrustManagersParameters;
 
 public class FileToFtpsImplicitTLSWithClientAuthAndSSLContextParametersTest extends FileToFtpsImplicitTLSWithClientAuthTest {
-    @Override
-    protected JndiRegistry createRegistry() throws Exception {
+    @BindToRegistry("sslContextParameters")
+    public SSLContextParameters createSslContextParams() throws Exception {
         KeyStoreParameters ksp = new KeyStoreParameters();
         ksp.setResource("server.jks");
         ksp.setPassword("password");
@@ -37,17 +37,16 @@ public class FileToFtpsImplicitTLSWithClientAuthAndSSLContextParametersTest exte
         tmp.setKeyStore(ksp);
         
         SSLContextParameters sslContextParameters = new SSLContextParameters();
-        sslContextParameters.setSecureSocketProtocol("TLS");
+        sslContextParameters.setSecureSocketProtocol("TLSv1.2");
         sslContextParameters.setKeyManagers(kmp);
         sslContextParameters.setTrustManagers(tmp);
         
-        JndiRegistry registry = super.createRegistry();
-        registry.bind("sslContextParameters", sslContextParameters);
-        return registry;
+        return sslContextParameters;
     }
     
+    @Override
     protected String getFtpUrl() {
-        return "ftps://admin@localhost:" + getPort() + "/tmp2/camel?password=admin&consumer.initialDelay=2000&disableSecureDataChannelDefaults=true"
-                + "&isImplicit=true&sslContextParameters=#sslContextParameters&delete=true";
+        return "ftps://admin@localhost:" + getPort() + "/tmp2/camel?password=admin&initialDelay=2000&disableSecureDataChannelDefaults=true"
+                + "&implicit=true&sslContextParameters=#sslContextParameters&delete=true";
     }
 }

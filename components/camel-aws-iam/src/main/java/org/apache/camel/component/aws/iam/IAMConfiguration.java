@@ -16,8 +16,8 @@
  */
 package org.apache.camel.component.aws.iam;
 
+import com.amazonaws.Protocol;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
-
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriParam;
@@ -39,6 +39,8 @@ public class IAMConfiguration implements Cloneable {
     @UriParam(label = "producer")
     @Metadata(required = true)
     private IAMOperations operation;
+    @UriParam(enums = "HTTP,HTTPS", defaultValue = "HTTPS")
+    private Protocol proxyProtocol = Protocol.HTTPS;
     @UriParam(label = "producer")
     private String proxyHost;
     @UriParam(label = "producer")
@@ -89,6 +91,17 @@ public class IAMConfiguration implements Cloneable {
     public void setOperation(IAMOperations operation) {
         this.operation = operation;
     }
+    
+    public Protocol getProxyProtocol() {
+        return proxyProtocol;
+    }
+
+    /**
+     * To define a proxy protocol when instantiating the IAM client
+     */
+    public void setProxyProtocol(Protocol proxyProtocol) {
+        this.proxyProtocol = proxyProtocol;
+    }
 
     public String getProxyHost() {
         return proxyHost;
@@ -117,7 +130,8 @@ public class IAMConfiguration implements Cloneable {
     }
 
     /**
-     * The region in which IAM client needs to work
+     * The region in which IAM client needs to work. When using this parameter, the configuration will expect the capitalized name of the region (for example AP_EAST_1)
+     * You'll need to use the name Regions.EU_WEST_1.name()
      */
     public void setRegion(String region) {
         this.region = region;

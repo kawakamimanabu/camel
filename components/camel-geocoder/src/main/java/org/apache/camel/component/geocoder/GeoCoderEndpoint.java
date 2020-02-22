@@ -71,16 +71,14 @@ public class GeoCoderEndpoint extends DefaultEndpoint {
         super(uri, component);
     }
 
+    @Override
     public Producer createProducer() throws Exception {
         return new GeoCoderProducer(this);
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         throw new UnsupportedOperationException("Cannot consume from this component");
-    }
-
-    public boolean isSingleton() {
-        return true;
     }
 
     public String getLanguage() {
@@ -149,8 +147,7 @@ public class GeoCoderEndpoint extends DefaultEndpoint {
         this.clientKey = clientKey;
     }
 
-
-    private String getApiKey() {
+    public String getApiKey() {
         return apiKey;
     }
 
@@ -159,6 +156,10 @@ public class GeoCoderEndpoint extends DefaultEndpoint {
      */
     public void setApiKey(String apiKey) {
         this.apiKey = apiKey;
+    }
+
+    public String getProxyHost() {
+        return proxyHost;
     }
 
     /**

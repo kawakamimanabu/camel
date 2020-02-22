@@ -17,6 +17,7 @@
 package org.apache.camel.component.jcache.policy;
 
 import java.util.Set;
+
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
@@ -92,7 +93,7 @@ public class JCachePolicy implements Policy {
             }
 
             //Use routeId as cacheName if it's not set
-            String cacheName = ObjectHelper.isNotEmpty(this.cacheName) ? this.cacheName : routeContext.getRoute().getId();
+            String cacheName = ObjectHelper.isNotEmpty(this.cacheName) ? this.cacheName : routeContext.getRouteId();
             LOG.debug("Getting cache:{}", cacheName);
 
             //Get cache or create a new one using the cacheConfiguration

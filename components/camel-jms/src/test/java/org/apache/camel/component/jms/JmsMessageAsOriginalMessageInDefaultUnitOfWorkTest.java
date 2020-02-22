@@ -27,7 +27,7 @@ import org.junit.Test;
 
 public class JmsMessageAsOriginalMessageInDefaultUnitOfWorkTest extends CamelTestSupport {
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint mockResult;
     
     @Test
@@ -53,6 +53,7 @@ public class JmsMessageAsOriginalMessageInDefaultUnitOfWorkTest extends CamelTes
         assertMockEndpointsSatisfied();
     }
 
+    @Override
     protected CamelContext createCamelContext() throws Exception {
         CamelContext camelContext = super.createCamelContext();
 

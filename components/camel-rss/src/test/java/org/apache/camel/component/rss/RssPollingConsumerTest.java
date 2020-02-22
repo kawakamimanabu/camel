@@ -16,7 +16,7 @@
  */
 package org.apache.camel.component.rss;
 
-import com.sun.syndication.feed.synd.SyndFeed;
+import com.rometools.rome.feed.synd.SyndFeed;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.builder.RouteBuilder;
@@ -45,6 +45,7 @@ public class RssPollingConsumerTest extends CamelTestSupport {
         assertEquals(10, body.getEntries().size());
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             public void configure() throws Exception {

@@ -20,6 +20,7 @@ import org.apache.camel.AsyncCallback;
 import org.apache.camel.CamelContext;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.NamedNode;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
@@ -38,8 +39,8 @@ public class RecipientListWithInterceptorTest extends ContextTestSupport {
         private static final Logger LOGGER = LoggerFactory.getLogger(MyInterceptStrategy.class);
         private static int doneCount;
 
-        public Processor wrapProcessorInInterceptors(final CamelContext context, final NamedNode definition,
-                                                     final Processor target, final Processor nextTarget) throws Exception {
+        @Override
+        public Processor wrapProcessorInInterceptors(final CamelContext context, final NamedNode definition, final Processor target, final Processor nextTarget) throws Exception {
             if (definition instanceof RecipientListDefinition<?>) {
                 final DelegateAsyncProcessor delegateAsyncProcessor = new DelegateAsyncProcessor() {
 
@@ -101,19 +102,13 @@ public class RecipientListWithInterceptorTest extends ContextTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() {
-                context.addInterceptStrategy(interceptStrategy);
+                context.adapt(ExtendedCamelContext.class).addInterceptStrategy(interceptStrategy);
 
-                from("direct:start")
-                    .recipientList(header("slip"))
-                    .to("mock:result");
+                from("direct:start").recipientList(header("slip")).to("mock:result");
 
-                from("direct:foo")
-                    .to("log:foo")
-                    .to("mock:foo");
+                from("direct:foo").to("log:foo").to("mock:foo");
 
-                from("direct:bar")
-                    .to("log:bar")
-                    .to("mock:bar");
+                from("direct:bar").to("log:bar").to("mock:bar");
             }
         };
     }

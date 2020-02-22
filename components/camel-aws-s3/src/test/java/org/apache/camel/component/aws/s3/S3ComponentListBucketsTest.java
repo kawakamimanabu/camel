@@ -19,7 +19,6 @@ package org.apache.camel.component.aws.s3;
 import java.util.List;
 
 import com.amazonaws.services.s3.model.Bucket;
-
 import org.apache.camel.BindToRegistry;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.Exchange;
@@ -34,11 +33,11 @@ public class S3ComponentListBucketsTest extends CamelTestSupport {
 
     @BindToRegistry("amazonS3Client")
     AmazonS3ClientMock clientMock = new AmazonS3ClientMock();
-    
-    @EndpointInject(uri = "direct:listBuckets")
+
+    @EndpointInject("direct:listBuckets")
     private ProducerTemplate template;
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint result;
 
     @Test

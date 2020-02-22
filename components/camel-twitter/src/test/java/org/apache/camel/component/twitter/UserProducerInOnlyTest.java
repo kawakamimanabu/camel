@@ -37,7 +37,7 @@ public class UserProducerInOnlyTest extends CamelTwitterTestSupport {
 
     private static final Logger LOG = LoggerFactory.getLogger(UserProducerInOnlyTest.class);
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     protected MockEndpoint resultEndpoint;
 
     @Test
@@ -63,6 +63,7 @@ public class UserProducerInOnlyTest extends CamelTwitterTestSupport {
         assertThat(receivedTweet, is(tweet));
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() {
         return new RouteBuilder() {
             public void configure() {

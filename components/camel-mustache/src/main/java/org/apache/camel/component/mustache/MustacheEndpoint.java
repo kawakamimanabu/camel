@@ -62,11 +62,6 @@ public class MustacheEndpoint extends ResourceEndpoint {
     }
 
     @Override
-    public boolean isSingleton() {
-        return true;
-    }
-
-    @Override
     public ExchangePattern getExchangePattern() {
         return ExchangePattern.InOut;
     }
@@ -106,7 +101,6 @@ public class MustacheEndpoint extends ResourceEndpoint {
             Message out = exchange.getOut();
             out.setBody(writer.toString());
             out.setHeaders(exchange.getIn().getHeaders());
-            out.setAttachments(exchange.getIn().getAttachments());
         } else {
             exchange.getIn().removeHeader(MustacheConstants.MUSTACHE_RESOURCE_URI);
             MustacheEndpoint newEndpoint = getCamelContext().getEndpoint(MUSTACHE_ENDPOINT_URI_PREFIX + newResourceUri, MustacheEndpoint.class);
@@ -138,9 +132,7 @@ public class MustacheEndpoint extends ResourceEndpoint {
             return newMustache;
         } finally {
             resourceReader.close();
-            if (oldcl != null) {
-                Thread.currentThread().setContextClassLoader(oldcl);
-            }
+            Thread.currentThread().setContextClassLoader(oldcl);
         }
     }
 

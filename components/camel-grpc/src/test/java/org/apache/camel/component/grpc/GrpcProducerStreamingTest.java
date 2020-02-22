@@ -29,12 +29,10 @@ import org.apache.camel.test.AvailablePortFinder;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Ignore("TODO: investigate for Camel 3.0")
 public class GrpcProducerStreamingTest extends CamelTestSupport {
     private static final Logger LOG = LoggerFactory.getLogger(GrpcProducerStreamingTest.class);
 
@@ -84,15 +82,13 @@ public class GrpcProducerStreamingTest extends CamelTestSupport {
             template.sendBody("direct:grpc-stream-async-async-route", PingRequest.newBuilder().setPingName(String.valueOf(i)).build());
         }
 
-        template.sendBody("direct:grpc-stream-async-async-route", PingRequest.newBuilder().setPingName(String.valueOf("error")).build());
-
-
+        template.sendBody("direct:grpc-stream-async-async-route", PingRequest.newBuilder().setPingName("error").build());
 
         MockEndpoint replies = getMockEndpoint("mock:grpc-replies");
         replies.expectedMessageCount(messageGroupCount);
         replies.assertIsSatisfied();
 
-        Thread.sleep(200);
+        Thread.sleep(2000);
 
         for (int i = messageGroupCount + 1; i <= 2 * messageGroupCount; i++) {
             template.sendBody("direct:grpc-stream-async-async-route", PingRequest.newBuilder().setPingName(String.valueOf(i)).build());

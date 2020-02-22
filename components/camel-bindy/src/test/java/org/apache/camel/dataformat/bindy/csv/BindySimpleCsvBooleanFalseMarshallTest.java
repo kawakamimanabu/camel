@@ -37,10 +37,10 @@ public class BindySimpleCsvBooleanFalseMarshallTest extends AbstractJUnit4Spring
     private List<Map<String, Object>> models = new ArrayList<>();
     private String result = "andrew,false\r\n";
 
-    @Produce(uri = "direct:start")
+    @Produce("direct:start")
     private ProducerTemplate template;
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint resultEndpoint;
 
     @Test
@@ -70,6 +70,7 @@ public class BindySimpleCsvBooleanFalseMarshallTest extends AbstractJUnit4Spring
 
     public static class ContextConfig extends RouteBuilder {
 
+        @Override
         public void configure() {
             BindyCsvDataFormat camelDataFormat = new BindyCsvDataFormat(
                 org.apache.camel.dataformat.bindy.model.simple.bool.BooleanExample.class);

@@ -18,7 +18,6 @@ package org.apache.camel.component.aws.sqs;
 
 /**
  * Constants used in Camel AWS SQS module
- *
  */
 public interface SqsConstants {
 
@@ -29,5 +28,6 @@ public interface SqsConstants {
     String RECEIPT_HANDLE = "CamelAwsSqsReceiptHandle";
     String DELAY_HEADER = "CamelAwsSqsDelaySeconds";
     String MESSAGE_GROUP_ID_PROPERTY = "CamelAwsMessageGroupId";
+    String SQS_QUEUE_PREFIX = "CamelAwsSqsPrefix";
     String SQS_OPERATION = "CamelAwsSqsOperation";
 }

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.file;
+
 import java.io.File;
 import java.util.Properties;
 
@@ -23,7 +24,6 @@ import org.apache.camel.CamelExecutionException;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.ExpressionIllegalSyntaxException;
-import org.apache.camel.component.properties.PropertiesComponent;
 import org.apache.camel.impl.JndiRegistry;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,10 +52,7 @@ public class FilerProducerDoneFileNameTest extends ContextTestSupport {
     @Override
     protected CamelContext createCamelContext() throws Exception {
         CamelContext context = super.createCamelContext();
-
-        PropertiesComponent pc = context.getComponent("properties", PropertiesComponent.class);
-        pc.setLocation("ref:myProp");
-
+        context.getPropertiesComponent().setLocation("ref:myProp");
         return context;
     }
 
@@ -138,8 +135,4 @@ public class FilerProducerDoneFileNameTest extends ContextTestSupport {
         assertEquals("Done file should exists", true, done.exists());
     }
 
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
-    }
 }

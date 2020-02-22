@@ -27,16 +27,16 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 
 import org.xml.sax.SAXException;
-import org.apache.camel.BytesSource;
+
 import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import org.apache.camel.component.validator.DefaultLSResourceResolver;
 import org.apache.camel.component.xmlsecurity.api.XmlSignatureConstants;
 import org.apache.camel.component.xmlsecurity.api.XmlSignatureException;
-import org.apache.camel.converter.IOConverter;
 import org.apache.camel.support.ResourceHelper;
 import org.apache.camel.util.IOHelper;
 import org.apache.camel.util.ObjectHelper;
+import org.apache.camel.util.xml.BytesSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,9 +109,9 @@ public abstract class XmlSignatureProcessor implements Processor {
                     "XML Signature component is wrongly configured: No XML schema found for specified schema resource URI "
                             + schemaResourceUri);
         }
-        byte[] bytes = null;
+        byte[] bytes;
         try {
-            bytes = IOConverter.toBytes(is);
+            bytes = message.getExchange().getContext().getTypeConverter().convertTo(byte[].class, is);
         } finally {
             // and make sure to close the input stream after the schema has been loaded
             IOHelper.close(is);

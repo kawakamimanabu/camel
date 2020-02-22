@@ -21,8 +21,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.EnumSet;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-
 import org.apache.camel.EndpointInject;
 import org.apache.camel.Produce;
 import org.apache.camel.ProducerTemplate;
@@ -32,6 +30,8 @@ import org.apache.camel.component.milo.server.MiloServerComponent;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.junit.Test;
+
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * Testing monitoring items over multiple connections
@@ -62,16 +62,16 @@ public class MonitorItemMultiConnectionsCertTest extends AbstractMiloServerTest 
     private static final String MOCK_TEST_2 = "mock:test2";
     private static final String MOCK_TEST_3 = "mock:test3";
 
-    @EndpointInject(uri = MOCK_TEST_1)
+    @EndpointInject(MOCK_TEST_1)
     protected MockEndpoint test1Endpoint;
 
-    @EndpointInject(uri = MOCK_TEST_2)
+    @EndpointInject(MOCK_TEST_2)
     protected MockEndpoint test2Endpoint;
 
-    @EndpointInject(uri = MOCK_TEST_3)
+    @EndpointInject(MOCK_TEST_3)
     protected MockEndpoint test3Endpoint;
 
-    @Produce(uri = DIRECT_START_1)
+    @Produce(DIRECT_START_1)
     protected ProducerTemplate producer1;
 
     @Override

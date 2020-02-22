@@ -22,6 +22,7 @@ import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
 import org.apache.camel.CamelContext;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.cdi.CdiCamelConfiguration;
 import org.apache.camel.cdi.CdiCamelExtension;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -32,6 +33,7 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -54,7 +56,7 @@ public class NoTCCLSetTest {
     @Test
     public void verifyNoTCCLFallbackClassLoader() {
         assertThat(camelContext, is(notNullValue()));
-        Set<ClassLoader> classLoaders = camelContext.getPackageScanClassResolver().getClassLoaders();
+        Set<ClassLoader> classLoaders = camelContext.adapt(ExtendedCamelContext.class).getPackageScanClassResolver().getClassLoaders();
         assertThat(classLoaders.size(), is(1));
         assertThat(classLoaders.iterator().next(), is(CamelContext.class.getClassLoader()));
     }

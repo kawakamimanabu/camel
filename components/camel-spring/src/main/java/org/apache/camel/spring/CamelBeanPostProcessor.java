@@ -29,8 +29,8 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Service;
 import org.apache.camel.core.xml.CamelJMXAgentDefinition;
-import org.apache.camel.impl.CamelPostProcessorHelper;
-import org.apache.camel.impl.DefaultCamelBeanPostProcessor;
+import org.apache.camel.impl.engine.CamelPostProcessorHelper;
+import org.apache.camel.impl.engine.DefaultCamelBeanPostProcessor;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.support.service.ServiceHelper;
 import org.slf4j.Logger;
@@ -59,6 +59,8 @@ public class CamelBeanPostProcessor implements org.apache.camel.spi.CamelBeanPos
     private ApplicationContext applicationContext;
     @XmlTransient
     private String camelId;
+    @XmlTransient
+    private boolean bindToRegistrySupported;
 
     // must use a delegate, as we cannot extend DefaultCamelBeanPostProcessor, as this will cause the
     // XSD schema generator to include the DefaultCamelBeanPostProcessor as a type, which we do not want to
@@ -92,6 +94,12 @@ public class CamelBeanPostProcessor implements org.apache.camel.spi.CamelBeanPos
             }
 
             return super.canPostProcessBean(bean, beanName);
+        }
+
+        @Override
+        protected boolean bindToRegistrySupported() {
+            // do not support @BindToRegistry as spring and spring-boot has its own set of annotations for this
+            return false;
         }
 
         @Override
@@ -198,4 +206,11 @@ public class CamelBeanPostProcessor implements org.apache.camel.spi.CamelBeanPos
         this.camelId = camelId;
     }
 
+    public boolean isBindToRegistrySupported() {
+        return bindToRegistrySupported;
+    }
+
+    public void setBindToRegistrySupported(boolean bindToRegistrySupported) {
+        this.bindToRegistrySupported = bindToRegistrySupported;
+    }
 }

@@ -35,10 +35,10 @@ public class BindySimpleCsvUnmarshallUnicodeNextLineTest extends AbstractJUnit4S
     private static final String URI_MOCK_RESULT = "mock:result";
     private static final String URI_DIRECT_START = "direct:start";
 
-    @Produce(uri = URI_DIRECT_START)
+    @Produce(URI_DIRECT_START)
     protected ProducerTemplate template;
 
-    @EndpointInject(uri = URI_MOCK_RESULT)
+    @EndpointInject(URI_MOCK_RESULT)
     private MockEndpoint result;
 
     private String record;
@@ -61,6 +61,7 @@ public class BindySimpleCsvUnmarshallUnicodeNextLineTest extends AbstractJUnit4S
     public static class ContextConfig extends RouteBuilder {
         BindyCsvDataFormat locationRecordBindyDataFormat = new BindyCsvDataFormat(LocationRecord.class);
 
+        @Override
         public void configure() {
             from(URI_DIRECT_START)
                     .unmarshal(locationRecordBindyDataFormat)

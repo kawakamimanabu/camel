@@ -19,6 +19,7 @@ package org.apache.camel.component.micrometer;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.apache.camel.Produce;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
@@ -28,7 +29,7 @@ import org.junit.Test;
 
 public class MicrometerComponentRouteTest extends CamelTestSupport {
 
-    @Produce(uri = "direct:start-1")
+    @Produce("direct:start-1")
     protected ProducerTemplate template1;
 
     @Test

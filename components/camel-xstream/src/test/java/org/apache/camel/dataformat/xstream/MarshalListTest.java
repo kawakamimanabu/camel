@@ -33,7 +33,7 @@ import org.junit.Test;
  */
 public class MarshalListTest extends CamelTestSupport {
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     MockEndpoint mock;
 
     @Test
@@ -84,6 +84,7 @@ public class MarshalListTest extends CamelTestSupport {
         mock.assertIsSatisfied();
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             public void configure() throws Exception {

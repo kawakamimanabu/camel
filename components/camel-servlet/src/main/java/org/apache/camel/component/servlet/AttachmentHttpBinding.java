@@ -21,15 +21,17 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Locale;
+
 import javax.activation.DataSource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.Part;
 
-import org.apache.camel.Attachment;
 import org.apache.camel.RuntimeCamelException;
+import org.apache.camel.attachment.Attachment;
+import org.apache.camel.attachment.AttachmentMessage;
+import org.apache.camel.attachment.DefaultAttachment;
 import org.apache.camel.http.common.DefaultHttpBinding;
 import org.apache.camel.http.common.HttpMessage;
-import org.apache.camel.support.DefaultAttachment;
 import org.apache.camel.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,7 +75,8 @@ public final class AttachmentHttpBinding extends DefaultHttpBinding {
                             attachment.addHeader(headerName, headerValue);
                         }
                     }
-                    message.addAttachmentObject(part.getName(), attachment);
+                    AttachmentMessage am = message.getExchange().getMessage(AttachmentMessage.class);
+                    am.addAttachmentObject(part.getName(), attachment);
                 } else {
                     LOG.debug("Cannot add file as attachment: {} because the file is not accepted according to fileNameExtWhitelist: {}", fileName, getFileNameExtWhitelist());
                 }

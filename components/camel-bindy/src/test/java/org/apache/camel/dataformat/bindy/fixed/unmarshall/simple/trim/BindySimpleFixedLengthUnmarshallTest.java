@@ -39,10 +39,10 @@ public class BindySimpleFixedLengthUnmarshallTest extends AbstractJUnit4SpringCo
     private static final String URI_MOCK_RESULT = "mock:result";
     private static final String URI_DIRECT_START = "direct:start";
 
-    @Produce(uri = URI_DIRECT_START)
+    @Produce(URI_DIRECT_START)
     private ProducerTemplate template;
 
-    @EndpointInject(uri = URI_MOCK_RESULT)
+    @EndpointInject(URI_MOCK_RESULT)
     private MockEndpoint result;
 
     private String expected;
@@ -70,6 +70,7 @@ public class BindySimpleFixedLengthUnmarshallTest extends AbstractJUnit4SpringCo
     public static class ContextConfig extends RouteBuilder {
         BindyFixedLengthDataFormat camelDataFormat = new BindyFixedLengthDataFormat(Order.class);
 
+        @Override
         public void configure() {
             from(URI_DIRECT_START).unmarshal(camelDataFormat).to(URI_MOCK_RESULT);
         }

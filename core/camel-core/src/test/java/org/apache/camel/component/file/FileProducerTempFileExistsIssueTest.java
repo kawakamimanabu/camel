@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.file;
+
 import java.io.File;
 
 import org.apache.camel.CamelExecutionException;
@@ -30,11 +31,6 @@ public class FileProducerTempFileExistsIssueTest extends ContextTestSupport {
     public void setUp() throws Exception {
         deleteDirectory("target/data/tempprefix");
         super.setUp();
-    }
-
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
     }
 
     @Test

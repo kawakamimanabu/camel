@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.file;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -36,23 +37,14 @@ public class FileSortByNestedExpressionTest extends ContextTestSupport {
         super.setUp();
     }
 
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
-    }
-
     private void prepareFolder(String folder) {
-        template.sendBodyAndHeader("file:target/data/filesorter/" + folder, "Hello Paris",
-            Exchange.FILE_NAME, "paris.txt");
+        template.sendBodyAndHeader("file:target/data/filesorter/" + folder, "Hello Paris", Exchange.FILE_NAME, "paris.txt");
 
-        template.sendBodyAndHeader("file:target/data/filesorter/" + folder, "Hello London",
-            Exchange.FILE_NAME, "london.txt");
+        template.sendBodyAndHeader("file:target/data/filesorter/" + folder, "Hello London", Exchange.FILE_NAME, "london.txt");
 
-        template.sendBodyAndHeader("file:target/data/filesorter/" + folder, "Hello Copenhagen",
-            Exchange.FILE_NAME, "copenhagen.xml");
+        template.sendBodyAndHeader("file:target/data/filesorter/" + folder, "Hello Copenhagen", Exchange.FILE_NAME, "copenhagen.xml");
 
-        template.sendBodyAndHeader("file:target/data/filesorter/" + folder, "Hello Dublin",
-            Exchange.FILE_NAME, "dublin.txt");
+        template.sendBodyAndHeader("file:target/data/filesorter/" + folder, "Hello Dublin", Exchange.FILE_NAME, "dublin.txt");
     }
 
     @Test
@@ -62,8 +54,7 @@ public class FileSortByNestedExpressionTest extends ContextTestSupport {
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from(fileUrl + "a/?initialDelay=0&delay=10&sortBy=file:ext;file:name")
-                        .convertBodyTo(String.class).to("mock:result");
+                from(fileUrl + "a/?initialDelay=0&delay=10&sortBy=file:ext;file:name").convertBodyTo(String.class).to("mock:result");
             }
         });
         context.start();
@@ -81,8 +72,7 @@ public class FileSortByNestedExpressionTest extends ContextTestSupport {
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from(fileUrl + "b/?initialDelay=0&delay=10&sortBy=file:ext;reverse:file:name")
-                        .convertBodyTo(String.class).to("mock:reverse");
+                from(fileUrl + "b/?initialDelay=0&delay=10&sortBy=file:ext;reverse:file:name").convertBodyTo(String.class).to("mock:reverse");
             }
         });
         context.start();

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.file;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -26,6 +27,8 @@ import java.util.Set;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.FailedToCreateRouteException;
+import org.apache.camel.PropertyBindingException;
+import org.apache.camel.ResolveEndpointFailedException;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.Before;
@@ -93,20 +96,23 @@ public class FileProducerChmodOptionTest extends ContextTestSupport {
 
                 @Override
                 public void configure() throws Exception {
-                    from("direct:writeBadChmod1")
-                            .to("file://" + TEST_DIRECTORY + "?chmod=abc")
-                            .to("mock:badChmod1");
+                    from("direct:writeBadChmod1").to("file://" + TEST_DIRECTORY + "?chmod=abc").to("mock:badChmod1");
                 }
             });
             fail("Expected FailedToCreateRouteException");
-        } catch (Exception e) {
-            assertTrue("Expected FailedToCreateRouteException, was " + e.getClass().getCanonicalName(), e instanceof FailedToCreateRouteException);
-            assertTrue("Message was [" + e.getMessage() + "]", e.getMessage().endsWith("conversion possible: chmod option [abc] is not valid"));
+        } catch (FailedToCreateRouteException e) {
+            assertIsInstanceOf(ResolveEndpointFailedException.class, e.getCause());
+            PropertyBindingException pbe = assertIsInstanceOf(PropertyBindingException.class, e.getCause().getCause());
+            assertEquals("chmod", pbe.getPropertyName());
+            IllegalArgumentException iae = assertIsInstanceOf(IllegalArgumentException.class, pbe.getCause());
+            assertEquals("chmod option [abc] is not valid", iae.getMessage());
         }
     }
 
     /**
-     * Write a file without chmod set, should work normally and not throw an exception for invalid chmod value
+     * Write a file without chmod set, should work normally and not throw an
+     * exception for invalid chmod value
+     * 
      * @throws Exception
      */
     @Test
@@ -130,18 +136,12 @@ public class FileProducerChmodOptionTest extends ContextTestSupport {
         return new RouteBuilder() {
             public void configure() {
                 // Valid chmod values
-                from("direct:write666")
-                        .to("file://" + TEST_DIRECTORY + "?chmod=666")
-                        .to("mock:chmod666");
+                from("direct:write666").to("file://" + TEST_DIRECTORY + "?chmod=666").to("mock:chmod666");
 
-                from("direct:write0755")
-                        .to("file://" + TEST_DIRECTORY + "?chmod=0755")
-                        .to("mock:chmod0755");
+                from("direct:write0755").to("file://" + TEST_DIRECTORY + "?chmod=0755").to("mock:chmod0755");
 
                 // No chmod
-                from("direct:writeNoChmod")
-                        .to("file://" + TEST_DIRECTORY)
-                        .to("mock:noChmod");
+                from("direct:writeNoChmod").to("file://" + TEST_DIRECTORY).to("mock:noChmod");
             }
         };
     }

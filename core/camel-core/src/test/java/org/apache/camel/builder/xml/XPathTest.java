@@ -41,10 +41,13 @@ import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.Expression;
 import org.apache.camel.Predicate;
+import org.apache.camel.language.xpath.InvalidXPathException;
+import org.apache.camel.language.xpath.XPathBuilder;
+import org.apache.camel.support.builder.Namespaces;
 import org.apache.camel.util.StringHelper;
 import org.junit.Test;
 
-import static org.apache.camel.builder.xml.XPathBuilder.xpath;
+import static org.apache.camel.language.xpath.XPathBuilder.xpath;
 
 public class XPathTest extends ContextTestSupport {
 
@@ -82,7 +85,7 @@ public class XPathTest extends ContextTestSupport {
         try {
             assertPredicate("/foo/", "<foo><bar xyz='cheese'/></foo>", true);
             fail("Should have thrown exception");
-        } catch (InvalidXPathExpression e) {
+        } catch (InvalidXPathException e) {
             assertEquals("/foo/", e.getXpath());
             assertIsInstanceOf(XPathExpressionException.class, e.getCause());
         }
@@ -235,7 +238,7 @@ public class XPathTest extends ContextTestSupport {
     @Test
     public void testXPathWithNamespaceBooleanResult() throws Exception {
         XPathBuilder builder = xpath("/c:person[@name='James']").namespace("c", "http://acme.com/cheese").booleanResult();
-        
+
         Object result = builder.evaluate(createExchange("<person xmlns=\"http://acme.com/cheese\" name='James' city='London'/>"));
         assertNotNull(result);
         assertEquals(Boolean.TRUE, result);
@@ -254,7 +257,7 @@ public class XPathTest extends ContextTestSupport {
     @Test
     public void testXPathWithNamespaceStringResult() throws Exception {
         XPathBuilder builder = xpath("/c:person/@name").namespace("c", "http://acme.com/cheese").stringResult();
-        
+
         Object result = builder.evaluate(createExchange("<person xmlns=\"http://acme.com/cheese\" name='James' city='London'/>"));
         assertNotNull(result);
         assertEquals("James", result);
@@ -297,25 +300,25 @@ public class XPathTest extends ContextTestSupport {
 
         // we may not have Xalan on the classpath
         try {
-            instance = Class.forName("org.apache.xalan.extensions.XPathFunctionResolverImpl").newInstance();
+            instance = Class.forName("org.apache.xalan.extensions.XPathFunctionResolverImpl").getDeclaredConstructor().newInstance();
         } catch (Throwable e) {
-            
+
             log.debug("Could not find Xalan on the classpath so ignoring this test case: " + e);
         }
         if (instance instanceof XPathFunctionResolver) {
             XPathFunctionResolver functionResolver = (XPathFunctionResolver)instance;
 
-            XPathBuilder builder = xpath("java:" + getClass().getName() + ".func(string(/header/value))")
-                .namespace("java", "http://xml.apache.org/xalan/java").functionResolver(functionResolver)
-                .stringResult();
+            XPathBuilder builder = xpath("java:" + getClass().getName() + ".func(string(/header/value))").namespace("java", "http://xml.apache.org/xalan/java")
+                .functionResolver(functionResolver).stringResult();
 
             String xml = "<header><value>12</value></header>";
-            // it can throw the exception if we put the xalan into the test class path
+            // it can throw the exception if we put the xalan into the test
+            // class path
             assertExpression(builder, xml, "modified12");
         }
 
     }
-    
+
     public static String func(String message) {
         return "modified" + message;
     }
@@ -375,8 +378,7 @@ public class XPathTest extends ContextTestSupport {
 
     @Test
     public void testXPathSplit() throws Exception {
-        Object node = XPathBuilder.xpath("foo/bar").nodeResult()
-                .evaluate(createExchange("<foo><bar>cheese</bar><bar>cake</bar><bar>beer</bar></foo>"));
+        Object node = XPathBuilder.xpath("foo/bar").nodeResult().evaluate(createExchange("<foo><bar>cheese</bar><bar>cake</bar><bar>beer</bar></foo>"));
         assertNotNull(node);
 
         Document doc = context.getTypeConverter().convertTo(Document.class, node);
@@ -387,11 +389,11 @@ public class XPathTest extends ContextTestSupport {
     public void testXPathSplitConcurrent() throws Exception {
         int size = 100;
 
-        final Object node = XPathBuilder.xpath("foo/bar").nodeResult()
-                .evaluate(createExchange("<foo><bar>cheese</bar><bar>cake</bar><bar>beer</bar></foo>"));
+        final Object node = XPathBuilder.xpath("foo/bar").nodeResult().evaluate(createExchange("<foo><bar>cheese</bar><bar>cake</bar><bar>beer</bar></foo>"));
         assertNotNull(node);
 
-        // convert the node concurrently to test that XML Parser is not thread safe when
+        // convert the node concurrently to test that XML Parser is not thread
+        // safe when
         // importing nodes to a new Document, so try a test for that
 
         final List<Document> result = new ArrayList<>();
@@ -427,8 +429,7 @@ public class XPathTest extends ContextTestSupport {
 
     @Test
     public void testXPathNodeListTest() throws Exception {
-        String xml = "<foo><person id=\"1\">Claus<country>SE</country></person>"
-                + "<person id=\"2\">Jonathan<country>CA</country></person></foo>";
+        String xml = "<foo><person id=\"1\">Claus<country>SE</country></person>" + "<person id=\"2\">Jonathan<country>CA</country></person></foo>";
         Document doc = context.getTypeConverter().convertTo(Document.class, xml);
 
         Object result = xpath("/foo/person").nodeSetResult().evaluate(createExchange(doc));
@@ -466,12 +467,14 @@ public class XPathTest extends ContextTestSupport {
     public void testXPathString() throws Exception {
         XPathBuilder builder = XPathBuilder.xpath("foo/bar");
 
-        // will evaluate as XPathConstants.NODESET and have Camel convert that to String
+        // will evaluate as XPathConstants.NODESET and have Camel convert that
+        // to String
         // this should return the String incl. xml tags
         String name = builder.evaluate(context, "<foo><bar id=\"1\">cheese</bar></foo>", String.class);
         assertEquals("<bar id=\"1\">cheese</bar>", name);
 
-        // will evaluate using XPathConstants.STRING which just return the text content (eg like text())
+        // will evaluate using XPathConstants.STRING which just return the text
+        // content (eg like text())
         name = builder.evaluate(context, "<foo><bar id=\"1\">cheese</bar></foo>");
         assertEquals("cheese", name);
     }

@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Endpoint;
 import org.apache.camel.PollingConsumer;
+import org.apache.camel.impl.engine.DefaultConsumerCache;
 import org.apache.camel.support.service.ServiceSupport;
 import org.junit.Test;
 
@@ -38,7 +39,7 @@ public class ConsumerCacheZeroCapacityTest extends ContextTestSupport {
         Endpoint endpoint = context.getEndpoint("file:target/data/foo?fileName=foo.txt&initialDelay=0&delay=10");
         PollingConsumer consumer = cache.acquirePollingConsumer(endpoint);
         assertNotNull(consumer);
-        assertEquals("Started", ((ServiceSupport) consumer).getStatus().name());
+        assertEquals("Started", ((ServiceSupport)consumer).getStatus().name());
 
         // let it run a poll
         consumer.receive(50);
@@ -49,8 +50,7 @@ public class ConsumerCacheZeroCapacityTest extends ContextTestSupport {
         cache.releasePollingConsumer(endpoint, consumer);
 
         // takes a little to stop
-        await().atMost(1, TimeUnit.SECONDS).untilAsserted(() ->
-            assertEquals("Stopped", ((ServiceSupport) consumer).getStatus().name()));
+        await().atMost(1, TimeUnit.SECONDS).untilAsserted(() -> assertEquals("Stopped", ((ServiceSupport)consumer).getStatus().name()));
 
         // should not be a file consumer thread
         found = Thread.getAllStackTraces().keySet().stream().anyMatch(t -> t.getName().contains("target/data/foo"));

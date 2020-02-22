@@ -17,7 +17,7 @@
 package org.apache.camel.core.osgi;
 
 import org.apache.camel.CamelContext;
-import org.apache.camel.impl.DefaultLanguageResolver;
+import org.apache.camel.impl.engine.DefaultLanguageResolver;
 import org.apache.camel.spi.Language;
 import org.apache.camel.spi.LanguageResolver;
 
@@ -25,6 +25,7 @@ public class CamelMockLanguageResolver implements LanguageResolver {
     // Delegate to the DefaultLanguageResolver
     private LanguageResolver delegate = new DefaultLanguageResolver();
 
+    @Override
     public Language resolveLanguage(String name, CamelContext context) {
         return delegate.resolveLanguage(name, context);
     }

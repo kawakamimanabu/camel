@@ -45,12 +45,13 @@ import org.w3c.dom.Node;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
+import org.apache.camel.attachment.AttachmentMessage;
+import org.apache.camel.attachment.DefaultAttachment;
 import org.apache.camel.component.cxf.common.header.CxfHeaderHelper;
 import org.apache.camel.component.cxf.common.message.CxfConstants;
 import org.apache.camel.component.cxf.util.ReaderInputStream;
 import org.apache.camel.spi.HeaderFilterStrategy;
 import org.apache.camel.spi.HeaderFilterStrategyAware;
-import org.apache.camel.support.DefaultAttachment;
 import org.apache.camel.support.ExchangeHelper;
 import org.apache.camel.util.ObjectHelper;
 import org.apache.cxf.attachment.AttachmentImpl;
@@ -84,8 +85,6 @@ import org.apache.cxf.staxutils.StaxUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-
 /**
  * The Default CXF binding implementation.
  */
@@ -103,6 +102,7 @@ public class DefaultCxfBinding implements CxfBinding, HeaderFilterStrategyAware 
      * will create a new CXF Message.  That method will put all properties from the 
      * CXF exchange and request context to the CXF message.
      */
+    @Override
     public void populateCxfRequestFromExchange(
             org.apache.cxf.message.Exchange cxfExchange, Exchange camelExchange,
             Map<String, Object> requestContext) {
@@ -132,18 +132,20 @@ public class DefaultCxfBinding implements CxfBinding, HeaderFilterStrategyAware 
         // we should avoid adding the attachments if the data format is CXFMESSAGE, as the message stream 
         // already has the attachment information
         if (!DataFormat.CXF_MESSAGE.equals(dataFormat)) {
-            for (Map.Entry<String, org.apache.camel.Attachment> entry : camelExchange.getIn().getAttachmentObjects().entrySet()) {
-                if (attachments == null) {
-                    attachments = new HashSet<>();
+            if (camelExchange.getIn(AttachmentMessage.class).hasAttachments()) {
+                for (Map.Entry<String, org.apache.camel.attachment.Attachment> entry : camelExchange.getIn(AttachmentMessage.class).getAttachmentObjects().entrySet()) {
+                    if (attachments == null) {
+                        attachments = new HashSet<>();
+                    }
+                    AttachmentImpl attachment = new AttachmentImpl(entry.getKey());
+                    org.apache.camel.attachment.Attachment camelAttachment = entry.getValue();
+                    attachment.setDataHandler(camelAttachment.getDataHandler());
+                    for (String name : camelAttachment.getHeaderNames()) {
+                        attachment.setHeader(name, camelAttachment.getHeader(name));
+                    }
+                    attachment.setXOP(isXop);
+                    attachments.add(attachment);
                 }
-                AttachmentImpl attachment = new AttachmentImpl(entry.getKey());
-                org.apache.camel.Attachment camelAttachment = entry.getValue();
-                attachment.setDataHandler(camelAttachment.getDataHandler());
-                for (String name : camelAttachment.getHeaderNames()) {
-                    attachment.setHeader(name, camelAttachment.getHeader(name));
-                }
-                attachment.setXOP(isXop);
-                attachments.add(attachment);
             }
         }
         
@@ -157,9 +159,10 @@ public class DefaultCxfBinding implements CxfBinding, HeaderFilterStrategyAware 
      * information from CXF Exchange to Camel Exchange.  The CXF Exchange contains a 
      * request from a CXF server.
      */
+    @Override
     public void populateExchangeFromCxfResponse(Exchange camelExchange,
-            org.apache.cxf.message.Exchange cxfExchange, 
-            Map<String, Object> responseContext) {
+                                                org.apache.cxf.message.Exchange cxfExchange,
+                                                Map<String, Object> responseContext) {
       
         Message cxfMessage = cxfExchange.getInMessage();
         // Need to check if the inMessage is set
@@ -193,7 +196,7 @@ public class DefaultCxfBinding implements CxfBinding, HeaderFilterStrategyAware 
         if (cxfMessage.getAttachments() != null) {
             // propagate attachments
             for (Attachment attachment : cxfMessage.getAttachments()) {
-                camelExchange.getOut().addAttachmentObject(attachment.getId(), createCamelAttachment(attachment));
+                camelExchange.getOut(AttachmentMessage.class).addAttachmentObject(attachment.getId(), createCamelAttachment(attachment));
             }        
         }
     }
@@ -211,8 +214,9 @@ public class DefaultCxfBinding implements CxfBinding, HeaderFilterStrategyAware 
     /**
      * This method is called by {@link CxfConsumer}.
      */
+    @Override
     public void populateExchangeFromCxfRequest(org.apache.cxf.message.Exchange cxfExchange,
-            Exchange camelExchange) {
+                                               Exchange camelExchange) {
         
         Method method = null;
         QName operationName = null;
@@ -308,8 +312,49 @@ public class DefaultCxfBinding implements CxfBinding, HeaderFilterStrategyAware 
         if (cxfMessage.getAttachments() != null 
             && !camelExchange.getProperty(CxfConstants.DATA_FORMAT_PROPERTY, DataFormat.class).equals(DataFormat.POJO)) {
             for (Attachment attachment : cxfMessage.getAttachments()) {
-                camelExchange.getIn().addAttachmentObject(attachment.getId(), createCamelAttachment(attachment));
+                camelExchange.getIn(AttachmentMessage.class).addAttachmentObject(attachment.getId(), createCamelAttachment(attachment));
             }
+        }
+    }
+    
+    /**
+     * This method is called by {@link CxfConsumer} to populate a CXF response protocol headers 
+     * from a Camel exchange headers before CheckError.
+     * Ensure can send protocol headers back even error/exception thrown
+     */
+    public void populateCxfHeaderFromCamelExchangeBeforeCheckError(Exchange camelExchange, 
+            org.apache.cxf.message.Exchange cxfExchange) {
+        
+        if (cxfExchange.isOneWay()) {
+            return;
+        }
+        
+        // create response context
+        Map<String, Object> responseContext = new HashMap<>();
+        
+        org.apache.camel.Message response;
+        if (camelExchange.getPattern().isOutCapable()) {
+            if (camelExchange.hasOut()) {
+                response = camelExchange.getOut();
+                LOG.trace("Get the response from the out message");
+            } else { // Take the in message as a fall back
+                response = camelExchange.getIn();
+                LOG.trace("Get the response from the in message as a fallback");
+            }
+        } else {
+            response = camelExchange.getIn();
+            LOG.trace("Get the response from the in message");
+        }
+        
+        // propagate response context
+        Map<String, Object> camelHeaders = response.getHeaders();
+        extractInvocationContextFromCamel(camelExchange, camelHeaders, 
+                responseContext, Client.RESPONSE_CONTEXT);
+        
+        propagateHeadersFromCamelToCxf(camelExchange, camelHeaders, cxfExchange, 
+                responseContext);
+        if (cxfExchange.getOutMessage() != null) {
+            cxfExchange.getOutMessage().put(Message.PROTOCOL_HEADERS, responseContext.get(Message.PROTOCOL_HEADERS));
         }
     }
 
@@ -317,8 +362,9 @@ public class DefaultCxfBinding implements CxfBinding, HeaderFilterStrategyAware 
      * This method is called by {@link CxfConsumer} to populate a CXF response exchange 
      * from a Camel exchange.
      */
-    public void populateCxfResponseFromExchange(Exchange camelExchange, 
-            org.apache.cxf.message.Exchange cxfExchange) {
+    @Override
+    public void populateCxfResponseFromExchange(Exchange camelExchange,
+                                                org.apache.cxf.message.Exchange cxfExchange) {
         
         if (cxfExchange.isOneWay()) {
             return;
@@ -408,28 +454,27 @@ public class DefaultCxfBinding implements CxfBinding, HeaderFilterStrategyAware 
         }
         
         // propagate attachments
-        
         Set<Attachment> attachments = null;
         boolean isXop = Boolean.valueOf(camelExchange.getProperty(Message.MTOM_ENABLED, String.class));
-        for (Map.Entry<String, org.apache.camel.Attachment> entry : camelExchange.getOut().getAttachmentObjects().entrySet()) {
-            if (attachments == null) {
-                attachments = new HashSet<>();
+        if (camelExchange.hasOut() && camelExchange.getOut(AttachmentMessage.class).hasAttachments()) {
+            for (Map.Entry<String, org.apache.camel.attachment.Attachment> entry : camelExchange.getOut(AttachmentMessage.class).getAttachmentObjects().entrySet()) {
+                if (attachments == null) {
+                    attachments = new HashSet<>();
+                }
+                AttachmentImpl attachment = new AttachmentImpl(entry.getKey());
+                org.apache.camel.attachment.Attachment camelAttachment = entry.getValue();
+                attachment.setDataHandler(camelAttachment.getDataHandler());
+                for (String name : camelAttachment.getHeaderNames()) {
+                    attachment.setHeader(name, camelAttachment.getHeader(name));
+                }
+                attachment.setXOP(isXop);
+                attachments.add(attachment);
             }
-            AttachmentImpl attachment = new AttachmentImpl(entry.getKey());
-            org.apache.camel.Attachment camelAttachment = entry.getValue();
-            attachment.setDataHandler(camelAttachment.getDataHandler());
-            for (String name : camelAttachment.getHeaderNames()) {
-                attachment.setHeader(name, camelAttachment.getHeader(name));
-            }
-            attachment.setXOP(isXop);
-            attachments.add(attachment);
         }
-
         if (attachments != null) {
             outMessage.setAttachments(attachments);
         }
-        
-       
+
         BindingOperationInfo boi = cxfExchange.get(BindingOperationInfo.class);
         if (boi != null) {
             cxfExchange.put(BindingMessageInfo.class, boi.getOutput());
@@ -451,10 +496,12 @@ public class DefaultCxfBinding implements CxfBinding, HeaderFilterStrategyAware 
         }
     }
     
+    @Override
     public HeaderFilterStrategy getHeaderFilterStrategy() {
         return headerFilterStrategy;
     }
 
+    @Override
     public void setHeaderFilterStrategy(HeaderFilterStrategy strategy) {
         this.headerFilterStrategy = strategy;
     }
@@ -526,7 +573,6 @@ public class DefaultCxfBinding implements CxfBinding, HeaderFilterStrategyAware 
             cxfContext.putAll(camelExchange.getProperties());
         }
         
-        camelExchange.setProperty(contextKey, cxfContext);
     }
 
     /**
@@ -685,8 +731,10 @@ public class DefaultCxfBinding implements CxfBinding, HeaderFilterStrategyAware 
             
             // We need to copy the content-type if the dataformat is RAW
             if (Message.CONTENT_TYPE.equalsIgnoreCase(entry.getKey()) && dataFormat.equals(DataFormat.RAW)) {
-                LOG.debug("Propagate to CXF header: {} value: {}", Message.CONTENT_TYPE, entry.getValue());
-                cxfContext.put(Message.CONTENT_TYPE, entry.getValue().toString());
+                if (entry.getValue() != null) {
+                    LOG.debug("Propagate to CXF header: {} value: {}", Message.CONTENT_TYPE, entry.getValue());
+                    cxfContext.put(Message.CONTENT_TYPE, entry.getValue().toString());
+                }
                 continue;
             }
             
@@ -936,6 +984,7 @@ public class DefaultCxfBinding implements CxfBinding, HeaderFilterStrategyAware 
     }
     
     
+    @Override
     public void copyJaxWsContext(org.apache.cxf.message.Exchange cxfExchange, Map<String, Object> context) {
         if (cxfExchange.getOutMessage() != null) {
             org.apache.cxf.message.Message outMessage = cxfExchange.getOutMessage();
@@ -947,6 +996,7 @@ public class DefaultCxfBinding implements CxfBinding, HeaderFilterStrategyAware 
         }
     }
 
+    @Override
     public void extractJaxWsContext(org.apache.cxf.message.Exchange cxfExchange, Map<String, Object> context) {
         org.apache.cxf.message.Message inMessage = cxfExchange.getInMessage();
         for (Map.Entry<String, Object> entry : inMessage.entrySet()) {

@@ -37,7 +37,7 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 
 public class SqlProducerConcurrentTest extends CamelTestSupport {
     
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint mockEndpoint;
     private EmbeddedDatabase db;
 
@@ -86,6 +86,7 @@ public class SqlProducerConcurrentTest extends CamelTestSupport {
         executor.shutdownNow();
     }
 
+    @Override
     @Before
     public void setUp() throws Exception {
         db = new EmbeddedDatabaseBuilder()
@@ -94,6 +95,7 @@ public class SqlProducerConcurrentTest extends CamelTestSupport {
         super.setUp();
     }
 
+    @Override
     @After
     public void tearDown() throws Exception {
         super.tearDown();

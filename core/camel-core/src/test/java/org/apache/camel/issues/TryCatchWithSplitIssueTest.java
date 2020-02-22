@@ -30,7 +30,7 @@ public class TryCatchWithSplitIssueTest extends ContextTestSupport {
         MockEndpoint error = getMockEndpoint("mock:error");
         error.expectedBodiesReceived("James");
         error.message(0).exchangeProperty(Exchange.EXCEPTION_CAUGHT).isNotNull();
-        error.message(0).exchangeProperty(Exchange.EXCEPTION_CAUGHT).method("getMessage").isEqualTo("This is a dummy error James!");
+        error.message(0).exchangeProperty(Exchange.EXCEPTION_CAUGHT).isInstanceOf(IllegalArgumentException.class);
 
         MockEndpoint result = getMockEndpoint("mock:result");
         result.expectedBodiesReceived("Hi Claus", "Hi Willem");
@@ -45,36 +45,28 @@ public class TryCatchWithSplitIssueTest extends ContextTestSupport {
         MockEndpoint error = getMockEndpoint("mock:error");
         error.expectedBodiesReceived("James");
         error.message(0).exchangeProperty(Exchange.EXCEPTION_CAUGHT).isNotNull();
-        error.message(0).exchangeProperty(Exchange.EXCEPTION_CAUGHT).method("getMessage").isEqualTo("This is a dummy error James!");
+        error.message(0).exchangeProperty(Exchange.EXCEPTION_CAUGHT).isInstanceOf(IllegalArgumentException.class);
 
         template.sendBody("direct:start", "James");
 
         assertMockEndpointsSatisfied();
     }
 
-
+    @Override
     protected JndiRegistry createRegistry() throws Exception {
         JndiRegistry jndi = super.createRegistry();
         jndi.bind("error", new GenerateError());
         return jndi;
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() {
         return new RouteBuilder() {
             public void configure() {
                 context.setTracing(true);
 
-                from("direct:start")
-                    .split(body().tokenize("@"))
-                    .doTry()
-                        .to("bean:error")
-                        .to("mock:result")
-                    .doCatch(Exception.class)
-                        .to("mock:error")
-                    .doFinally()
-                        .to("mock:foo")
-                        .to("mock:bar")
-                    .end();
+                from("direct:start").split(body().tokenize("@")).doTry().to("bean:error").to("mock:result").doCatch(Exception.class).to("mock:error").doFinally().to("mock:foo")
+                    .to("mock:bar").end();
             }
 
         };

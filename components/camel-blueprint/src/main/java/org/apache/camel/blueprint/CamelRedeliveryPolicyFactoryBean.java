@@ -17,6 +17,7 @@
 package org.apache.camel.blueprint;
 
 import java.util.Set;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -24,10 +25,11 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.core.xml.AbstractCamelRedeliveryPolicyFactoryBean;
+import org.apache.camel.processor.errorhandler.RedeliveryPolicy;
 import org.osgi.service.blueprint.container.BlueprintContainer;
 
 /**
- * A factory which instantiates {@link org.apache.camel.processor.RedeliveryPolicy} objects
+ * A factory which instantiates {@link RedeliveryPolicy} objects
  */
 @XmlRootElement(name = "redeliveryPolicyProfile")
 @XmlAccessorType(XmlAccessType.FIELD)

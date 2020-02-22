@@ -17,7 +17,6 @@
 package org.apache.camel.component.properties;
 
 import org.apache.camel.ContextTestSupport;
-import org.apache.camel.FailedToCreateRouteException;
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.Test;
 
@@ -33,9 +32,7 @@ public class PropertiesComponentOnlyUseDefaultValuesTest extends ContextTestSupp
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:start")
-                        .to("{{foo:mock:foo}}")
-                        .to("{{bar:mock:bar}}");
+                from("direct:start").to("{{foo:mock:foo}}").to("{{bar:mock:bar}}");
             }
         });
         context.start();
@@ -53,16 +50,14 @@ public class PropertiesComponentOnlyUseDefaultValuesTest extends ContextTestSupp
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:start")
-                        .to("{{foo:mock:foo}}")
-                        .to("{{bar}}");
+                from("direct:start").to("{{foo:mock:foo}}").to("{{bar}}");
             }
         });
 
         try {
             context.start();
             fail("Should have thrown exception");
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             // expected
         }
     }
@@ -72,16 +67,14 @@ public class PropertiesComponentOnlyUseDefaultValuesTest extends ContextTestSupp
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:start")
-                        .to("{{foo:mock:foo}}")
-                        .to("{{bar}}");
+                from("direct:start").to("{{foo:mock:foo}}").to("{{bar}}");
             }
         });
 
         try {
             context.start();
             fail("Should have thrown exception");
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             // expected
         }
     }

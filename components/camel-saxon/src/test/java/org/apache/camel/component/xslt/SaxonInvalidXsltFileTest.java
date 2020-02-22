@@ -37,14 +37,14 @@ public class SaxonInvalidXsltFileTest extends TestSupport {
             fail("Should have thrown an exception due XSL compilation error");
         } catch (Exception e) {
             // expected
-            assertIsInstanceOf(TransformerException.class, e.getCause());
+            assertIsInstanceOf(TransformerException.class, e.getCause().getCause());
         }
     }
 
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             public void configure() throws Exception {
-                from("seda:a").to("xslt:org/apache/camel/component/xslt/notfound.xsl?transformerFactoryClass=net.sf.saxon.TransformerFactoryImpl");
+                from("seda:a").to("xslt-saxon:org/apache/camel/component/xslt/notfound.xsl?transformerFactoryClass=net.sf.saxon.TransformerFactoryImpl");
             }
         };
     }

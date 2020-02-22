@@ -75,6 +75,7 @@ public class RemoteFileProducer<T> extends GenericFileProducer<T> {
     /**
      * The file could not be written. We need to disconnect from the remote server.
      */
+    @Override
     public void handleFailedWrite(Exchange exchange, Exception exception) throws Exception {
         loggedIn = false;
         if (isStopping() || isStopped()) {
@@ -102,7 +103,7 @@ public class RemoteFileProducer<T> extends GenericFileProducer<T> {
     }
 
     @Override
-    public void preWriteCheck() throws Exception {
+    public void preWriteCheck(Exchange exchange) throws Exception {
         // before writing send a noop to see if the connection is alive and works
         boolean noop = false;
         if (loggedIn) {
@@ -126,7 +127,7 @@ public class RemoteFileProducer<T> extends GenericFileProducer<T> {
         // if not alive then reconnect
         if (!noop) {
             try {
-                connectIfNecessary();
+                connectIfNecessary(exchange);
             } catch (Exception e) {
                 loggedIn = false;
 
@@ -172,11 +173,11 @@ public class RemoteFileProducer<T> extends GenericFileProducer<T> {
         super.doStop();
     }
 
-    protected void connectIfNecessary() throws GenericFileOperationFailedException {
+    protected void connectIfNecessary(Exchange exchange) throws GenericFileOperationFailedException {
         if (!loggedIn || !getOperations().isConnected()) {
             log.debug("Not already connected/logged in. Connecting to: {}", getEndpoint());
             RemoteFileConfiguration config = getEndpoint().getConfiguration();
-            loggedIn = getOperations().connect(config);
+            loggedIn = getOperations().connect(config, exchange);
             if (!loggedIn) {
                 return;
             }
@@ -184,6 +185,7 @@ public class RemoteFileProducer<T> extends GenericFileProducer<T> {
         }
     }
 
+    @Override
     public boolean isSingleton() {
         // this producer is stateful because the remote file operations is not thread safe
         return false;

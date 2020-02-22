@@ -22,7 +22,7 @@ import java.util.Map;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class RecipientListErrorHandlingIssueTest extends FtpServerTestSupport {
 
@@ -30,11 +30,6 @@ public class RecipientListErrorHandlingIssueTest extends FtpServerTestSupport {
         // use a wrong password so we cannot login and get an exception so we
         // can test that the error handler kick in and we know which endpoint failed
         return "ftp://admin@localhost:" + getPort() + "/recipientlist?password=denied";
-    }
-
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
     }
 
     @Test

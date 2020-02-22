@@ -35,10 +35,10 @@ public class BindySimpleCsvMarshallTrimClipTest extends AbstractJUnit4SpringCont
 
     private String expected;
 
-    @Produce(uri = URI_DIRECT_START)
+    @Produce(URI_DIRECT_START)
     private ProducerTemplate template;
 
-    @EndpointInject(uri = URI_MOCK_RESULT)
+    @EndpointInject(URI_MOCK_RESULT)
     private MockEndpoint result;
 
     @Test
@@ -62,6 +62,7 @@ public class BindySimpleCsvMarshallTrimClipTest extends AbstractJUnit4SpringCont
     }
 
     public static class ContextConfig extends RouteBuilder {
+        @Override
         public void configure() {
             BindyCsvDataFormat camelDataFormat = new BindyCsvDataFormat(
                 org.apache.camel.dataformat.bindy.model.simple.oneclassandtrimandclip.Customer.class);

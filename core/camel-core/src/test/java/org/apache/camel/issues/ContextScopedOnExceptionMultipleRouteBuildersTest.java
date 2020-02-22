@@ -18,6 +18,7 @@ package org.apache.camel.issues;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.ContextTestSupport;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.builder.DeadLetterChannelBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.Test;
@@ -51,38 +52,27 @@ public class ContextScopedOnExceptionMultipleRouteBuildersTest extends ContextTe
     @Override
     protected CamelContext createCamelContext() throws Exception {
         CamelContext context = super.createCamelContext();
-        context.setErrorHandlerFactory(new DeadLetterChannelBuilder("mock:dead"));
+        context.adapt(ExtendedCamelContext.class).setErrorHandlerFactory(new DeadLetterChannelBuilder("mock:dead"));
         return context;
     }
 
     @Override
     protected RouteBuilder[] createRouteBuilders() throws Exception {
-        return new RouteBuilder[]{
-            new RouteBuilder() {
-                @Override
-                public void configure() throws Exception {
-                    onException(Exception.class)
-                            .handled(true)
-                            .to("mock:handle-foo");
+        return new RouteBuilder[] {new RouteBuilder() {
+            @Override
+            public void configure() throws Exception {
+                onException(Exception.class).handled(true).to("mock:handle-foo");
 
-                    from("direct:foo")
-                            .to("mock:foo")
-                            .throwException(new IllegalArgumentException("Damn"));
-                }
-            },
-            new RouteBuilder() {
-                @Override
-                public void configure() throws Exception {
-                    onException(IllegalArgumentException.class)
-                            .handled(true)
-                            .to("mock:handle-bar");
-
-                    from("direct:bar")
-                            .to("mock:bar")
-                            .throwException(new IllegalArgumentException("Damn"));
-                }
+                from("direct:foo").to("mock:foo").throwException(new IllegalArgumentException("Damn"));
             }
-        };
+        }, new RouteBuilder() {
+            @Override
+            public void configure() throws Exception {
+                onException(IllegalArgumentException.class).handled(true).to("mock:handle-bar");
+
+                from("direct:bar").to("mock:bar").throwException(new IllegalArgumentException("Damn"));
+            }
+        }};
     }
 
 }

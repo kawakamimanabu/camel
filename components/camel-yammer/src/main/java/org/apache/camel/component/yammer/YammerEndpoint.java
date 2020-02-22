@@ -43,10 +43,12 @@ public class YammerEndpoint extends ScheduledPollEndpoint {
         this.setConfig(config);
     }
 
+    @Override
     public Producer createProducer() throws Exception {
         return new YammerMessageProducer(this);
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         switch (config.getFunctionType()) {
         case MESSAGES:
@@ -64,10 +66,6 @@ public class YammerEndpoint extends ScheduledPollEndpoint {
             throw new Exception(String.format("%s is not a valid Yammer function type.", config.getFunction()));
         }  
 
-    }
-
-    public boolean isSingleton() {
-        return true;
     }
 
     public YammerConfiguration getConfig() {

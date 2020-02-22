@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.file;
+
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -66,8 +67,7 @@ public class FileConsumerCustomSchedulerTest extends ContextTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("file:target/data/file/custom?scheduler=#myScheduler&scheduler.foo=bar&initialDelay=0&delay=10").routeId("foo").noAutoStartup()
-                    .to("mock:result");
+                from("file:target/data/file/custom?scheduler=#myScheduler&scheduler.foo=bar&initialDelay=0&delay=10").routeId("foo").noAutoStartup().to("mock:result");
             }
         };
     }
@@ -135,16 +135,16 @@ public class FileConsumerCustomSchedulerTest extends ContextTestSupport {
         }
 
         @Override
-        public void shutdown() throws Exception {
+        public void shutdown() {
             timerTask.cancel();
         }
 
         @Override
-        public void start() throws Exception {
+        public void start() {
         }
 
         @Override
-        public void stop() throws Exception {
+        public void stop() {
         }
     }
 }

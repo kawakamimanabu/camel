@@ -21,21 +21,21 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import org.apache.camel.StringSource;
 import org.apache.camel.TypeConverter;
-import org.apache.camel.impl.DefaultClassResolver;
-import org.apache.camel.impl.DefaultFactoryFinderResolver;
-import org.apache.camel.impl.DefaultPackageScanClassResolver;
 import org.apache.camel.impl.converter.DefaultTypeConverter;
+import org.apache.camel.impl.engine.DefaultClassResolver;
+import org.apache.camel.impl.engine.DefaultFactoryFinderResolver;
+import org.apache.camel.impl.engine.DefaultPackageScanClassResolver;
 import org.apache.camel.support.service.ServiceHelper;
 import org.apache.camel.util.ReflectionInjector;
+import org.apache.camel.util.xml.StringSource;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 public class StringSourceTest extends Assert {
-    protected TypeConverter converter = new DefaultTypeConverter(new DefaultPackageScanClassResolver(),
-            new ReflectionInjector(), new DefaultFactoryFinderResolver().resolveDefaultFactoryFinder(new DefaultClassResolver()), false);
+    protected TypeConverter converter = new DefaultTypeConverter(new DefaultPackageScanClassResolver(), new ReflectionInjector(),
+                                                                 new DefaultFactoryFinderResolver().resolveDefaultFactoryFinder(new DefaultClassResolver()), false);
     protected String expectedBody = "<hello>world!</hello>";
 
     @Before
@@ -54,11 +54,10 @@ public class StringSourceTest extends Assert {
         output.writeObject(expected);
         output.close();
 
-
         ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(buffer.toByteArray()));
         Object object = in.readObject();
         assertTrue("is a StringSource", object instanceof StringSource);
-        StringSource actual = (StringSource) object;
+        StringSource actual = (StringSource)object;
 
         assertEquals("source.text", expected.getPublicId(), actual.getPublicId());
         assertEquals("source.text", expected.getSystemId(), actual.getSystemId());

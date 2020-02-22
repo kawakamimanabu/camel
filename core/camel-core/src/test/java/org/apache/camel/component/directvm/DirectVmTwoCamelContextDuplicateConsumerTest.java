@@ -34,7 +34,7 @@ public class DirectVmTwoCamelContextDuplicateConsumerTest extends AbstractDirect
         try {
             third.start();
             fail("Should have thrown exception");
-        } catch (IllegalStateException e) {
+        } catch (Exception e) {
             assertEquals("A consumer Consumer[direct-vm://foo] already exists from CamelContext: camel-1. Multiple consumers not supported", e.getMessage());
         }
 
@@ -59,10 +59,7 @@ public class DirectVmTwoCamelContextDuplicateConsumerTest extends AbstractDirect
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct-vm:foo")
-                    .transform(constant("Bye World"))
-                    .log("Running on Camel ${camelId} on thread ${threadName} with message ${body}")
-                    .to("mock:result");
+                from("direct-vm:foo").transform(constant("Bye World")).log("Running on Camel ${camelId} on thread ${threadName} with message ${body}").to("mock:result");
             }
         };
     }
@@ -72,9 +69,7 @@ public class DirectVmTwoCamelContextDuplicateConsumerTest extends AbstractDirect
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:start")
-                    .log("Running on Camel ${camelId} on thread ${threadName} with message ${body}")
-                    .to("direct-vm:foo");
+                from("direct:start").log("Running on Camel ${camelId} on thread ${threadName} with message ${body}").to("direct-vm:foo");
             }
         };
     }
@@ -83,10 +78,7 @@ public class DirectVmTwoCamelContextDuplicateConsumerTest extends AbstractDirect
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct-vm:foo")
-                    .transform(constant("Bye World"))
-                    .log("Running on Camel ${camelId} on thread ${threadName} with message ${body}")
-                    .to("mock:third");
+                from("direct-vm:foo").transform(constant("Bye World")).log("Running on Camel ${camelId} on thread ${threadName} with message ${body}").to("mock:third");
             }
         };
     }

@@ -15,17 +15,15 @@
  * limitations under the License.
  */
 package org.apache.camel.processor;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.builder.xml.Namespaces;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.apache.camel.support.builder.Namespaces;
 import org.junit.Before;
 import org.junit.Test;
 
-/**
- *
- */
 public class SplitGroupWrappedMultiXmlTokenTest extends ContextTestSupport {
 
     @Override
@@ -39,12 +37,11 @@ public class SplitGroupWrappedMultiXmlTokenTest extends ContextTestSupport {
     public void testTokenXMLPairGroup() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:split");
         mock.expectedMessageCount(3);
-        mock.message(0).body().isEqualTo(
-            "<?xml version=\"1.0\"?>\n<orders xmlns=\"http:acme.com\">\n  <order id=\"1\">Camel in Action</order><order id=\"2\">ActiveMQ in Action</order></orders>");
-        mock.message(1).body().isEqualTo(
-            "<?xml version=\"1.0\"?>\n<orders xmlns=\"http:acme.com\">\n  <order id=\"3\">Spring in Action</order><order id=\"4\">Scala in Action</order></orders>");
-        mock.message(2).body().isEqualTo(
-            "<?xml version=\"1.0\"?>\n<orders xmlns=\"http:acme.com\">\n  <order id=\"5\">Groovy in Action</order></orders>");
+        mock.message(0).body()
+            .isEqualTo("<?xml version=\"1.0\"?>\n<orders xmlns=\"http:acme.com\">\n  <order id=\"1\">Camel in Action</order><order id=\"2\">ActiveMQ in Action</order></orders>");
+        mock.message(1).body()
+            .isEqualTo("<?xml version=\"1.0\"?>\n<orders xmlns=\"http:acme.com\">\n  <order id=\"3\">Spring in Action</order><order id=\"4\">Scala in Action</order></orders>");
+        mock.message(2).body().isEqualTo("<?xml version=\"1.0\"?>\n<orders xmlns=\"http:acme.com\">\n  <order id=\"5\">Groovy in Action</order></orders>");
 
         String body = createBody();
         template.sendBodyAndHeader("file:target/data/pair", body, Exchange.FILE_NAME, "orders.xml");
@@ -68,14 +65,14 @@ public class SplitGroupWrappedMultiXmlTokenTest extends ContextTestSupport {
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             Namespaces ns = new Namespaces("", "http:acme.com");
+
             @Override
             public void configure() throws Exception {
                 // START SNIPPET: e1
                 from("file:target/data/pair?initialDelay=0&delay=10")
-                        // split the order child tags, and inherit namespaces from the orders root tag
-                        .split().xtokenize("//order", 'w', ns, 2)
-                        .to("log:split")
-                        .to("mock:split");
+                    // split the order child tags, and inherit namespaces from
+                    // the orders root tag
+                    .split().xtokenize("//order", 'w', ns, 2).to("log:split").to("mock:split");
                 // END SNIPPET: e1
             }
         };

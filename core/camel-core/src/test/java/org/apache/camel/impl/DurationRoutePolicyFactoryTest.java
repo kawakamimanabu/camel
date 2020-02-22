@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.impl.engine.DurationRoutePolicyFactory;
 import org.junit.Test;
 
 import static org.awaitility.Awaitility.await;
@@ -31,7 +32,8 @@ public class DurationRoutePolicyFactoryTest extends ContextTestSupport {
         assertTrue(context.getRouteController().getRouteStatus("foo").isStarted());
         assertFalse(context.getRouteController().getRouteStatus("foo").isStopped());
 
-        // the policy should stop the route after 2 seconds which is approx 20-30 messages
+        // the policy should stop the route after 2 seconds which is approx
+        // 20-30 messages
         getMockEndpoint("mock:foo").expectedMinimumMessageCount(10);
         assertMockEndpointsSatisfied();
 
@@ -53,8 +55,7 @@ public class DurationRoutePolicyFactoryTest extends ContextTestSupport {
 
                 getContext().addRoutePolicyFactory(factory);
 
-                from("timer:foo?period=100").routeId("foo")
-                    .to("mock:foo");
+                from("timer:foo?period=100").routeId("foo").to("mock:foo");
             }
         };
     }

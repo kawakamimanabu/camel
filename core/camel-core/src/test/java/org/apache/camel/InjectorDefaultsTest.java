@@ -16,7 +16,7 @@
  */
 package org.apache.camel;
 
-import org.apache.camel.impl.DefaultInjector;
+import org.apache.camel.impl.engine.DefaultInjector;
 import org.apache.camel.spi.Injector;
 import org.junit.Test;
 
@@ -41,6 +41,5 @@ public class InjectorDefaultsTest extends ContextTestSupport {
         assertEquals("Claus", foo.getName());
         assertNull(foo2.getName());
     }
-
 
 }

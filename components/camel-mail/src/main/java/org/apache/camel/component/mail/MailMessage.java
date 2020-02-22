@@ -22,7 +22,6 @@ import java.util.Map;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 
-import org.apache.camel.Attachment;
 import org.apache.camel.Exchange;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.support.DefaultMessage;
@@ -51,17 +50,11 @@ public class MailMessage extends DefaultMessage {
         return "MailMessage@" + ObjectHelper.getIdentityHashCode(this);
     }
 
+    @Override
     public MailMessage copy() {
         MailMessage answer = (MailMessage)super.copy();
         answer.originalMailMessage = originalMailMessage;
         answer.mailMessage = mailMessage;
-
-        if (mapMailMessage) {
-            // force attachments to be created (by getting attachments) to ensure they are always available due Camel error handler
-            // makes defensive copies, and we have optimized it to avoid populating initial attachments, when not needed,
-            // as all other Camel components do not use attachments
-            getAttachments();
-        }
         return answer;
     }
 
@@ -117,19 +110,6 @@ public class MailMessage extends DefaultMessage {
     }
 
     @Override
-    protected void populateInitialAttachments(Map<String, Attachment> map) {
-        if (mailMessage != null) {
-            try {
-                MailBinding binding = ExchangeHelper.getBinding(getExchange(), MailBinding.class);
-                if (binding != null) {
-                    binding.extractAttachmentsFromMail(mailMessage, map);
-                }
-            } catch (Exception e) {
-                throw new RuntimeCamelException("Error populating the initial mail message attachments", e);
-            }
-        }
-    }
-
     public void copyFrom(org.apache.camel.Message that) {
         // only do a deep copy if we need to (yes when that is not a mail message, or if the mapMailMessage is true)
         boolean needCopy = !(that instanceof MailMessage) || (((MailMessage) that).mapMailMessage);
@@ -138,7 +118,6 @@ public class MailMessage extends DefaultMessage {
         } else {
             // no deep copy needed, but copy message id
             setMessageId(that.getMessageId());
-            setFault(that.isFault());
         }
         if (that instanceof MailMessage) {
             MailMessage mailMessage = (MailMessage) that;

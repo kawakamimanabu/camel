@@ -18,14 +18,16 @@ package org.apache.camel.spi;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
 import org.apache.camel.EndpointAware;
+import org.apache.camel.ErrorHandlerFactory;
 import org.apache.camel.NamedNode;
 import org.apache.camel.Processor;
+import org.apache.camel.Route;
 import org.apache.camel.RuntimeConfiguration;
-import org.apache.camel.meta.Experimental;
 
 /**
  * The context used to activate new routing rules
@@ -33,11 +35,9 @@ import org.apache.camel.meta.Experimental;
 public interface RouteContext extends RuntimeConfiguration, EndpointAware {
 
     /**
-     * Gets the from type
-     *
-     * @return the from type
+     * Gets the route id
      */
-    NamedNode getFrom();
+    String getRouteId();
 
     /**
      * Get the route type
@@ -100,7 +100,7 @@ public interface RouteContext extends RuntimeConfiguration, EndpointAware {
      * For completing the route creation, creating a single event driven route
      * for the current from endpoint with any processors required
      */
-    void commit();
+    Route commit();
 
     /**
      * Adds an event driven processor
@@ -148,13 +148,15 @@ public interface RouteContext extends RuntimeConfiguration, EndpointAware {
     ManagementInterceptStrategy getManagementInterceptStrategy();
 
     /**
-     * If this flag is true, {@link org.apache.camel.model.ProcessorDefinition#addRoutes(RouteContext, java.util.Collection)}
+     * If this flag is true, {@link org.apache.camel.reifier.ProcessorReifier#addRoutes(RouteContext)}
      * will not add processor to addEventDrivenProcessor to the RouteContext and it
      * will prevent from adding an EventDrivenRoute.
      *
      * @param value the flag
      */
     void setIsRouteAdded(boolean value);
+
+    void setEndpoint(Endpoint endpoint);
 
     /**
      * Returns the isRouteAdded flag
@@ -178,16 +180,36 @@ public interface RouteContext extends RuntimeConfiguration, EndpointAware {
     void setRoutePolicyList(List<RoutePolicy> routePolicyList);
 
     /**
-     * A private counter that increments, is used to as book keeping
-     * when building a route based on the model
+     * Sets whether the route should automatically start when Camel starts.
      * <p/>
-     * We need this special book keeping be able to assign the correct
-     * {@link org.apache.camel.model.ProcessorDefinition} to the {@link org.apache.camel.Channel}
+     * Default is <tt>true</tt> to always start up.
      *
-     * @param node the current node
-     * @return the current count
+     * @param autoStartup whether to start up automatically.
      */
-    int getAndIncrement(NamedNode node);
+    @Override
+    void setAutoStartup(Boolean autoStartup);
+
+    /**
+     * Gets whether the route should automatically start when Camel starts.
+     * <p/>
+     * Default is <tt>true</tt> to always start up.
+     *
+     * @return <tt>true</tt> if route should automatically start
+     */
+    @Override
+    Boolean isAutoStartup();
+
+    void setStartupOrder(Integer startupOrder);
+
+    Integer getStartupOrder();
+
+    void setErrorHandlerFactory(ErrorHandlerFactory errorHandlerFactory);
+
+    ErrorHandlerFactory getErrorHandlerFactory();
+
+    void addAdvice(CamelInternalProcessorAdvice<?> advice);
+
+    void addProperty(String key, Object value);
 
     /**
      * Gets the last error.
@@ -211,17 +233,44 @@ public interface RouteContext extends RuntimeConfiguration, EndpointAware {
      *
      * @return the route controller,
      */
-    @Experimental
-    default RouteController getRouteController() {
-        return null;
-    }
+    RouteController getRouteController();
 
     /**
      * Sets the {@link RouteController} for this route.
      *
      * @param controller the RouteController
      */
-    @Experimental
-    default void setRouteController(RouteController controller) {
-    }
+    void setRouteController(RouteController controller);
+
+    Processor getOnCompletion(String onCompletionId);
+
+    void setOnCompletion(String onCompletionId, Processor processor);
+
+    Processor getOnException(String onExceptionId);
+
+    void setOnException(String onExceptionId, Processor processor);
+
+    /**
+     * Adds error handler for the given exception type
+     *
+     * @param factory       the error handler factory
+     * @param exception     the exception to handle
+     */
+    void addErrorHandler(ErrorHandlerFactory factory, NamedNode exception);
+
+    /**
+     * Gets the error handlers
+     *
+     * @param factory       the error handler factory
+     */
+    Set<NamedNode> getErrorHandlers(ErrorHandlerFactory factory);
+
+    /**
+     * Link the error handlers from a factory to another
+     *
+     * @param source        the source factory
+     * @param target        the target factory
+     */
+    void addErrorHandlerFactoryReference(ErrorHandlerFactory source, ErrorHandlerFactory target);
+
 }

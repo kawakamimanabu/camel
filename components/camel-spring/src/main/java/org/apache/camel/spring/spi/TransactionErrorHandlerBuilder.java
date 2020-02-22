@@ -21,6 +21,7 @@ import java.util.Map;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.DefaultErrorHandlerBuilder;
+import org.apache.camel.reifier.errorhandler.ErrorHandlerReifier;
 import org.apache.camel.spi.CamelLogger;
 import org.apache.camel.spi.RouteContext;
 import org.apache.camel.spi.TransactedPolicy;
@@ -35,6 +36,10 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 public class TransactionErrorHandlerBuilder extends DefaultErrorHandlerBuilder {
 
+    static {
+        ErrorHandlerReifier.registerReifier(TransactionErrorHandlerBuilder.class, TransactionErrorHandlerReifier::new);
+    }
+
     private static final Logger LOG = LoggerFactory.getLogger(TransactionErrorHandlerBuilder.class);
     private static final String PROPAGATION_REQUIRED = "PROPAGATION_REQUIRED";
     private TransactionTemplate transactionTemplate;
@@ -48,10 +53,12 @@ public class TransactionErrorHandlerBuilder extends DefaultErrorHandlerBuilder {
         return transactionTemplate;
     }
 
+    @Override
     public boolean supportTransacted() {
         return true;
     }
 
+    @Override
     public Processor createErrorHandler(RouteContext routeContext, Processor processor) throws Exception {
         if (transactionTemplate == null) {
             // lookup in context if no transaction template has been configured
@@ -156,6 +163,7 @@ public class TransactionErrorHandlerBuilder extends DefaultErrorHandlerBuilder {
     // Implementation
     // -------------------------------------------------------------------------
 
+    @Override
     protected CamelLogger createLogger() {
         return new CamelLogger(LoggerFactory.getLogger(TransactionErrorHandler.class), LoggingLevel.ERROR);
     }

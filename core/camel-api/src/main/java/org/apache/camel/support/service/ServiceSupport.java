@@ -16,6 +16,7 @@
  */
 package org.apache.camel.support.service;
 
+import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.ServiceStatus;
 import org.apache.camel.StatefulService;
 import org.slf4j.Logger;
@@ -36,60 +37,52 @@ import org.slf4j.LoggerFactory;
 public abstract class ServiceSupport implements StatefulService {
 
     protected static final int NEW = 0;
-    protected static final int INITIALIZED = 1;
-    protected static final int STARTING = 2;
-    protected static final int STARTED = 3;
-    protected static final int SUSPENDING = 4;
-    protected static final int SUSPENDED = 5;
-    protected static final int STOPPING = 6;
-    protected static final int STOPPED = 7;
-    protected static final int SHUTTINGDOWN = 8;
-    protected static final int SHUTDOWN = 9;
-    protected static final int FAILED = 10;
+    protected static final int BUILDED = 1;
+    protected static final int INITIALIZED = 2;
+    protected static final int STARTING = 3;
+    protected static final int STARTED = 4;
+    protected static final int SUSPENDING = 5;
+    protected static final int SUSPENDED = 6;
+    protected static final int STOPPING = 7;
+    protected static final int STOPPED = 8;
+    protected static final int SHUTTINGDOWN = 9;
+    protected static final int SHUTDOWN = 10;
+    protected static final int FAILED = 11;
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
     protected final Object lock = new Object();
     protected volatile int status = NEW;
 
-    public void init() {
+    @Override
+    public void build() {
         if (status == NEW) {
             synchronized (lock) {
                 if (status == NEW) {
-                    log.trace("Initializing service: {}", this);
-                    doInit();
-                    status = INITIALIZED;
+                    log.trace("Building service: {}", this);
+                    try {
+                        doBuild();
+                    } catch (Exception e) {
+                        throw RuntimeCamelException.wrapRuntimeException(e);
+                    }
+                    status = BUILDED;
                 }
             }
         }
     }
 
-    /**
-     * <b>Important: </b> You should override the lifecycle methods that start with <tt>do</tt>, eg {@link #doStart()},
-     * {@link #doStop()}, etc. where you implement your logic. The methods {@link #start()}, {@link #stop()} should
-     * <b>NOT</b> be overriden as they are used internally to keep track of the state of this service and properly
-     * invoke the operation in a safe manner.
-     */
-    public void start() throws Exception {
-        synchronized (lock) {
-            if (status == STARTED) {
-                log.trace("Service: {} already started", this);
-                return;
-            }
-            if (status == STARTING) {
-                log.trace("Service: {} already starting", this);
-                return;
-            }
-            init();
-            try {
-                status = STARTING;
-                log.trace("Starting service: {}", this);
-                doStart();
-                status = STARTED;
-                log.trace("Service started: {}", this);
-            } catch (Exception e) {
-                status = FAILED;
-                log.trace("Error while starting service: " + this, e);
-                throw e;
+    @Override
+    public void init() {
+        if (status <= BUILDED) {
+            synchronized (lock) {
+                if (status <= BUILDED) {
+                    log.trace("Initializing service: {}", this);
+                    try {
+                        doInit();
+                    } catch (Exception e) {
+                        throw RuntimeCamelException.wrapRuntimeException(e);
+                    }
+                    status = INITIALIZED;
+                }
             }
         }
     }
@@ -100,8 +93,58 @@ public abstract class ServiceSupport implements StatefulService {
      * <b>NOT</b> be overridden as they are used internally to keep track of the state of this service and properly
      * invoke the operation in a safe manner.
      */
-    public void stop() throws Exception {
+    @Override
+    public void start() {
         synchronized (lock) {
+            if (status == STARTED) {
+                log.trace("Service: {} already started", this);
+                return;
+            }
+            if (status == STARTING) {
+                log.trace("Service: {} already starting", this);
+                return;
+            }
+            try {
+                init();
+            } catch (Exception e) {
+                status = FAILED;
+                log.trace("Error while initializing service: " + this, e);
+                throw e;
+            }
+            try {
+                status = STARTING;
+                log.trace("Starting service: {}", this);
+                doStart();
+                status = STARTED;
+                log.trace("Service started: {}", this);
+            } catch (Exception e) {
+                // need to stop as some resources may have been started during startup
+                try {
+                    stop();
+                } catch (Exception e2) {
+                    // ignore
+                    log.trace("Error while stopping service after it failed to start: " + this + ". This exception is ignored", e);
+                }
+                status = FAILED;
+                log.trace("Error while starting service: " + this, e);
+                throw RuntimeCamelException.wrapRuntimeException(e);
+            }
+        }
+    }
+
+    /**
+     * <b>Important: </b> You should override the lifecycle methods that start with <tt>do</tt>, eg {@link #doStart()},
+     * {@link #doStop()}, etc. where you implement your logic. The methods {@link #start()}, {@link #stop()} should
+     * <b>NOT</b> be overridden as they are used internally to keep track of the state of this service and properly
+     * invoke the operation in a safe manner.
+     */
+    @Override
+    public void stop() {
+        synchronized (lock) {
+            if (status == FAILED) {
+                log.trace("Service: {} failed and regarded as already stopped", this);
+                return;
+            }
             if (status == STOPPED || status == SHUTTINGDOWN || status == SHUTDOWN) {
                 log.trace("Service: {} already stopped", this);
                 return;
@@ -119,7 +162,7 @@ public abstract class ServiceSupport implements StatefulService {
             } catch (Exception e) {
                 status = FAILED;
                 log.trace("Error while stopping service: " + this, e);
-                throw e;
+                throw RuntimeCamelException.wrapRuntimeException(e);
             }
         }
     }
@@ -131,7 +174,7 @@ public abstract class ServiceSupport implements StatefulService {
      * invoke the operation in a safe manner.
      */
     @Override
-    public void suspend() throws Exception {
+    public void suspend() {
         synchronized (lock) {
             if (status == SUSPENDED) {
                 log.trace("Service: {} already suspended", this);
@@ -150,7 +193,7 @@ public abstract class ServiceSupport implements StatefulService {
             } catch (Exception e) {
                 status = FAILED;
                 log.trace("Error while suspending service: " + this, e);
-                throw e;
+                throw RuntimeCamelException.wrapRuntimeException(e);
             }
         }
     }
@@ -158,11 +201,11 @@ public abstract class ServiceSupport implements StatefulService {
     /**
      * <b>Important: </b> You should override the lifecycle methods that start with <tt>do</tt>, eg {@link #doStart()},
      * {@link #doStop()}, etc. where you implement your logic. The methods {@link #start()}, {@link #stop()} should
-     * <b>NOT</b> be overriden as they are used internally to keep track of the state of this service and properly
+     * <b>NOT</b> be overridden as they are used internally to keep track of the state of this service and properly
      * invoke the operation in a safe manner.
      */
     @Override
-    public void resume() throws Exception {
+    public void resume() {
         synchronized (lock) {
             if (status != SUSPENDED) {
                 log.trace("Service is not suspended: {}", this);
@@ -177,7 +220,7 @@ public abstract class ServiceSupport implements StatefulService {
             } catch (Exception e) {
                 status = FAILED;
                 log.trace("Error while resuming service: " + this, e);
-                throw e;
+                throw RuntimeCamelException.wrapRuntimeException(e);
             }
         }
     }
@@ -185,11 +228,11 @@ public abstract class ServiceSupport implements StatefulService {
     /**
      * <b>Important: </b> You should override the lifecycle methods that start with <tt>do</tt>, eg {@link #doStart()},
      * {@link #doStop()}, etc. where you implement your logic. The methods {@link #start()}, {@link #stop()} should
-     * <b>NOT</b> be overriden as they are used internally to keep track of the state of this service and properly
+     * <b>NOT</b> be overridden as they are used internally to keep track of the state of this service and properly
      * invoke the operation in a safe manner.
      */
     @Override
-    public void shutdown() throws Exception {
+    public void shutdown() {
         synchronized (lock) {
             if (status == SHUTDOWN) {
                 log.trace("Service: {} already shut down", this);
@@ -209,7 +252,7 @@ public abstract class ServiceSupport implements StatefulService {
             } catch (Exception e) {
                 status = FAILED;
                 log.trace("Error shutting down service: " + this, e);
-                throw e;
+                throw RuntimeCamelException.wrapRuntimeException(e);
             }
         }
     }
@@ -236,6 +279,10 @@ public abstract class ServiceSupport implements StatefulService {
         return status == NEW;
     }
 
+    public boolean isBuild() {
+        return status == BUILDED;
+    }
+
     public boolean isInit() {
         return status == INITIALIZED;
     }
@@ -257,7 +304,7 @@ public abstract class ServiceSupport implements StatefulService {
 
     @Override
     public boolean isStopped() {
-        return status == STOPPED || status == SHUTTINGDOWN || status == SHUTDOWN || status == FAILED;
+        return status == NEW || status == INITIALIZED || status == BUILDED || status == STOPPED || status == SHUTTINGDOWN || status == SHUTDOWN || status == FAILED;
     }
 
     @Override
@@ -301,10 +348,17 @@ public abstract class ServiceSupport implements StatefulService {
     }
 
     /**
+     * Optional build phase of the service.
+     * This method will only be called by frameworks which supports pre-building projects such as camel-quarkus.
+     */
+    protected void doBuild() throws Exception {
+    }
+
+    /**
      * Initialize the service.
      * This method will only be called once before starting.
      */
-    protected void doInit() {
+    protected void doInit() throws Exception {
     }
 
     /**

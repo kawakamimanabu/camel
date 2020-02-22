@@ -28,7 +28,6 @@ import com.google.api.services.bigquery.model.QueryParameterType;
 import com.google.api.services.bigquery.model.QueryParameterValue;
 import com.google.api.services.bigquery.model.QueryRequest;
 import com.google.api.services.bigquery.model.QueryResponse;
-
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.RuntimeExchangeException;
@@ -138,11 +137,6 @@ public class GoogleBigQuerySQLProducer extends DefaultProducer {
             list.add(param);
         });
         apiQueryRequest.setQueryParameters(list);
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     @Override

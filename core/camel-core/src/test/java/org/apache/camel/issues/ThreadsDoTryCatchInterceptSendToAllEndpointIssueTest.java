@@ -17,8 +17,9 @@
 package org.apache.camel.issues;
 
 import org.apache.camel.ContextTestSupport;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.impl.InterceptSendToMockEndpointStrategy;
+import org.apache.camel.impl.engine.InterceptSendToMockEndpointStrategy;
 import org.junit.Test;
 
 /**
@@ -41,25 +42,13 @@ public class ThreadsDoTryCatchInterceptSendToAllEndpointIssueTest extends Contex
     @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         // mock all endpoints
-        context.addRegisterEndpointCallback(new InterceptSendToMockEndpointStrategy("*"));
+        context.adapt(ExtendedCamelContext.class).registerEndpointCallback(new InterceptSendToMockEndpointStrategy("*"));
 
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:start")
-                    .threads()
-                    .doTry()
-                        .to("log:try")
-                        .throwException(new IllegalArgumentException("Forced"))
-                    .doCatch(Exception.class)
-                        .to("log:catch")
-                        .choice()
-                            .when(body().contains("World"))
-                                .to("log:world").stop()
-                            .otherwise()
-                                .to("log:other").stop()
-                        .end()
-                    .end();
+                from("direct:start").threads().doTry().to("log:try").throwException(new IllegalArgumentException("Forced")).doCatch(Exception.class).to("log:catch").choice()
+                    .when(body().contains("World")).to("log:world").stop().otherwise().to("log:other").stop().end().end();
             }
         };
     }

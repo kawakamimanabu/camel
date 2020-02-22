@@ -17,7 +17,6 @@
 package org.apache.camel.processor.aggregator;
 
 import org.apache.camel.ContextTestSupport;
-import org.apache.camel.FailedToCreateRouteException;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.processor.BodyInAggregatingStrategy;
 import org.junit.Test;
@@ -38,17 +37,14 @@ public class AggregateUnknownExecutorServiceRefTest extends ContextTestSupport {
             context.addRoutes(new RouteBuilder() {
                 @Override
                 public void configure() throws Exception {
-                    from("direct:start")
-                        .aggregate(header("id"), new BodyInAggregatingStrategy())
-                            // use an unknown executor service ref should fail
-                            .completionSize(3).executorServiceRef("myUnknownProfile")
-                            .to("log:foo")
-                            .to("mock:aggregated");
+                    from("direct:start").aggregate(header("id"), new BodyInAggregatingStrategy())
+                        // use an unknown executor service ref should fail
+                        .completionSize(3).executorServiceRef("myUnknownProfile").to("log:foo").to("mock:aggregated");
                 }
             });
             context.start();
             fail("Should have thrown exception");
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             IllegalArgumentException cause = assertIsInstanceOf(IllegalArgumentException.class, e.getCause());
             assertTrue(cause.getMessage().contains("myUnknownProfile"));
         }

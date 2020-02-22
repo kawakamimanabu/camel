@@ -23,9 +23,8 @@ import java.io.PrintStream;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.impl.DefaultCamelContext;
-import org.apache.camel.impl.DefaultRuntimeEndpointRegistry;
-import org.apache.camel.impl.ExplicitCamelContextNameStrategy;
-import org.apache.camel.model.ModelCamelContext;
+import org.apache.camel.impl.engine.DefaultRuntimeEndpointRegistry;
+import org.apache.camel.impl.engine.ExplicitCamelContextNameStrategy;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +66,7 @@ public class ContextListCommandTest {
         CamelContext context = new DefaultCamelContext();
         context.setRuntimeEndpointRegistry(new DefaultRuntimeEndpointRegistry());
         context.setNameStrategy(new ExplicitCamelContextNameStrategy("foobar"));
-        context.adapt(ModelCamelContext.class).addRoutes(new RouteBuilder() {
+        context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
                 from("direct:start").to("mock:result");

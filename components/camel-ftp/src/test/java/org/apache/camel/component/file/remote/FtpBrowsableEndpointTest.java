@@ -22,17 +22,17 @@ import java.util.List;
 import org.apache.camel.Exchange;
 import org.apache.camel.spi.BrowsableEndpoint;
 import org.apache.camel.support.processor.idempotent.MemoryIdempotentRepository;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.apache.camel.test.junit5.TestSupport.createDirectory;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FtpBrowsableEndpointTest extends FtpServerTestSupport {
 
     private String getFtpUrl() {
         return "ftp://admin@localhost:" + getPort() + "/browse?password=admin";
-    }
-
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
     }
 
     @Test
@@ -69,7 +69,7 @@ public class FtpBrowsableEndpointTest extends FtpServerTestSupport {
 
         // and the file is still there
         File file = new File(FTP_ROOT_DIR + "/browse/a.txt");
-        assertTrue("File should exist " + file, file.exists());
+        assertTrue(file.exists(), "File should exist " + file);
     }
 
     @Test
@@ -95,9 +95,9 @@ public class FtpBrowsableEndpointTest extends FtpServerTestSupport {
 
         // and the files is still there
         File fileA = new File(FTP_ROOT_DIR + "/browse/a.txt");
-        assertTrue("File should exist " + fileA, fileA.exists());
+        assertTrue(fileA.exists(), "File should exist " + fileA);
         File fileB = new File(FTP_ROOT_DIR + "/browse/b.txt");
-        assertTrue("File should exist " + fileB, fileB.exists());
+        assertTrue(fileB.exists(), "File should exist " + fileB);
     }
 
     @Test
@@ -125,10 +125,10 @@ public class FtpBrowsableEndpointTest extends FtpServerTestSupport {
 
         // and the files is still there
         File fileA = new File(FTP_ROOT_DIR + "/browse/a.txt");
-        assertTrue("File should exist " + fileA, fileA.exists());
+        assertTrue(fileA.exists(), "File should exist " + fileA);
         File fileB = new File(FTP_ROOT_DIR + "/browse/foo/b.txt");
-        assertTrue("File should exist " + fileB, fileB.exists());
+        assertTrue(fileB.exists(), "File should exist " + fileB);
         File fileC = new File(FTP_ROOT_DIR + "/browse/bar/c.txt");
-        assertTrue("File should exist " + fileC, fileC.exists());
+        assertTrue(fileC.exists(), "File should exist " + fileC);
     }
 }

@@ -51,7 +51,7 @@ public class CsvMarshalHeaderWithCustomMarshallFactoryTest extends CamelTestSupp
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
-    @Produce(uri = "direct:start")
+    @Produce("direct:start")
     private ProducerTemplate producerTemplate;
 
     private File outputFile;
@@ -127,6 +127,7 @@ public class CsvMarshalHeaderWithCustomMarshallFactoryTest extends CamelTestSupp
             }
         }
 
+        @Override
         @SuppressWarnings("unchecked")
         public void marshal(Exchange exchange, Object object, OutputStream outputStream) throws IOException {
             Iterator<Map<String, String>> it = (Iterator<Map<String, String>>) ObjectHelper.createIterator(object);

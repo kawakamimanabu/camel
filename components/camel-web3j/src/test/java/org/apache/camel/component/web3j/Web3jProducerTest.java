@@ -29,7 +29,6 @@ import org.apache.camel.builder.RouteBuilder;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.Response;
@@ -92,7 +91,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 
 public class Web3jProducerTest extends Web3jMockTestSupport {
 
-    @Produce(uri = "direct:start")
+    @Produce("direct:start")
     protected ProducerTemplate template;
 
     @Mock

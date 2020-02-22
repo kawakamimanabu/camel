@@ -16,8 +16,6 @@
  */
 package org.apache.camel.component.docker.consumer;
 
-import java.util.Date;
-
 import com.github.dockerjava.api.command.EventsCmd;
 import com.github.dockerjava.api.model.Event;
 import com.github.dockerjava.core.command.EventsResultCallback;
@@ -54,7 +52,7 @@ public class DockerEventsConsumer extends DefaultConsumer {
      * Determine the point in time to begin streaming events
      */
     private long processInitialEvent() {
-        long currentTime = new Date().getTime();
+        long currentTime = System.currentTimeMillis();
         Long initialRange = DockerHelper.getProperty(DockerConstants.DOCKER_INITIAL_RANGE, endpoint.getConfiguration(), null, Long.class);
         if (initialRange != null) {
             currentTime = currentTime - initialRange;
@@ -80,6 +78,7 @@ public class DockerEventsConsumer extends DefaultConsumer {
 
     protected class EventsCallback extends EventsResultCallback {
 
+        @Override
         public void onNext(Event event) {
             log.debug("Received Docker Event: {}", event);
 

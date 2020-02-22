@@ -17,6 +17,7 @@
 package org.apache.camel.component.jdbc;
 
 import java.util.Map;
+
 import javax.sql.DataSource;
 
 import org.apache.camel.Component;
@@ -73,14 +74,12 @@ public class JdbcEndpoint extends DefaultEndpoint {
         this.dataSource = dataSource;
     }
 
-    public boolean isSingleton() {
-        return true;
-    }
-
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         throw new UnsupportedOperationException("Not supported");
     }
 
+    @Override
     public Producer createProducer() throws Exception {
         return new JdbcProducer(this, dataSource, readSize, parameters);
     }
@@ -184,7 +183,7 @@ public class JdbcEndpoint extends DefaultEndpoint {
     }
 
     /**
-     * Allows to plugin to use a custom org.apache.camel.component.jdbc.JdbcPrepareStatementStrategy to control preparation of the query and prepared statement.
+     * Allows the plugin to use a custom org.apache.camel.component.jdbc.JdbcPrepareStatementStrategy to control preparation of the query and prepared statement.
      */
     public void setPrepareStatementStrategy(JdbcPrepareStatementStrategy prepareStatementStrategy) {
         this.prepareStatementStrategy = prepareStatementStrategy;

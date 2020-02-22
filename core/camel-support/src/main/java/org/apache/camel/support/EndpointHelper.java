@@ -29,13 +29,11 @@ import org.apache.camel.DelegateEndpoint;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
-import org.apache.camel.Message;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.PollingConsumer;
 import org.apache.camel.Processor;
 import org.apache.camel.ResolveEndpointFailedException;
 import org.apache.camel.Route;
-import org.apache.camel.spi.BrowsableEndpoint;
-
 import org.apache.camel.support.service.ServiceHelper;
 import org.apache.camel.util.StringHelper;
 import org.apache.camel.util.URISupport;
@@ -103,6 +101,7 @@ public final class EndpointHelper {
      * <li>exact match, returns true</li>
      * <li>wildcard match (pattern ends with a * and the uri starts with the pattern), returns true</li>
      * <li>regular expression match, returns true</li>
+     * <li>exact match with uri normalization of the pattern if possible, returns true</li>
      * <li>otherwise returns false</li>
      * </ul>
      *
@@ -128,24 +127,40 @@ public final class EndpointHelper {
         }
 
         // we need to test with and without scheme separators (//)
-        if (uri.contains("://")) {
-            // try without :// also
-            String scheme = StringHelper.before(uri, "://");
-            String path = after(uri, "://");
-            if (PatternHelper.matchPattern(scheme + ":" + path, pattern)) {
-                return true;
-            }
-        } else {
-            // try with :// also
-            String scheme = StringHelper.before(uri, ":");
-            String path = after(uri, ":");
-            if (PatternHelper.matchPattern(scheme + "://" + path, pattern)) {
-                return true;
+        boolean match = PatternHelper.matchPattern(toggleUriSchemeSeparators(uri), pattern);
+        match |= PatternHelper.matchPattern(uri, pattern);
+        if (!match && pattern != null && pattern.contains("?")) {
+            // try normalizing the pattern as a uri for exact matching, so parameters are ordered the same as in the endpoint uri
+            try {
+                pattern = URISupport.normalizeUri(pattern);
+                // try both with and without scheme separators (//)
+                match = toggleUriSchemeSeparators(uri).equalsIgnoreCase(pattern);
+                return match || uri.equalsIgnoreCase(pattern);
+            } catch (URISyntaxException e) {
+                //Can't normalize and original match failed
+                return false;
+            } catch (Exception e) {
+                throw new ResolveEndpointFailedException(uri, e);
             }
         }
+        return match;
+    }
 
-        // and fallback to test with the uri as is
-        return PatternHelper.matchPattern(uri, pattern);
+    /**
+     * Toggles // separators in the given uri. If the uri does not contain ://, the slashes are added, otherwise they are removed.
+     * @param normalizedUri The uri to add/remove separators in
+     * @return The uri with separators added or removed
+     */
+    private static String toggleUriSchemeSeparators(String normalizedUri) {
+        if (normalizedUri.contains("://")) {
+            String scheme = StringHelper.before(normalizedUri, "://");
+            String path = after(normalizedUri, "://");
+            return scheme + ":" + path;
+        } else {
+            String scheme = StringHelper.before(normalizedUri, ":");
+            String path = after(normalizedUri, ":");
+            return scheme + "://" + path;
+        }
     }
 
     /**
@@ -155,9 +170,12 @@ public final class EndpointHelper {
      * @param bean       the bean
      * @param parameters parameters
      * @throws Exception is thrown if setting property fails
+     * @deprecated use PropertyBindingSupport
      */
+    @Deprecated
     public static void setProperties(CamelContext context, Object bean, Map<String, Object> parameters) throws Exception {
-        IntrospectionSupport.setProperties(context.getTypeConverter(), bean, parameters);
+        // use the property binding which can do more advanced configuration
+        PropertyBindingSupport.build().bind(context, bean, parameters);
     }
 
     /**
@@ -170,7 +188,9 @@ public final class EndpointHelper {
      * @param bean       the bean
      * @param parameters parameters
      * @throws Exception is thrown if setting property fails
+     * @deprecated use PropertyBindingSupport
      */
+    @Deprecated
     public static void setReferenceProperties(CamelContext context, Object bean, Map<String, Object> parameters) throws Exception {
         Iterator<Map.Entry<String, Object>> it = parameters.entrySet().iterator();
         while (it.hasNext()) {
@@ -178,8 +198,8 @@ public final class EndpointHelper {
             String name = entry.getKey();
             Object v = entry.getValue();
             String value = v != null ? v.toString() : null;
-            if (value != null && isReferenceParameter(value)) {
-                boolean hit = IntrospectionSupport.setProperty(context, context.getTypeConverter(), bean, name, null, value, true);
+            if (isReferenceParameter(value)) {
+                boolean hit = context.adapt(ExtendedCamelContext.class).getBeanIntrospection().setProperty(context, context.getTypeConverter(), bean, name, null, value, true, false, false);
                 if (hit) {
                     // must remove as its a valid option and we could configure it
                     it.remove();
@@ -225,7 +245,8 @@ public final class EndpointHelper {
      *                                  <code>mandatory</code> is <code>true</code>.
      */
     public static <T> T resolveReferenceParameter(CamelContext context, String value, Class<T> type, boolean mandatory) {
-        String valueNoHash = StringHelper.replaceAll(value, "#", "");
+        String valueNoHash = StringHelper.replaceAll(value, "#bean:", "");
+        valueNoHash = StringHelper.replaceAll(valueNoHash, "#", "");
         if (mandatory) {
             return CamelContextHelper.mandatoryLookupAndConvert(context, valueNoHash, type);
         } else {
@@ -350,45 +371,6 @@ public final class EndpointHelper {
 
         // not found
         return null;
-    }
-
-    /**
-     * Browses the {@link BrowsableEndpoint} within the given range, and returns the messages as a XML payload.
-     *
-     * @param endpoint    the browsable endpoint
-     * @param fromIndex   from range
-     * @param toIndex     to range
-     * @param includeBody whether to include the message body in the XML payload
-     * @return XML payload with the messages
-     * @throws IllegalArgumentException if the from and to range is invalid
-     * @see MessageHelper#dumpAsXml(org.apache.camel.Message)
-     */
-    public static String browseRangeMessagesAsXml(BrowsableEndpoint endpoint, Integer fromIndex, Integer toIndex, Boolean includeBody) {
-        if (fromIndex == null) {
-            fromIndex = 0;
-        }
-        if (toIndex == null) {
-            toIndex = Integer.MAX_VALUE;
-        }
-        if (fromIndex > toIndex) {
-            throw new IllegalArgumentException("From index cannot be larger than to index, was: " + fromIndex + " > " + toIndex);
-        }
-
-        List<Exchange> exchanges = endpoint.getExchanges();
-        if (exchanges.size() == 0) {
-            return null;
-        }
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("<messages>");
-        for (int i = fromIndex; i < exchanges.size() && i <= toIndex; i++) {
-            Exchange exchange = exchanges.get(i);
-            Message msg = exchange.hasOut() ? exchange.getOut() : exchange.getIn();
-            String xml = MessageHelper.dumpAsXml(msg, includeBody);
-            sb.append("\n").append(xml);
-        }
-        sb.append("\n</messages>");
-        return sb.toString();
     }
 
     /**

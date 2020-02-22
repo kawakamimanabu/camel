@@ -27,31 +27,26 @@ import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.component.pulsar.utils.AutoConfiguration;
-import org.apache.camel.impl.JndiRegistry;
-import org.apache.camel.test.junit4.CamelTestSupport;
+import org.apache.camel.spi.Registry;
+import org.apache.camel.support.SimpleRegistry;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.impl.ClientBuilderImpl;
-import org.junit.Rule;
 import org.junit.Test;
-import org.testcontainers.containers.PulsarContainer;
 
-public class PulsarConcurrentProducerInTest extends CamelTestSupport {
+public class PulsarConcurrentProducerInTest extends PulsarTestSupport {
 
     private static final String TOPIC_URI = "persistent://public/default/camel-concurrent-producers-topic";
     private static final String PRODUCER = "camel-producer";
 
-    @Rule
-    public PulsarContainer pulsarContainer = new PulsarContainer();
-
-    @Produce(uri = "direct:start")
+    @Produce("direct:start")
     private ProducerTemplate producerTemplate;
 
-    @EndpointInject(uri = "pulsar:" + TOPIC_URI + "?numberOfConsumers=3&subscriptionType=Shared" + "&subscriptionName=camel-subscription&consumerQueueSize=1"
-                          + "&consumerNamePrefix=camel-consumer" + "&producerName=" + PRODUCER)
+    @EndpointInject("pulsar:" + TOPIC_URI + "?numberOfConsumers=3&subscriptionType=Shared" + "&subscriptionName=camel-subscription&consumerQueueSize=5"
+                    + "&consumerNamePrefix=camel-consumer" + "&producerName=" + PRODUCER)
     private Endpoint from;
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint to;
 
     @Override
@@ -67,27 +62,28 @@ public class PulsarConcurrentProducerInTest extends CamelTestSupport {
     }
 
     @Override
-    protected JndiRegistry createRegistry() throws Exception {
-        JndiRegistry jndi = super.createRegistry();
+    protected Registry createCamelRegistry() throws Exception {
+        SimpleRegistry registry = new SimpleRegistry();
 
-        registerPulsarBeans(jndi);
+        registerPulsarBeans(registry);
 
-        return jndi;
+        return registry;
     }
 
-    private void registerPulsarBeans(final JndiRegistry jndi) throws PulsarClientException {
+    private void registerPulsarBeans(SimpleRegistry registry) throws PulsarClientException {
         PulsarClient pulsarClient = givenPulsarClient();
         AutoConfiguration autoConfiguration = new AutoConfiguration(null, null);
 
-        jndi.bind("pulsarClient", pulsarClient);
+        registry.bind("pulsarClient", pulsarClient);
         PulsarComponent comp = new PulsarComponent(context);
         comp.setAutoConfiguration(autoConfiguration);
         comp.setPulsarClient(pulsarClient);
-        jndi.bind("pulsar", comp);
+        registry.bind("pulsar", comp);
+
     }
 
     private PulsarClient givenPulsarClient() throws PulsarClientException {
-        return new ClientBuilderImpl().serviceUrl(pulsarContainer.getPulsarBrokerUrl()).ioThreads(1).listenerThreads(1).build();
+        return new ClientBuilderImpl().serviceUrl(getPulsarBrokerUrl()).ioThreads(1).listenerThreads(1).build();
     }
 
     @Test

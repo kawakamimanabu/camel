@@ -73,20 +73,18 @@ public class ApnsEndpoint extends ScheduledPollEndpoint {
         return getApnsComponent().getApnsService();
     }
 
-    public boolean isSingleton() {
-        return true;
-    }
-
     protected Set<DefaultConsumer> getConsumers() {
         return consumers;
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         ApnsConsumer apnsConsumer = new ApnsConsumer(this, processor);
         configureConsumer(apnsConsumer);
         return apnsConsumer;
     }
 
+    @Override
     public Producer createProducer() throws Exception {
         return new ApnsProducer(this);
     }

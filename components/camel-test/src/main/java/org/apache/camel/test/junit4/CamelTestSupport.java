@@ -50,6 +50,7 @@ import org.apache.camel.ConsumerTemplate;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
 import org.apache.camel.Expression;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.FluentProducerTemplate;
 import org.apache.camel.Message;
 import org.apache.camel.NamedNode;
@@ -59,6 +60,7 @@ import org.apache.camel.Processor;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.Route;
 import org.apache.camel.RoutesBuilder;
+import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.Service;
 import org.apache.camel.ServiceStatus;
 import org.apache.camel.api.management.JmxSystemPropertyKeys;
@@ -69,24 +71,27 @@ import org.apache.camel.api.management.mbean.ManagedRouteMBean;
 import org.apache.camel.builder.AdviceWithRouteBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.component.properties.PropertiesComponent;
-import org.apache.camel.impl.BreakpointSupport;
-import org.apache.camel.impl.DefaultCamelBeanPostProcessor;
 import org.apache.camel.impl.DefaultCamelContext;
-import org.apache.camel.impl.DefaultDebugger;
-import org.apache.camel.impl.InterceptSendToMockEndpointStrategy;
 import org.apache.camel.impl.JndiRegistry;
+import org.apache.camel.impl.engine.InterceptSendToMockEndpointStrategy;
+import org.apache.camel.model.Model;
 import org.apache.camel.model.ModelCamelContext;
 import org.apache.camel.model.ProcessorDefinition;
+import org.apache.camel.processor.interceptor.BreakpointSupport;
+import org.apache.camel.processor.interceptor.DefaultDebugger;
 import org.apache.camel.reifier.RouteReifier;
+import org.apache.camel.spi.CamelBeanPostProcessor;
 import org.apache.camel.spi.Language;
+import org.apache.camel.spi.PropertiesComponent;
 import org.apache.camel.spi.Registry;
 import org.apache.camel.support.EndpointHelper;
 import org.apache.camel.util.IOHelper;
 import org.apache.camel.util.StopWatch;
 import org.apache.camel.util.TimeUtils;
+import org.apache.camel.util.URISupport;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,29 +108,35 @@ public abstract class CamelTestSupport extends TestSupport {
      */
     public static final String ROUTE_COVERAGE_ENABLED = "CamelTestRouteCoverage";
 
+    // CHECKSTYLE:OFF
     private static final Logger LOG = LoggerFactory.getLogger(CamelTestSupport.class);
     private static ThreadLocal<ModelCamelContext> threadCamelContext = new ThreadLocal<>();
     private static ThreadLocal<ProducerTemplate> threadTemplate = new ThreadLocal<>();
     private static ThreadLocal<FluentProducerTemplate> threadFluentTemplate = new ThreadLocal<>();
     private static ThreadLocal<ConsumerTemplate> threadConsumer = new ThreadLocal<>();
     private static ThreadLocal<Service> threadService = new ThreadLocal<>();
+    protected Properties extra;
     protected volatile ModelCamelContext context;
     protected volatile ProducerTemplate template;
     protected volatile FluentProducerTemplate fluentTemplate;
     protected volatile ConsumerTemplate consumer;
     protected volatile Service camelContextService;
-    protected boolean dumpRouteStats;
     private boolean useRouteBuilder = true;
     private final DebugBreakpoint breakpoint = new DebugBreakpoint();
     private final StopWatch watch = new StopWatch();
     private final Map<String, String> fromEndpoints = new HashMap<>();
-    private final AtomicInteger tests = new AtomicInteger(0);
+    private static final ThreadLocal<AtomicInteger> TESTS = new ThreadLocal<>();
+    private static final ThreadLocal<CamelTestSupport> INSTANCE = new ThreadLocal<>();
     private CamelTestWatcher camelTestWatcher = new CamelTestWatcher();
+    @ClassRule
+    public static final CamelTearDownRule CAMEL_TEAR_DOWN_RULE = new CamelTearDownRule(INSTANCE);
+    // CHECKSTYLE:ON
 
     /**
      * Use the RouteBuilder or not
+     *
      * @return <tt>true</tt> then {@link CamelContext} will be auto started,
-     *        <tt>false</tt> then {@link CamelContext} will <b>not</b> be auto started (you will have to start it manually)
+     * <tt>false</tt> then {@link CamelContext} will <b>not</b> be auto started (you will have to start it manually)
      */
     public boolean isUseRouteBuilder() {
         return useRouteBuilder;
@@ -210,6 +221,44 @@ public abstract class CamelTestSupport extends TestSupport {
     }
 
     /**
+     * Used for filtering routes routes matching the given pattern, which follows the following rules:
+     * <p>
+     * - Match by route id
+     * - Match by route input endpoint uri
+     * <p>
+     * The matching is using exact match, by wildcard and regular expression.
+     * <p>
+     * For example to only include routes which starts with foo in their route id's, use: include=foo&#42;
+     * And to exclude routes which starts from JMS endpoints, use: exclude=jms:&#42;
+     * <p>
+     * Multiple patterns can be separated by comma, for example to exclude both foo and bar routes, use: exclude=foo&#42;,bar&#42;
+     * <p>
+     * Exclude takes precedence over include.
+     */
+    public String getRouteFilterIncludePattern() {
+        return null;
+    }
+
+    /**
+     * Used for filtering routes routes matching the given pattern, which follows the following rules:
+     * <p>
+     * - Match by route id
+     * - Match by route input endpoint uri
+     * <p>
+     * The matching is using exact match, by wildcard and regular expression.
+     * <p>
+     * For example to only include routes which starts with foo in their route id's, use: include=foo&#42;
+     * And to exclude routes which starts from JMS endpoints, use: exclude=jms:&#42;
+     * <p>
+     * Multiple patterns can be separated by comma, for example to exclude both foo and bar routes, use: exclude=foo&#42;,bar&#42;
+     * <p>
+     * Exclude takes precedence over include.
+     */
+    public String getRouteFilterExcludePattern() {
+        return null;
+    }
+
+    /**
      * Override to enable debugger
      * <p/>
      * Is default <tt>false</tt>
@@ -259,24 +308,25 @@ public abstract class CamelTestSupport extends TestSupport {
         log.info("********************************************************************************");
 
         if (isCreateCamelContextPerClass()) {
-            while (true) {
-                int v = tests.get();
-                if (tests.compareAndSet(v, v + 1)) {
-                    if (v == 0) {
-                        // test is per class, so only setup once (the first time)
-                        doSpringBootCheck();
-                        setupResources();
-                        doPreSetup();
-                        doSetUp();
-                        doPostSetup();
-                    } else {
-                        // and in between tests we must do IoC and reset mocks
-                        postProcessTest();
-                        resetMocks();
-                    }
-
-                    break;
-                }
+            INSTANCE.set(this);
+            AtomicInteger v = TESTS.get();
+            if (v == null) {
+                v = new AtomicInteger();
+                TESTS.set(v);
+            }
+            if (v.getAndIncrement() == 0) {
+                LOG.debug("Setup CamelContext before running first test");
+                // test is per class, so only setup once (the first time)
+                doSpringBootCheck();
+                setupResources();
+                doPreSetup();
+                doSetUp();
+                doPostSetup();
+            } else {
+                LOG.debug("Reset between test methods");
+                // and in between tests we must do IoC and reset mocks
+                postProcessTest();
+                resetMocks();
             }
         } else {
             // test is per test so always setup
@@ -313,7 +363,7 @@ public abstract class CamelTestSupport extends TestSupport {
         boolean springBoot = hasClassAnnotation("org.springframework.boot.test.context.SpringBootTest");
         if (springBoot) {
             throw new RuntimeException("Spring Boot detected: The CamelTestSupport/CamelSpringTestSupport class is not intended for Camel testing with Spring Boot."
-                + " Prefer to not extend this class, but use @RunWith(CamelSpringBootRunner.class) instead.");
+                    + " Prefer to not extend this class, but use @RunWith(CamelSpringBootRunner.class) instead.");
         }
     }
 
@@ -327,7 +377,7 @@ public abstract class CamelTestSupport extends TestSupport {
             disableJMX();
         }
 
-        context = (ModelCamelContext)createCamelContext();
+        context = (ModelCamelContext) createCamelContext();
         threadCamelContext.set(context);
 
         assertNotNull("No context found!", context);
@@ -364,22 +414,31 @@ public abstract class CamelTestSupport extends TestSupport {
         // enable auto mocking if enabled
         String pattern = isMockEndpoints();
         if (pattern != null) {
-            context.addRegisterEndpointCallback(new InterceptSendToMockEndpointStrategy(pattern));
+            context.adapt(ExtendedCamelContext.class).registerEndpointCallback(new InterceptSendToMockEndpointStrategy(pattern));
         }
         pattern = isMockEndpointsAndSkip();
         if (pattern != null) {
-            context.addRegisterEndpointCallback(new InterceptSendToMockEndpointStrategy(pattern, true));
+            context.adapt(ExtendedCamelContext.class).registerEndpointCallback(new InterceptSendToMockEndpointStrategy(pattern, true));
         }
 
         // configure properties component (mandatory for testing)
-        PropertiesComponent pc = context.getComponent("properties", PropertiesComponent.class);
-        Properties extra = useOverridePropertiesWithPropertiesComponent();
+        PropertiesComponent pc = context.getPropertiesComponent();
+        if (extra == null) {
+            extra = useOverridePropertiesWithPropertiesComponent();
+        }
         if (extra != null && !extra.isEmpty()) {
             pc.setOverrideProperties(extra);
         }
         Boolean ignore = ignoreMissingLocationWithPropertiesComponent();
         if (ignore != null) {
             pc.setIgnoreMissingLocation(ignore);
+        }
+
+        String include = getRouteFilterIncludePattern();
+        String exclude = getRouteFilterExcludePattern();
+        if (include != null || exclude != null) {
+            log.info("Route filtering pattern: include={}, exclude={}", include, exclude);
+            context.getExtension(Model.class).setRouteFilterPattern(include, exclude);
         }
 
         // prepare for in-between tests
@@ -441,8 +500,8 @@ public abstract class CamelTestSupport extends TestSupport {
             ManagedCamelContext mc = context != null ? context.getExtension(ManagedCamelContext.class) : null;
             ManagedCamelContextMBean managedCamelContext = mc != null ? mc.getManagedCamelContext() : null;
             if (managedCamelContext == null) {
-                log.warn("Cannot dump route coverage to file as JMX is not enabled. "  
-                    + "Add camel-management-impl JAR as dependency and/or override useJmx() method to enable JMX in the unit test classes.");
+                log.warn("Cannot dump route coverage to file as JMX is not enabled. "
+                        + "Add camel-management JAR as dependency and/or override useJmx() method to enable JMX in the unit test classes.");
             } else {
                 logCoverageSummary(managedCamelContext);
 
@@ -464,32 +523,23 @@ public abstract class CamelTestSupport extends TestSupport {
         log.info("********************************************************************************");
 
         if (isCreateCamelContextPerClass()) {
-            while (true) {
-                int v = tests.get();
-                if (v <= 0) {
-                    LOG.warn("Test already teared down");
-                    break;
-                }
-
-                if (tests.compareAndSet(v, v - 1)) {
-                    if (v == 1) {
-                        LOG.debug("tearDown test");
-                        doStopTemplates(threadConsumer.get(), threadTemplate.get(), threadFluentTemplate.get());
-                        doStopCamelContext(threadCamelContext.get(), threadService.get());
-                        doPostTearDown();
-                        cleanupResources();
-                    }
-
-                    break;
-                }
-            }
+            // will tear down test specially in CamelTearDownRule
         } else {
-            LOG.debug("tearDown test");
+            LOG.debug("tearDown()");
             doStopTemplates(consumer, template, fluentTemplate);
             doStopCamelContext(context, camelContextService);
             doPostTearDown();
             cleanupResources();
         }
+    }
+
+    void tearDownCreateCamelContextPerClass() throws Exception {
+        LOG.debug("tearDownCreateCamelContextPerClass()");
+        TESTS.remove();
+        doStopTemplates(threadConsumer.get(), threadTemplate.get(), threadFluentTemplate.get());
+        doStopCamelContext(threadCamelContext.get(), threadService.get());
+        doPostTearDown();
+        cleanupResources();
     }
 
     /**
@@ -690,18 +740,17 @@ public abstract class CamelTestSupport extends TestSupport {
     }
 
     /**
-     * Applies the {@link DefaultCamelBeanPostProcessor} to this instance.
-     *
+     * Applies the {@link CamelBeanPostProcessor} to this instance.
+     * <p>
      * Derived classes using IoC / DI frameworks may wish to turn this into a NoOp such as for CDI
      * we would just use CDI to inject this
      */
     protected void applyCamelPostProcessor() throws Exception {
-        // use the default bean post processor from camel-core if the test class is not dependency injected already by Spring
+        // use the bean post processor if the test class is not dependency injected already by Spring Framework
         boolean spring = hasClassAnnotation("org.springframework.boot.test.context.SpringBootTest", "org.springframework.context.annotation.ComponentScan");
         if (!spring) {
-            DefaultCamelBeanPostProcessor processor = new DefaultCamelBeanPostProcessor(context);
-            processor.postProcessBeforeInitialization(this, getClass().getName());
-            processor.postProcessAfterInitialization(this, getClass().getName());
+            context.getExtension(ExtendedCamelContext.class).getBeanPostProcessor().postProcessBeforeInitialization(this, getClass().getName());
+            context.getExtension(ExtendedCamelContext.class).getBeanPostProcessor().postProcessAfterInitialization(this, getClass().getName());
         }
     }
 
@@ -766,7 +815,7 @@ public abstract class CamelTestSupport extends TestSupport {
             camelContextService.start();
         } else {
             if (context instanceof DefaultCamelContext) {
-                DefaultCamelContext defaultCamelContext = (DefaultCamelContext)context;
+                DefaultCamelContext defaultCamelContext = (DefaultCamelContext) context;
                 if (!defaultCamelContext.isStarted()) {
                     defaultCamelContext.start();
                 }
@@ -787,8 +836,8 @@ public abstract class CamelTestSupport extends TestSupport {
         }
         if (registry != null) {
             String msg = "createRegistry() from camel-test is deprecated. Use createCamelRegistry if you want to control which registry to use, however"
-                + " if you need to bind beans to the registry then this is possible already with the bind method on registry,"
-                + " and there is no need to override this method.";
+                    + " if you need to bind beans to the registry then this is possible already with the bind method on registry,"
+                    + " and there is no need to override this method.";
             LOG.warn(msg);
         } else {
             registry = createCamelRegistry();
@@ -812,7 +861,7 @@ public abstract class CamelTestSupport extends TestSupport {
 
     /**
      * Override to use a custom {@link Registry}.
-     *
+     * <p>
      * However if you need to bind beans to the registry then this is possible already with the bind method on registry,"
      * and there is no need to override this method.
      */
@@ -837,7 +886,6 @@ public abstract class CamelTestSupport extends TestSupport {
      */
     @Deprecated
     protected Context createJndiContext() throws Exception {
-        LOG.warn("The method createJndiContext() in camel-test is deprecated. You can bind beans directly from Camel Registry instead");
         Properties properties = new Properties();
 
         // jndi.properties is optional
@@ -891,7 +939,7 @@ public abstract class CamelTestSupport extends TestSupport {
      * @see #createRouteBuilder()
      */
     protected RoutesBuilder[] createRouteBuilders() throws Exception {
-        return new RoutesBuilder[] {createRouteBuilder()};
+        return new RoutesBuilder[]{createRouteBuilder()};
     }
 
     /**
@@ -926,21 +974,50 @@ public abstract class CamelTestSupport extends TestSupport {
 
     /**
      * Resolves the {@link MockEndpoint} using a URI of the form <code>mock:someName</code>, optionally
-     * creating it if it does not exist.
+     * creating it if it does not exist. This implementation will lookup existing mock endpoints and match
+     * on the mock queue name, eg mock:foo and mock:foo?retainFirst=5 would match as the queue name is foo.
      *
-     * @param uri      the URI which typically starts with "mock:" and has some name
-     * @param create   whether or not to allow the endpoint to be created if it doesn't exist
+     * @param uri    the URI which typically starts with "mock:" and has some name
+     * @param create whether or not to allow the endpoint to be created if it doesn't exist
      * @return the mock endpoint or an {@link NoSuchEndpointException} is thrown if it could not be resolved
      * @throws NoSuchEndpointException is the mock endpoint does not exists
      */
     protected MockEndpoint getMockEndpoint(String uri, boolean create) throws NoSuchEndpointException {
+        // look for existing mock endpoints that has the same queue name, and to do that we need to
+        // normalize uri and strip out query parameters and whatnot
+        String n;
+        try {
+            n = URISupport.normalizeUri(uri);
+        } catch (Exception e) {
+            throw RuntimeCamelException.wrapRuntimeException(e);
+        }
+        // strip query
+        int idx = n.indexOf('?');
+        if (idx != -1) {
+            n = n.substring(0, idx);
+        }
+        final String target = n;
+
+        // lookup endpoints in registry and try to find it
+        MockEndpoint found = (MockEndpoint) context.getEndpointRegistry().values().stream()
+                .filter(e -> e instanceof MockEndpoint)
+                .filter(e -> {
+                    String t = e.getEndpointUri();
+                    // strip query
+                    int idx2 = t.indexOf('?');
+                    if (idx2 != -1) {
+                        t = t.substring(0, idx2);
+                    }
+                    return t.equals(target);
+                }).findFirst().orElse(null);
+
+        if (found != null) {
+            return found;
+        }
+
         if (create) {
             return resolveMandatoryEndpoint(uri, MockEndpoint.class);
         } else {
-            Endpoint endpoint = context.hasEndpoint(uri);
-            if (endpoint instanceof MockEndpoint) {
-                return (MockEndpoint) endpoint;
-            }
             throw new NoSuchEndpointException(String.format("MockEndpoint %s does not exist.", uri));
         }
     }

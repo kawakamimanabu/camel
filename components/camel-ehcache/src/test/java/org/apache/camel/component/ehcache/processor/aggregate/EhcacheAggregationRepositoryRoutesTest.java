@@ -28,7 +28,6 @@ import org.apache.camel.component.ehcache.EhcacheTestSupport;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.Test;
 
-
 public class EhcacheAggregationRepositoryRoutesTest extends EhcacheTestSupport {
     private static final String ENDPOINT_MOCK = "mock:result";
     private static final String ENDPOINT_DIRECT = "direct:one";
@@ -36,10 +35,10 @@ public class EhcacheAggregationRepositoryRoutesTest extends EhcacheTestSupport {
     private static final int SUM = IntStream.of(VALUES).reduce(0, (a, b) -> a + b);
     private static final String CORRELATOR = "CORRELATOR";
 
-    @EndpointInject(uri = ENDPOINT_MOCK)
+    @EndpointInject(ENDPOINT_MOCK)
     private MockEndpoint mock;
 
-    @Produce(uri = ENDPOINT_DIRECT)
+    @Produce(ENDPOINT_DIRECT)
     private ProducerTemplate producer;
 
     @Test

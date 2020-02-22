@@ -133,7 +133,7 @@ public class XmlParseTest extends XmlTestSupport {
         RouteDefinition route = assertOneRoute("setHeader.xml");
         assertFrom(route, "seda:a");
         SetHeaderDefinition node = assertNthProcessorInstanceOf(SetHeaderDefinition.class, route, 0);
-        assertEquals("oldBodyValue", node.getHeaderName());
+        assertEquals("oldBodyValue", node.getName());
         assertExpression(node.getExpression(), "simple", "body");
         assertChildTo(route, "mock:b", 1);
     }
@@ -143,7 +143,7 @@ public class XmlParseTest extends XmlTestSupport {
         RouteDefinition route = assertOneRoute("setHeaderToConstant.xml");
         assertFrom(route, "seda:a");
         SetHeaderDefinition node = assertNthProcessorInstanceOf(SetHeaderDefinition.class, route, 0);
-        assertEquals("theHeader", node.getHeaderName());
+        assertEquals("theHeader", node.getName());
         assertExpression(node.getExpression(), "constant", "a value");
         assertChildTo(route, "mock:b", 1);
     }
@@ -270,12 +270,6 @@ public class XmlParseTest extends XmlTestSupport {
     }
 
     @Test
-    public void testParseJibxDataFormat() throws Exception {
-        RouteDefinition route = assertOneRoute("routeWithJibxDataFormat.xml");
-        assertFrom(route, "seda:a");
-    }
-
-    @Test
     public void testParseXMLSecurityDataFormat() throws Exception {
         RouteDefinition route = assertOneRoute("routeWithXMLSecurityDataFormat.xml");
         assertFrom(route, "seda:a");
@@ -335,8 +329,8 @@ public class XmlParseTest extends XmlTestSupport {
         ResequenceDefinition resequencer = assertOneProcessorInstanceOf(ResequenceDefinition.class, route);
         assertNull(resequencer.getStreamConfig());
         assertNotNull(resequencer.getBatchConfig());
-        assertEquals(500, resequencer.getBatchConfig().getBatchSize());
-        assertEquals(2000L, resequencer.getBatchConfig().getBatchTimeout());
+        assertEquals(Integer.toString(500), resequencer.getBatchConfig().getBatchSize());
+        assertEquals(Long.toString(2000L), resequencer.getBatchConfig().getBatchTimeout());
     }
 
     @Test
@@ -345,8 +339,8 @@ public class XmlParseTest extends XmlTestSupport {
         ResequenceDefinition resequencer = assertOneProcessorInstanceOf(ResequenceDefinition.class, route);
         assertNotNull(resequencer.getStreamConfig());
         assertNull(resequencer.getBatchConfig());
-        assertEquals(1000, resequencer.getStreamConfig().getCapacity());
-        assertEquals(2000L, resequencer.getStreamConfig().getTimeout());
+        assertEquals(Integer.toString(1000), resequencer.getStreamConfig().getCapacity());
+        assertEquals(Long.toString(2000L), resequencer.getStreamConfig().getTimeout());
     }
 
     @Test

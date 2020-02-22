@@ -26,7 +26,6 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.dataformat.bindy.model.simple.linkonetomany.Order;
 import org.apache.camel.dataformat.bindy.model.simple.linkonetomany.OrderItem;
-
 import org.junit.Test;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -41,10 +40,10 @@ public class BindyMarshalOneToManyWithHeadersTest extends AbstractJUnit4SpringCo
 
     private String expected;
 
-    @Produce(uri = URI_DIRECT_START)
+    @Produce(URI_DIRECT_START)
     private ProducerTemplate template;
 
-    @EndpointInject(uri = URI_MOCK_RESULT)
+    @EndpointInject(URI_MOCK_RESULT)
     private MockEndpoint result;
 
     @Test
@@ -85,6 +84,7 @@ public class BindyMarshalOneToManyWithHeadersTest extends AbstractJUnit4SpringCo
 
     public static class ContextConfig extends RouteBuilder {
 
+        @Override
         public void configure() {
 
             BindyCsvDataFormat camelDataFormat = new BindyCsvDataFormat(Order.class);

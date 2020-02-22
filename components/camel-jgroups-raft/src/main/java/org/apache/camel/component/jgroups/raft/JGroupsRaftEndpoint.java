@@ -24,7 +24,6 @@ import org.apache.camel.Consumer;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
-
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriEndpoint;
 import org.apache.camel.spi.UriParam;
@@ -75,11 +74,6 @@ public class JGroupsRaftEndpoint extends DefaultEndpoint {
     @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         return new JGroupsRaftConsumer(this, processor, resolvedRaftHandle, clusterName, enableRoleChangeEvents);
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     @Override

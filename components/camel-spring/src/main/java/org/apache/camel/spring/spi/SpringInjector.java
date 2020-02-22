@@ -16,6 +16,10 @@
  */
 package org.apache.camel.spring.spi;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+
+import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.spi.Injector;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -32,8 +36,35 @@ public class SpringInjector implements Injector {
         this.applicationContext = applicationContext;
     }
 
+    @Override
     public <T> T newInstance(Class<T> type) {
-        Object value = applicationContext.getBeanFactory().createBean(type, autowireMode, dependencyCheck);
+        return newInstance(type, true);
+    }
+
+    @Override
+    public <T> T newInstance(Class<T> type, String factoryMethod) {
+        T answer = null;
+        try {
+            // lookup factory method
+            Method fm = type.getMethod(factoryMethod);
+            if (Modifier.isStatic(fm.getModifiers()) && Modifier.isPublic(fm.getModifiers()) && fm.getReturnType() == type) {
+                Object obj = fm.invoke(null);
+                answer = type.cast(obj);
+            }
+        } catch (Exception e) {
+            throw new RuntimeCamelException("Error invoking factory method: " + factoryMethod + " on class: " + type, e);
+        }
+        return answer;
+    }
+
+    @Override
+    public <T> T newInstance(Class<T> type, boolean postProcessBean) {
+        Object value;
+        if (postProcessBean) {
+            value = applicationContext.getBeanFactory().createBean(type, autowireMode, dependencyCheck);
+        } else {
+            value = applicationContext.getBeanFactory().createBean(type, AutowireCapableBeanFactory.AUTOWIRE_NO, false);
+        }
         return type.cast(value);
     }
 

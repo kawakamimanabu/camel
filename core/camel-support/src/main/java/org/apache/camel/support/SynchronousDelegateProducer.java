@@ -19,6 +19,7 @@ package org.apache.camel.support;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
 import org.apache.camel.Producer;
+import org.apache.camel.support.service.ServiceHelper;
 
 /**
  * To process the delegated producer in synchronous mode.
@@ -38,22 +39,32 @@ public class SynchronousDelegateProducer implements Producer {
         this.producer = producer;
     }
 
+    @Override
     public Endpoint getEndpoint() {
         return producer.getEndpoint();
     }
 
+    @Override
     public void process(Exchange exchange) throws Exception {
         producer.process(exchange);
     }
 
-    public void start() throws Exception {
-        producer.start();
+    @Override
+    public void init() {
+        producer.init();
     }
 
-    public void stop() throws Exception {
-        producer.stop();
+    @Override
+    public void start() {
+        ServiceHelper.startService(producer);
     }
 
+    @Override
+    public void stop() {
+        ServiceHelper.stopService(producer);
+    }
+
+    @Override
     public boolean isSingleton() {
         return producer.isSingleton();
     }

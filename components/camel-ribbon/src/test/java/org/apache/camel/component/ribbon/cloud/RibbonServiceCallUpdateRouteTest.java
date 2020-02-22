@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.component.ribbon.cloud;
+
 import org.apache.camel.RoutesBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.ribbon.RibbonConfiguration;
@@ -81,10 +82,10 @@ public class RibbonServiceCallUpdateRouteTest extends CamelTestSupport {
                 from("direct:start")
                     .serviceCall()
                         .name("myService")
-                        .component("jetty")
+                        .component("http")
                         .loadBalancer(loadBalancer)
                         .serviceDiscovery(servers)
-                        .end()
+                    .end()
                     .to("mock:result");
                 from("jetty:http://localhost:9090").routeId("9090")
                     .to("mock:9090")

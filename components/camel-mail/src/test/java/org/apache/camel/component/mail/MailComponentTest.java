@@ -19,7 +19,6 @@ package org.apache.camel.component.mail;
 import javax.mail.Message;
 
 import org.apache.camel.Endpoint;
-import org.apache.camel.pollconsumer.quartz2.QuartzScheduledPollConsumerScheduler;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.junit.Test;
 
@@ -122,23 +121,6 @@ public class MailComponentTest extends CamelTestSupport {
         MailEndpoint endpoint = resolveMandatoryEndpoint("smtp://james@myhost?password=secret&connectionTimeout=2500");
         MailConfiguration config = endpoint.getConfiguration();
         assertEquals(2500, config.getConnectionTimeout());
-    }
-
-    @Test
-    public void testDummyTrustManager() throws Exception {
-        MailEndpoint endpoint = resolveMandatoryEndpoint("smtp://james@myhost?password=secret&dummyTrustManager=true");
-        MailConfiguration config = endpoint.getConfiguration();
-        assertEquals(true, config.isDummyTrustManager());
-        assertEquals(false, config.isSecureProtocol());
-    }
-
-    @Test
-    public void testDummyTrustManagerSecure() throws Exception {
-        MailEndpoint endpoint = resolveMandatoryEndpoint("smtps://james@myhost?password=secret&dummyTrustManager=true");
-        MailConfiguration config = endpoint.getConfiguration();
-        assertEquals(true, config.isDummyTrustManager());
-        assertEquals(true, config.isSecureProtocol());
-        assertEquals("smtps://myhost:465 (SSL enabled using DummyTrustManager), folder=INBOX", config.getMailStoreLogInformation());
     }
 
     @Test
@@ -274,7 +256,7 @@ public class MailComponentTest extends CamelTestSupport {
     public void testMailComponentCtr() throws Exception {
         MailComponent comp = new MailComponent();
         comp.setCamelContext(context);
-        
+
         assertNotNull(comp.getConfiguration());
         assertNull(comp.getContentTypeResolver());
 
@@ -329,13 +311,13 @@ public class MailComponentTest extends CamelTestSupport {
         assertSame(config, comp.getConfiguration());
         assertNull(comp.getContentTypeResolver());
 
-        MailEndpoint endpoint = (MailEndpoint)comp.createEndpoint("imap://myhost?scheduler=quartz2&scheduler.cron=0%2F5+*+0-23+%3F+*+*+*&scheduler.timeZone=Europe%2FBerlin");
+        MailEndpoint endpoint = (MailEndpoint)comp.createEndpoint("imap://myhost?scheduler=quartz&scheduler.cron=0%2F5+*+0-23+%3F+*+*+*&scheduler.timeZone=Europe%2FBerlin");
         assertEquals("james", endpoint.getConfiguration().getUsername());
         assertEquals("secret", endpoint.getConfiguration().getPassword());
         assertEquals("myhost", endpoint.getConfiguration().getHost());
 
         assertNotNull("Scheduler not set", endpoint.getScheduler());
-        assertTrue("Wrong scheduler class", endpoint.getScheduler() instanceof QuartzScheduledPollConsumerScheduler);
+        assertEquals("quartz", endpoint.getScheduler());
     }
 }
 

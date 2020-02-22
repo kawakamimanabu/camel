@@ -34,8 +34,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
-
-
 @ContextConfiguration
 public class BindyImpliedTest extends AbstractJUnit4SpringContextTests {
 
@@ -48,16 +46,16 @@ public class BindyImpliedTest extends AbstractJUnit4SpringContextTests {
     //
     // *************************************************************************
 
-    @Produce(uri = URI_DIRECT_MARSHALL)
+    @Produce(URI_DIRECT_MARSHALL)
     private ProducerTemplate mtemplate;
 
-    @EndpointInject(uri = URI_MOCK_MARSHALL_RESULT)
+    @EndpointInject(URI_MOCK_MARSHALL_RESULT)
     private MockEndpoint mresult;
 
-    @Produce(uri = URI_DIRECT_UNMARSHALL)
+    @Produce(URI_DIRECT_UNMARSHALL)
     private ProducerTemplate utemplate;
 
-    @EndpointInject(uri = URI_MOCK_UNMARSHALL_RESULT)
+    @EndpointInject(URI_MOCK_UNMARSHALL_RESULT)
     private MockEndpoint uresult;
 
     // *************************************************************************
@@ -108,6 +106,7 @@ public class BindyImpliedTest extends AbstractJUnit4SpringContextTests {
     // *************************************************************************
 
     public static class ContextConfig extends RouteBuilder {
+        @Override
         public void configure() {
             BindyDataFormat bindy = new BindyDataFormat();
             bindy.setClassType(Record.class);

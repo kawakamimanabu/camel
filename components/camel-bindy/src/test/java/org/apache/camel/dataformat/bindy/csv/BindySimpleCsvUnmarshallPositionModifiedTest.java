@@ -38,15 +38,15 @@ public class BindySimpleCsvUnmarshallPositionModifiedTest extends AbstractJUnit4
     private static final String URI_MOCK_ERROR = "mock:error";
     private static final String URI_DIRECT_START = "direct:start";
 
-    @Produce(uri = URI_DIRECT_START)
+    @Produce(URI_DIRECT_START)
     protected ProducerTemplate template;
 
     private String record;
 
-    @EndpointInject(uri = URI_MOCK_RESULT)
+    @EndpointInject(URI_MOCK_RESULT)
     private MockEndpoint result;
 
-    @EndpointInject(uri = URI_MOCK_ERROR)
+    @EndpointInject(URI_MOCK_ERROR)
     private MockEndpoint error;
 
     @Test
@@ -89,6 +89,7 @@ public class BindySimpleCsvUnmarshallPositionModifiedTest extends AbstractJUnit4
 
         BindyCsvDataFormat orderBindyDataFormat = new BindyCsvDataFormat(org.apache.camel.dataformat.bindy.model.simple.oneclassdifferentposition.Order.class);
 
+        @Override
         public void configure() {
 
             // default should errors go to mock:error

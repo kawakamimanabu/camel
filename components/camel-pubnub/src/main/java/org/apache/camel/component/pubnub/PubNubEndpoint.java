@@ -18,7 +18,6 @@ package org.apache.camel.component.pubnub;
 
 import com.pubnub.api.PNConfiguration;
 import com.pubnub.api.PubNub;
-
 import org.apache.camel.Consumer;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
@@ -53,11 +52,6 @@ public class PubNubEndpoint extends DefaultEndpoint {
     @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         return new PubNubConsumer(this, processor, configuration);
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     public PubNubConfiguration getConfiguration() {

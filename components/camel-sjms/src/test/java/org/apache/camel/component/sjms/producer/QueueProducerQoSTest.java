@@ -25,7 +25,6 @@ import org.apache.camel.EndpointInject;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.component.sjms.support.JmsTestSupport;
-
 import org.junit.Assume;
 import org.junit.Test;
 
@@ -37,7 +36,7 @@ public class QueueProducerQoSTest extends JmsTestSupport {
     private static final String EXPIRED_MESSAGE_ROUTE_ID = "expiredAdvisoryRoute";
     private static final String MOCK_EXPIRED_ADVISORY = "mock:expiredAdvisory";
 
-    @EndpointInject(uri = MOCK_EXPIRED_ADVISORY)
+    @EndpointInject(MOCK_EXPIRED_ADVISORY)
     MockEndpoint mockExpiredAdvisory;
 
     @Test

@@ -17,7 +17,7 @@
 package org.apache.camel.language.tokenizer;
 
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.builder.xml.Namespaces;
+import org.apache.camel.support.builder.Namespaces;
 
 public class XMLTokenizeLanguageStreamingTest extends XMLTokenizeLanguageTest {
 
@@ -25,11 +25,9 @@ public class XMLTokenizeLanguageStreamingTest extends XMLTokenizeLanguageTest {
     protected RouteBuilder createRouteBuilder() {
         return new RouteBuilder() {
             Namespaces ns = new Namespaces("C", "urn:c");
+
             public void configure() {
-                from("direct:start")
-                    .split().xtokenize("//C:child", ns).streaming()
-                        .to("mock:result")
-                    .end();
+                from("direct:start").split().xtokenize("//C:child", ns).streaming().to("mock:result").end();
             }
         };
     }

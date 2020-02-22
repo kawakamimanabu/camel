@@ -18,7 +18,6 @@ package org.apache.camel.impl;
 
 import org.apache.camel.Consumer;
 import org.apache.camel.ContextTestSupport;
-import org.apache.camel.FailedToStartRouteException;
 import org.apache.camel.MultipleConsumersSupport;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
@@ -53,7 +52,7 @@ public class MultipleConsumersSupportTest extends ContextTestSupport {
         try {
             context.start();
             fail("Should have thrown exception");
-        } catch (FailedToStartRouteException e) {
+        } catch (Exception e) {
             assertTrue(e.getMessage().endsWith("Multiple consumers for the same endpoint is not allowed: my:endpoint"));
         }
     }
@@ -70,25 +69,30 @@ public class MultipleConsumersSupportTest extends ContextTestSupport {
                 from(my).to("mock:b");
             }
         });
-        // this one is allowing multiple consumers on the same endpoint so no problem starting
+        // this one is allowing multiple consumers on the same endpoint so no
+        // problem starting
         context.start();
         context.stop();
     }
 
     private static class MyEndpoint extends DefaultEndpoint implements MultipleConsumersSupport {
 
+        @Override
         public boolean isSingleton() {
             return true;
         }
 
+        @Override
         public boolean isMultipleConsumersSupported() {
             return false;
         }
 
+        @Override
         public Producer createProducer() throws Exception {
             return null;
         }
 
+        @Override
         public Consumer createConsumer(Processor processor) throws Exception {
             return new DefaultConsumer(this, processor);
         }
@@ -101,18 +105,22 @@ public class MultipleConsumersSupportTest extends ContextTestSupport {
 
     private static class MyOtherEndpoint extends DefaultEndpoint implements MultipleConsumersSupport {
 
+        @Override
         public boolean isSingleton() {
             return true;
         }
 
+        @Override
         public boolean isMultipleConsumersSupported() {
             return true;
         }
 
+        @Override
         public Producer createProducer() throws Exception {
             return null;
         }
 
+        @Override
         public Consumer createConsumer(Processor processor) throws Exception {
             return new DefaultConsumer(this, processor);
         }

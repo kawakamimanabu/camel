@@ -37,15 +37,12 @@ public class JettyRestProducerPutTest extends BaseJettyTest {
             @Override
             public void configure() throws Exception {
                 // configure to use localhost with the given port
-                restConfiguration().component("jetty").host("localhost").port(getPort());
+                restConfiguration().component("jetty").producerComponent("http").host("localhost").port(getPort());
 
-                from("direct:start")
-                        .to("rest:put:users/{id}");
+                from("direct:start").to("rest:put:users/{id}");
 
                 // use the rest DSL to define the rest services
-                rest("/users/")
-                    .put("{id}")
-                        .to("mock:input");
+                rest("/users/").put("{id}").to("mock:input");
             }
         };
     }

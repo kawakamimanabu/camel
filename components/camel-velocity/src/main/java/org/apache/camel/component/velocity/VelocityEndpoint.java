@@ -41,7 +41,6 @@ import org.apache.velocity.runtime.RuntimeConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * Transforms the message using a Velocity template.
  */
@@ -62,11 +61,6 @@ public class VelocityEndpoint extends ResourceEndpoint {
 
     public VelocityEndpoint(String uri, VelocityComponent component, String resourceUri) {
         super(uri, component, resourceUri);
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     @Override
@@ -222,6 +216,5 @@ public class VelocityEndpoint extends ResourceEndpoint {
         Message out = exchange.getOut();
         out.setBody(buffer.toString());
         out.setHeaders(exchange.getIn().getHeaders());
-        out.setAttachments(exchange.getIn().getAttachments());
     }
 }

@@ -30,11 +30,10 @@ import org.apache.camel.component.atomix.client.AtomixClientTestSupport;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.Test;
 
-
 public class AtomixMessagingTest extends AtomixClientTestSupport {
     private static final String NODE_NAME = UUID.randomUUID().toString();
 
-    @EndpointInject(uri = "direct:start")
+    @EndpointInject("direct:start")
     private FluentProducerTemplate template;
 
     // ************************************

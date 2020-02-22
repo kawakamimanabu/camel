@@ -49,7 +49,7 @@ import org.apache.http.entity.ContentType;
 /**
  * Component used for transferring data secure and reliable over the internet using the AS2 protocol.
  */
-@UriEndpoint(scheme = "as2", firstVersion = "2.22.0", title = "AS2", syntax = "as2:apiName", label = "AS2")
+@UriEndpoint(scheme = "as2", firstVersion = "2.22.0", title = "AS2", syntax = "as2:apiName/methodName", label = "AS2")
 public class AS2Endpoint extends AbstractApiEndpoint<AS2ApiName, AS2Configuration> {
 
     @UriParam
@@ -67,10 +67,6 @@ public class AS2Endpoint extends AbstractApiEndpoint<AS2ApiName, AS2Configuratio
         this.configuration = endpointConfiguration;
     }
 
-    public AS2Configuration getAs2Configuration() {
-        return configuration;
-    }
-
     public AS2ClientConnection getAS2ClientConnection() {
         return as2ClientConnection;
     }
@@ -79,10 +75,12 @@ public class AS2Endpoint extends AbstractApiEndpoint<AS2ApiName, AS2Configuratio
         return as2ServerConnection;
     }
 
+    @Override
     public Producer createProducer() throws Exception {
         return new AS2Producer(this);
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         // make sure inBody is not set for consumers
         if (inBody != null) {
@@ -228,6 +226,7 @@ public class AS2Endpoint extends AbstractApiEndpoint<AS2ApiName, AS2Configuratio
         return AS2PropertiesHelper.getHelper();
     }
 
+    @Override
     protected String getThreadProfileName() {
         return AS2Constants.THREAD_PROFILE_NAME;
     }

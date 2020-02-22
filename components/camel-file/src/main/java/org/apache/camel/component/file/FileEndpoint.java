@@ -18,6 +18,7 @@ package org.apache.camel.component.file;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Arrays;
@@ -56,12 +57,18 @@ public class FileEndpoint extends GenericFileEndpoint<File> {
     private boolean copyAndDeleteOnRenameFail = true;
     @UriParam(label = "advanced")
     private boolean renameUsingCopy;
-    @UriParam(label = "producer,advanced", defaultValue = "true")
-    private boolean forceWrites = true;
+    @UriParam(label = "consumer,advanced")
+    private boolean startingDirectoryMustExist;
+    @UriParam(label = "consumer,advanced")
+    private boolean startingDirectoryMustHaveAccess;
+    @UriParam(label = "consumer,advanced")
+    private boolean directoryMustExist;
     @UriParam(label = "consumer,advanced")
     private boolean probeContentType;
     @UriParam(label = "consumer,advanced")
     private String extendedAttributes;
+    @UriParam(label = "producer,advanced", defaultValue = "true")
+    private boolean forceWrites = true;
     @UriParam(label = "producer,advanced")
     private String chmod;
     @UriParam(label = "producer,advanced")
@@ -74,6 +81,7 @@ public class FileEndpoint extends GenericFileEndpoint<File> {
         super(endpointUri, component);
     }
 
+    @Override
     public FileConsumer createConsumer(Processor processor) throws Exception {
         ObjectHelper.notNull(operations, "operations");
         ObjectHelper.notNull(file, "file");
@@ -91,7 +99,13 @@ public class FileEndpoint extends GenericFileEndpoint<File> {
                 throw new FileNotFoundException("Starting directory does not exist: " + file);
             }
         }
-
+        if (!isStartingDirectoryMustExist() && isStartingDirectoryMustHaveAccess()) {
+            throw new IllegalArgumentException("You cannot set startingDirectoryMustHaveAccess=true without setting startingDirectoryMustExist=true");
+        } else if (isStartingDirectoryMustExist() && isStartingDirectoryMustHaveAccess()) {
+            if (!file.canRead() || !file.canWrite()) {
+                throw new IOException("Starting directory permission denied: " + file);
+            }
+        }
         FileConsumer result = newFileConsumer(processor, operations);
 
         if (isDelete() && getMove() != null) {
@@ -145,6 +159,7 @@ public class FileEndpoint extends GenericFileEndpoint<File> {
         return result;
     }
 
+    @Override
     public GenericFileProducer<File> createProducer() throws Exception {
         ObjectHelper.notNull(operations, "operations");
 
@@ -165,6 +180,7 @@ public class FileEndpoint extends GenericFileEndpoint<File> {
         return new GenericFileProducer<>(this, operations);
     }
 
+    @Override
     public Exchange createExchange(GenericFile<File> file) {
         Exchange exchange = createExchange();
         if (file != null) {
@@ -251,6 +267,44 @@ public class FileEndpoint extends GenericFileEndpoint<File> {
         this.renameUsingCopy = renameUsingCopy;
     }
 
+    public boolean isStartingDirectoryMustExist() {
+        return startingDirectoryMustExist;
+    }
+
+    /**
+     * Whether the starting directory must exist. Mind that the autoCreate option is default enabled,
+     * which means the starting directory is normally auto created if it doesn't exist.
+     * You can disable autoCreate and enable this to ensure the starting directory must exist. Will thrown an exception if the directory doesn't exist.
+     */
+    public void setStartingDirectoryMustExist(boolean startingDirectoryMustExist) {
+        this.startingDirectoryMustExist = startingDirectoryMustExist;
+    }
+
+    public boolean isStartingDirectoryMustHaveAccess() {
+        return startingDirectoryMustHaveAccess;
+    }
+
+    /**
+     * Whether the starting directory has access permissions. Mind that the
+     * startingDirectoryMustExist parameter must be set to true in order to verify that the
+     * directory exists. Will thrown an exception if the directory doesn't have
+     * read and write permissions.
+     */
+    public void setStartingDirectoryMustHaveAccess(boolean startingDirectoryMustHaveAccess) {
+        this.startingDirectoryMustHaveAccess = startingDirectoryMustHaveAccess;
+    }
+
+    public boolean isDirectoryMustExist() {
+        return directoryMustExist;
+    }
+
+    /**
+     * Similar to the startingDirectoryMustExist option but this applies during polling (after starting the consumer).
+     */
+    public void setDirectoryMustExist(boolean directoryMustExist) {
+        this.directoryMustExist = directoryMustExist;
+    }
+
     public boolean isForceWrites() {
         return forceWrites;
     }
@@ -296,8 +350,8 @@ public class FileEndpoint extends GenericFileEndpoint<File> {
         }
         String permissionsString = chmod.trim().substring(chmod.length() - 3);  // if 4 digits chop off leading one
         for (int i = 0; i < permissionsString.length(); i++) {
-            Character c = permissionsString.charAt(i);
-            if (!Character.isDigit(c) || Integer.parseInt(c.toString()) > 7) {
+            char c = permissionsString.charAt(i);
+            if (!Character.isDigit(c) || Integer.parseInt(Character.toString(c)) > 7) {
                 return false;
             }
         }
@@ -312,9 +366,9 @@ public class FileEndpoint extends GenericFileEndpoint<File> {
 
         String chmodString = chmod.substring(chmod.length() - 3);  // if 4 digits chop off leading one
 
-        Integer ownerValue = Integer.parseInt(chmodString.substring(0, 1));
-        Integer groupValue = Integer.parseInt(chmodString.substring(1, 2));
-        Integer othersValue = Integer.parseInt(chmodString.substring(2, 3));
+        int ownerValue = Integer.parseInt(chmodString.substring(0, 1));
+        int groupValue = Integer.parseInt(chmodString.substring(1, 2));
+        int othersValue = Integer.parseInt(chmodString.substring(2, 3));
 
         if ((ownerValue & CHMOD_WRITE_MASK) > 0) {
             permissions.add(PosixFilePermission.OWNER_WRITE);
@@ -357,7 +411,7 @@ public class FileEndpoint extends GenericFileEndpoint<File> {
      * Specify the file permissions which is sent by the producer, the chmod value must be between 000 and 777;
      * If there is a leading digit like in 0755 we will ignore it.
      */
-    public void setChmod(String chmod) throws Exception {
+    public void setChmod(String chmod) {
         if (ObjectHelper.isNotEmpty(chmod) && chmodPermissionsAreValid(chmod)) {
             this.chmod = chmod.trim();
         } else {
@@ -373,9 +427,9 @@ public class FileEndpoint extends GenericFileEndpoint<File> {
 
         String chmodString = chmodDirectory.substring(chmodDirectory.length() - 3);  // if 4 digits chop off leading one
 
-        Integer ownerValue = Integer.parseInt(chmodString.substring(0, 1));
-        Integer groupValue = Integer.parseInt(chmodString.substring(1, 2));
-        Integer othersValue = Integer.parseInt(chmodString.substring(2, 3));
+        int ownerValue = Integer.parseInt(chmodString.substring(0, 1));
+        int groupValue = Integer.parseInt(chmodString.substring(1, 2));
+        int othersValue = Integer.parseInt(chmodString.substring(2, 3));
 
         if ((ownerValue & CHMOD_WRITE_MASK) > 0) {
             permissions.add(PosixFilePermission.OWNER_WRITE);
@@ -418,7 +472,7 @@ public class FileEndpoint extends GenericFileEndpoint<File> {
      * Specify the directory permissions used when the producer creates missing directories, the chmod value must be between 000 and 777;
      * If there is a leading digit like in 0755 we will ignore it.
      */
-    public void setChmodDirectory(String chmodDirectory) throws Exception {
+    public void setChmodDirectory(String chmodDirectory) {
         if (ObjectHelper.isNotEmpty(chmodDirectory) && chmodPermissionsAreValid(chmodDirectory)) {
             this.chmodDirectory = chmodDirectory.trim();
         } else {

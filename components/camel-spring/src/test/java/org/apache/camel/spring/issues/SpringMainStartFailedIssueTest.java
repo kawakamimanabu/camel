@@ -17,7 +17,6 @@
 package org.apache.camel.spring.issues;
 
 import org.apache.camel.FailedToCreateRouteException;
-import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.TestSupport;
 import org.apache.camel.spring.Main;
 import org.junit.Test;
@@ -32,8 +31,8 @@ public class SpringMainStartFailedIssueTest extends TestSupport {
         try {
             main.run(args);
             fail("Should have thrown an exception");
-        } catch (RuntimeCamelException e) {
-            assertIsInstanceOf(FailedToCreateRouteException.class, e.getCause());
+        } catch (Exception e) {
+            assertIsInstanceOf(FailedToCreateRouteException.class, e);
         }
 
         assertNull("Spring application context should NOT be created", main.getApplicationContext());

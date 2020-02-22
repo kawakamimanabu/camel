@@ -33,9 +33,15 @@ public class TelegramConfiguration {
     @Metadata(required = true)
     private String type;
 
-    @UriPath(label = "security", description = "The authorization token for using the bot (ask the BotFather), eg. 654321531:HGF_dTra456323dHuOedsE343211fqr3t-H.")
+    @UriParam(description = "The authorization token for using the bot (ask the BotFather)", label = "security", secret = true)
     @Metadata(required = true)
     private String authorizationToken;
+
+    @UriParam(description = "HTTP proxy host which could be used when sending out the message.", label = "proxy")
+    private String proxyHost;
+
+    @UriParam(description = "HTTP proxy port which could be used when sending out the message.", label = "proxy")
+    private Integer proxyPort;
 
     @UriParam(description = "The identifier of the chat that will receive the produced messages. Chat ids can be first obtained from incoming messages "
             + "(eg. when a telegram user starts a conversation with a bot, its client sends automatically a '/start' message containing the chat id). "
@@ -46,40 +52,14 @@ public class TelegramConfiguration {
             "consumer.", defaultValue = "30", label = "consumer")
     private Integer timeout = 30;
 
-    @UriParam(description = "Limit on the number of updates that can be received in a single polling request.", optionalPrefix = "consumer.", defaultValue = "100", label = "consumer")
+    @UriParam(description = "Limit on the number of updates that can be received in a single polling request.",
+            optionalPrefix = "consumer.", defaultValue = "100", label = "consumer")
     private Integer limit = 100;
 
+    @UriParam(label = "advanced", description = "Can be used to set an alternative base URI, e.g. when you want to test the component against a mock Telegram API")
+    private String baseUri;
+
     public TelegramConfiguration() {
-    }
-
-    /**
-     * Sets the remaining configuration parameters available in the URI.
-     *
-     * @param remaining the URI part after the scheme
-     * @param defaultAuthorizationToken the default authorization token to use if not present in the URI
-     */
-    public void updatePathConfig(String remaining, String defaultAuthorizationToken) {
-        String[] parts = remaining.split("/");
-        if (parts.length == 0 || parts.length > 2) {
-            throw new IllegalArgumentException("Unexpected URI format. Expected 'bots' or 'bots/<authorizationToken>', found '" + remaining + "'");
-        }
-
-        String type = parts[0];
-        if (!type.equals(ENDPOINT_TYPE_BOTS)) {
-            throw new IllegalArgumentException("Unexpected endpoint type. Expected 'bots', found '" + type + "'");
-        }
-
-        String authorizationToken = defaultAuthorizationToken;
-        if (parts.length > 1) {
-            authorizationToken = parts[1];
-        }
-
-        if (authorizationToken == null || authorizationToken.trim().length() == 0) {
-            throw new IllegalArgumentException("The authorization token must be provided and cannot be empty");
-        }
-
-        this.type = type;
-        this.authorizationToken = authorizationToken;
     }
 
     public String getType() {
@@ -96,6 +76,22 @@ public class TelegramConfiguration {
 
     public void setAuthorizationToken(String authorizationToken) {
         this.authorizationToken = authorizationToken;
+    }
+
+    public String getProxyHost() {
+        return proxyHost;
+    }
+
+    public void setProxyHost(String proxyHost) {
+        this.proxyHost = proxyHost;
+    }
+
+    public Integer getProxyPort() {
+        return proxyPort;
+    }
+
+    public void setProxyPort(Integer proxyPort) {
+        this.proxyPort = proxyPort;
     }
 
     public String getChatId() {
@@ -120,6 +116,17 @@ public class TelegramConfiguration {
 
     public void setLimit(Integer limit) {
         this.limit = limit;
+    }
+
+    public String getBaseUri() {
+        return baseUri;
+    }
+
+    /**
+     * Set an alternative base URI, e.g. when you want to test the component against a mock Telegram API.
+     */
+    public void setBaseUri(String telegramBaseUri) {
+        this.baseUri = telegramBaseUri;
     }
 
     @Override

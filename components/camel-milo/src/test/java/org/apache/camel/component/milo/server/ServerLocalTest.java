@@ -21,8 +21,8 @@ import java.io.IOException;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.RoutesBuilder;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.milo.Ports;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.apache.camel.test.AvailablePortFinder;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
@@ -38,13 +38,13 @@ public class ServerLocalTest extends CamelTestSupport {
 
     private static final String MOCK_TEST = "mock:test";
 
-    @EndpointInject(uri = MOCK_TEST)
+    @EndpointInject(MOCK_TEST)
     protected MockEndpoint testEndpoint;
 
     @Before
     public void pickFreePort() throws IOException {
         final MiloServerComponent component = context().getComponent("milo-server", MiloServerComponent.class);
-        component.setBindPort(Ports.pickServerPort());
+        component.setBindPort(AvailablePortFinder.getNextAvailable());
     }
 
     @Override

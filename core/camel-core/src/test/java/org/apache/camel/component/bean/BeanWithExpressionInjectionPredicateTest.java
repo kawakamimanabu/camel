@@ -20,7 +20,7 @@ import javax.naming.Context;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.language.Simple;
+import org.apache.camel.language.simple.Simple;
 import org.apache.camel.support.jndi.JndiContext;
 import org.junit.Test;
 
@@ -50,6 +50,7 @@ public class BeanWithExpressionInjectionPredicateTest extends ContextTestSupport
         return answer;
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() {
         return new RouteBuilder() {
             public void configure() {

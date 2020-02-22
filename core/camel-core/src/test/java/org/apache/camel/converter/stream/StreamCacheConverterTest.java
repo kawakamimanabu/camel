@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.camel.converter.stream;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -31,6 +32,7 @@ import org.apache.camel.StreamCache;
 import org.apache.camel.converter.IOConverter;
 import org.apache.camel.converter.jaxp.XmlConverter;
 import org.apache.camel.support.DefaultExchange;
+import org.apache.camel.util.xml.StreamSourceConverter;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,24 +40,24 @@ import org.junit.Test;
  * Test cases for {@link StreamCacheConverter}
  */
 public class StreamCacheConverterTest extends ContextTestSupport {
-    
+
     private static final String TEST_FILE = "org/apache/camel/converter/stream/test.xml";
     private static final String MESSAGE = "<test>This is a test</test>";
     private Exchange exchange;
-    
+
     @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
         this.exchange = new DefaultExchange(context);
     }
-    
+
     @Test
     public void testConvertToStreamCache() throws Exception {
         context.start();
 
         ByteArrayInputStream inputStream = new ByteArrayInputStream(MESSAGE.getBytes());
-        StreamCache streamCache = StreamCacheConverter.convertToStreamCache(new SAXSource(new InputSource(inputStream)), exchange);
+        StreamCache streamCache = StreamSourceConverter.convertToStreamCache(new SAXSource(new InputSource(inputStream)), exchange);
         String message = exchange.getContext().getTypeConverter().convertTo(String.class, streamCache);
         assertNotNull(message);
         assertEquals("The converted message is wrong", MESSAGE, message);
@@ -66,8 +68,8 @@ public class StreamCacheConverterTest extends ContextTestSupport {
         context.start();
 
         StreamSource source = new StreamSource(getTestFileStream());
-        StreamCache cache = StreamCacheConverter.convertToStreamCache(source, exchange);
-        //assert re-readability of the cached StreamSource
+        StreamCache cache = StreamSourceConverter.convertToStreamCache(source, exchange);
+        // assert re-readability of the cached StreamSource
         XmlConverter converter = new XmlConverter();
         assertNotNull(converter.toString((Source)cache, null));
         cache.reset();
@@ -80,13 +82,13 @@ public class StreamCacheConverterTest extends ContextTestSupport {
 
         InputStream is = getTestFileStream();
         InputStream cache = (InputStream)StreamCacheConverter.convertToStreamCache(is, exchange);
-        //assert re-readability of the cached InputStream
+        // assert re-readability of the cached InputStream
         String data = IOConverter.toString(cache, null);
         cache.reset();
         String data2 = IOConverter.toString(cache, null);
         assertEquals(data, data2);
     }
-    
+
     @Test
     public void testConvertToStreamCacheInputStreamWithFileCache() throws Exception {
         exchange.getContext().getStreamCachingStrategy().setSpoolThreshold(1);
@@ -113,7 +115,7 @@ public class StreamCacheConverterTest extends ContextTestSupport {
 
         InputStream is = getTestFileStream();
         StreamCache cache = StreamCacheConverter.convertToStreamCache(is, exchange);
-        Serializable ser = StreamCacheConverter.convertToSerializable(cache, exchange);
+        Serializable ser = StreamSourceConverter.convertToSerializable(cache, exchange);
         assertNotNull(ser);
     }
 

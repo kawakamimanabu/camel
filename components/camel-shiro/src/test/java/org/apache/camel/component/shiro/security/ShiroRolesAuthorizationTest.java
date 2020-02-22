@@ -29,10 +29,10 @@ import org.junit.Test;
 
 public class ShiroRolesAuthorizationTest extends CamelTestSupport {
     
-    @EndpointInject(uri = "mock:success")
+    @EndpointInject("mock:success")
     protected MockEndpoint successEndpoint;
 
-    @EndpointInject(uri = "mock:authorizationException")
+    @EndpointInject("mock:authorizationException")
     protected MockEndpoint failureEndpoint;
     
     private byte[] passPhrase = {
@@ -169,6 +169,7 @@ public class ShiroRolesAuthorizationTest extends CamelTestSupport {
             super(shiroSecurityToken, bytes);
         }
         
+        @Override
         public void process(Exchange exchange) throws Exception {
             exchange.getIn().setHeader(ShiroSecurityConstants.SHIRO_SECURITY_TOKEN, encrypt());
             exchange.getIn().setBody("Beatle Mania");

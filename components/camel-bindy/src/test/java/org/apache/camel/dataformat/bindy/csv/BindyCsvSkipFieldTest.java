@@ -30,7 +30,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
-
 @ContextConfiguration
 public class BindyCsvSkipFieldTest  extends AbstractJUnit4SpringContextTests {
 
@@ -39,10 +38,10 @@ public class BindyCsvSkipFieldTest  extends AbstractJUnit4SpringContextTests {
     
     private static String input = "VOA,12 abc street,Skip Street,Melbourne,VIC,3000,Australia,Skip dummy1,end of record";
 
-    @Produce(uri = URI_DIRECT_START)
+    @Produce(URI_DIRECT_START)
     private ProducerTemplate template;
 
-    @EndpointInject(uri = URI_MOCK_RESULT)
+    @EndpointInject(URI_MOCK_RESULT)
     private MockEndpoint result;
 
     @Test
@@ -57,6 +56,7 @@ public class BindyCsvSkipFieldTest  extends AbstractJUnit4SpringContextTests {
     public static class ContextConfig extends RouteBuilder {
         BindyCsvDataFormat camelDataFormat = new BindyCsvDataFormat(CsvSkipField.class);
 
+        @Override
         public void configure() {
             from(URI_DIRECT_START).unmarshal(camelDataFormat)
                     .process(new Processor() {

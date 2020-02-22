@@ -29,28 +29,28 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class JMXTXUseOriginalBodyWithDLCErrorHandlerTest extends JMXTXUseOriginalBodyTest {
 
-    @EndpointInject(uri = "mock:end")
+    @EndpointInject("mock:end")
     protected MockEndpoint endpoint;
 
-    @EndpointInject(uri = "mock:error")
+    @EndpointInject("mock:error")
     protected MockEndpoint error;
 
-    @EndpointInject(uri = "mock:dead")
+    @EndpointInject("mock:dead")
     protected MockEndpoint dead;
 
-    @EndpointInject(uri = "mock:checkpoint1")
+    @EndpointInject("mock:checkpoint1")
     protected MockEndpoint checkpoint1;
 
-    @EndpointInject(uri = "mock:checkpoint2")
+    @EndpointInject("mock:checkpoint2")
     protected MockEndpoint checkpoint2;
 
-    @Produce(uri = "activemq:start")
+    @Produce("activemq:start")
     protected ProducerTemplate start;
 
-    @Produce(uri = "activemq:broken")
+    @Produce("activemq:broken")
     protected ProducerTemplate broken;
 
-    @Produce(uri = "activemq:ok")
+    @Produce("activemq:ok")
     protected ProducerTemplate ok;
 
     @Override
@@ -58,6 +58,7 @@ public class JMXTXUseOriginalBodyWithDLCErrorHandlerTest extends JMXTXUseOrigina
         return new ClassPathXmlApplicationContext("/org/apache/camel/component/jms/tx/JMXTXUseOriginalBodyWithDLCErrorHandlerTest.xml");
     }
 
+    @Override
     @Test
     public void testWithConstant() throws InterruptedException {
         endpoint.expectedMessageCount(0);
@@ -71,6 +72,7 @@ public class JMXTXUseOriginalBodyWithDLCErrorHandlerTest extends JMXTXUseOrigina
         assertMockEndpointsSatisfied();
     }
 
+    @Override
     @Test
     public void testWithBean() throws InterruptedException {
         endpoint.expectedMessageCount(0);

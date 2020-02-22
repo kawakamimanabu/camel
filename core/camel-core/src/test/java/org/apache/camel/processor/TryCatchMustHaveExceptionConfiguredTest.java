@@ -17,7 +17,6 @@
 package org.apache.camel.processor;
 
 import org.apache.camel.ContextTestSupport;
-import org.apache.camel.FailedToCreateRouteException;
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.Test;
 
@@ -29,20 +28,14 @@ public class TryCatchMustHaveExceptionConfiguredTest extends ContextTestSupport 
             @Override
             @SuppressWarnings("unchecked")
             public void configure() throws Exception {
-                from("direct:a")
-                    .doTry()
-                        .to("mock:b")
-                        .throwException(new IllegalArgumentException("Damn"))
-                    .doCatch()
-                        .to("mock:catch")
-                    .end();
+                from("direct:a").doTry().to("mock:b").throwException(new IllegalArgumentException("Damn")).doCatch().to("mock:catch").end();
             }
         });
 
         try {
             context.start();
             fail("Should throw exception");
-        } catch (FailedToCreateRouteException e) {
+        } catch (Exception e) {
             assertIsInstanceOf(IllegalArgumentException.class, e.getCause());
             assertEquals("At least one Exception must be configured to catch", e.getCause().getMessage());
         }

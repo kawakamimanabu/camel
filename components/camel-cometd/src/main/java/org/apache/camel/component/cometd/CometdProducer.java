@@ -43,10 +43,9 @@ public class CometdProducer extends DefaultProducer implements CometdProducerCon
     }
 
     @Override
-    public void start() throws Exception {
-        super.start();
+    public void doStart() throws Exception {
+        super.doStart();
         // must connect first
-
         endpoint.connect(this);
         // should probably look into synchronization for this.
         if (service == null) {
@@ -55,15 +54,17 @@ public class CometdProducer extends DefaultProducer implements CometdProducerCon
     }
 
     @Override
-    public void stop() throws Exception {
+    public void doStop() throws Exception {
         super.stop();
         endpoint.disconnect(this);
     }
 
+    @Override
     public void process(final Exchange exchange) {
         service.process(exchange);
     }
 
+    @Override
     public CometdEndpoint getEndpoint() {
         return endpoint;
     }
@@ -76,6 +77,7 @@ public class CometdProducer extends DefaultProducer implements CometdProducerCon
         return service;
     }
 
+    @Override
     public void setBayeux(BayeuxServerImpl bayeux) {
         this.bayeux = bayeux;
     }

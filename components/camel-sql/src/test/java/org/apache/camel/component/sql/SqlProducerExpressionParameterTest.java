@@ -18,6 +18,7 @@ package org.apache.camel.component.sql;
 
 import java.util.List;
 import java.util.Map;
+
 import org.apache.camel.EndpointInject;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
@@ -31,14 +32,15 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 
 public class SqlProducerExpressionParameterTest extends CamelTestSupport {
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     MockEndpoint result;
 
-    @EndpointInject(uri = "mock:result-simple")
+    @EndpointInject("mock:result-simple")
     MockEndpoint resultSimple;
 
     private EmbeddedDatabase db;
 
+    @Override
     @Before
     public void setUp() throws Exception {
         db = new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.DERBY).addScript("sql/createAndPopulateDatabase.sql").build();
@@ -46,6 +48,7 @@ public class SqlProducerExpressionParameterTest extends CamelTestSupport {
         super.setUp();
     }
 
+    @Override
     @After
     public void tearDown() throws Exception {
         super.tearDown();

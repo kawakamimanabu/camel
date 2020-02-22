@@ -21,7 +21,14 @@ import java.io.File;
 import org.apache.camel.CamelExecutionException;
 import org.apache.camel.Exchange;
 import org.apache.camel.component.file.GenericFileOperationFailedException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.apache.camel.test.junit5.TestSupport.assertFileExists;
+import static org.apache.camel.test.junit5.TestSupport.assertFileNotExists;
+import static org.apache.camel.test.junit5.TestSupport.assertIsInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *
@@ -122,10 +129,5 @@ public class SftpProducerMoveExistingTest extends SftpServerTestSupport {
         // and the renamed file should be untouched
         assertFileExists(FTP_ROOT_DIR + "/move/renamed-hello.txt");
         assertEquals("Old file", context.getTypeConverter().convertTo(String.class, new File(FTP_ROOT_DIR + "/move/renamed-hello.txt")));
-    }
-
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
     }
 }

@@ -272,11 +272,11 @@ public class ObjectHelperTest extends Assert {
     public void testCreateIteratorWithPrimitiveArrayTypes() {
         Iterator<?> it = ObjectHelper.createIterator(new byte[] {13, Byte.MAX_VALUE, 7, Byte.MIN_VALUE}, null);
         assertTrue(it.hasNext());
-        assertEquals(Byte.valueOf((byte) 13), it.next());
+        assertEquals(Byte.valueOf((byte)13), it.next());
         assertTrue(it.hasNext());
         assertEquals(Byte.MAX_VALUE, it.next());
         assertTrue(it.hasNext());
-        assertEquals(Byte.valueOf((byte) 7), it.next());
+        assertEquals(Byte.valueOf((byte)7), it.next());
         assertTrue(it.hasNext());
         assertEquals(Byte.MIN_VALUE, it.next());
         assertFalse(it.hasNext());
@@ -302,11 +302,11 @@ public class ObjectHelperTest extends Assert {
 
         it = ObjectHelper.createIterator(new short[] {13, Short.MAX_VALUE, 7, Short.MIN_VALUE}, null);
         assertTrue(it.hasNext());
-        assertEquals(Short.valueOf((short) 13), it.next());
+        assertEquals(Short.valueOf((short)13), it.next());
         assertTrue(it.hasNext());
         assertEquals(Short.MAX_VALUE, it.next());
         assertTrue(it.hasNext());
-        assertEquals(Short.valueOf((short) 7), it.next());
+        assertEquals(Short.valueOf((short)7), it.next());
         assertTrue(it.hasNext());
         assertEquals(Short.MIN_VALUE, it.next());
         assertFalse(it.hasNext());
@@ -861,11 +861,11 @@ public class ObjectHelperTest extends Assert {
         assertTrue(org.apache.camel.util.ObjectHelper.hasDefaultPublicNoArgConstructor(ObjectHelperTest.class));
         assertFalse(org.apache.camel.util.ObjectHelper.hasDefaultPublicNoArgConstructor(MyStaticClass.class));
     }
-    
+
     @Test
     public void testIdentityHashCode() {
         MyDummyObject dummy = new MyDummyObject("Camel");
-        
+
         String code = org.apache.camel.util.ObjectHelper.getIdentityHashCode(dummy);
         String code2 = org.apache.camel.util.ObjectHelper.getIdentityHashCode(dummy);
 
@@ -875,7 +875,7 @@ public class ObjectHelperTest extends Assert {
         String code3 = org.apache.camel.util.ObjectHelper.getIdentityHashCode(dummyB);
         assertNotSame(code, code3);
     }
-    
+
     @Test
     public void testIsNaN() throws Exception {
         assertTrue(org.apache.camel.util.ObjectHelper.isNaN(Float.NaN));
@@ -956,4 +956,23 @@ public class ObjectHelperTest extends Assert {
         Method m2 = InterfaceSize.class.getMethod("size");
         assertFalse(org.apache.camel.util.ObjectHelper.isOverridingMethod(InterfaceSize.class, m2, m1, false));
     }
+
+    @Test
+    public void testAsList() {
+        List<Object> out0 = org.apache.camel.util.ObjectHelper.asList(null);
+        assertNotNull(out0);
+        assertTrue(out0 instanceof List && out0.size() == 0);
+
+        List<Object> out1 = org.apache.camel.util.ObjectHelper.asList(new Object[0]);
+        assertNotNull(out1);
+        assertTrue(out1 instanceof List && out1.size() == 0);
+
+        String[] args = new String[] {"foo", "bar"};
+        List<Object> out2 = org.apache.camel.util.ObjectHelper.asList(args);
+        assertNotNull(out2);
+        assertTrue(out2 instanceof List && out2.size() == 2);
+        assertEquals("foo", out2.get(0));
+        assertEquals("bar", out2.get(1));
+    }
+
 }

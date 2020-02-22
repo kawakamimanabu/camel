@@ -21,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.camel.AsyncProducer;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.spi.AsyncProcessorAwaitManager;
 
 /**
@@ -33,11 +34,13 @@ public abstract class DefaultAsyncProducer extends DefaultProducer implements As
         super(endpoint);
     }
 
+    @Override
     public void process(Exchange exchange) throws Exception {
-        AsyncProcessorAwaitManager awaitManager = exchange.getContext().getAsyncProcessorAwaitManager();
+        AsyncProcessorAwaitManager awaitManager = exchange.getContext().adapt(ExtendedCamelContext.class).getAsyncProcessorAwaitManager();
         awaitManager.process(this, exchange);
     }
 
+    @Override
     public CompletableFuture<Exchange> processAsync(Exchange exchange) {
         AsyncCallbackToCompletableFutureAdapter<Exchange> callback = new AsyncCallbackToCompletableFutureAdapter<>(exchange);
         process(exchange, callback);

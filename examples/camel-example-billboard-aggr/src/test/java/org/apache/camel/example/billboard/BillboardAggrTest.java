@@ -29,12 +29,11 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.model.dataformat.BindyType;
 import org.apache.camel.test.junit4.CamelTestSupport;
-
 import org.junit.Test;
 
 public class BillboardAggrTest extends CamelTestSupport {
 
-    private static final String BASEPATH = System.getProperty("user.dir") + "/src/test/resources/data";
+    private static final String BASEPATH = System.getProperty("user.dir") + "/src/test/data";
 
     @Override
     protected CamelContext createCamelContext() throws Exception {
@@ -68,7 +67,6 @@ public class BillboardAggrTest extends CamelTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                //@formatter:off
                 from("file:" + BASEPATH + "?noop=true&idempotent=true")
                     .split(body().tokenize("\n")).streaming().parallelProcessing()
                         // skip first line with headers
@@ -88,13 +86,12 @@ public class BillboardAggrTest extends CamelTestSupport {
                     .aggregate(new MyAggregationStrategy()).header("artist")
                         .completionPredicate(header("CamelSplitComplete").isEqualTo(true))
                     .to("mock:result");
-                //@formatter:on
             }
         };
     }
 
     public static class MyAggregationStrategy implements AggregationStrategy {
-        private static Map<String, Integer> map = new ConcurrentHashMap<String, Integer>();
+        private static Map<String, Integer> map = new ConcurrentHashMap<>();
 
         @Override
         public Exchange aggregate(Exchange oldExchange, Exchange newExchange) {
@@ -110,7 +107,7 @@ public class BillboardAggrTest extends CamelTestSupport {
         }
 
         public void setArtistHeader(Exchange exchange, SongRecord song) {
-            exchange.getOut().setHeader("artist", song.getArtist());
+            exchange.getMessage().setHeader("artist", song.getArtist());
         }
 
         public Map<String, Integer> getTop20Artists() {

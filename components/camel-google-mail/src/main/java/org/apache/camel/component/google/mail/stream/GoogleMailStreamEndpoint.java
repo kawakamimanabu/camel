@@ -66,7 +66,7 @@ public class GoogleMailStreamEndpoint extends ScheduledPollEndpoint {
     @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         String unreadLabelId = null;
-        List labelsIds = new ArrayList<>();
+        List<String> labelsIds = new ArrayList<>();
         ListLabelsResponse listResponse = getClient().users().labels().list("me").execute();
         for (Label label : listResponse.getLabels()) {
             Label countLabel = getClient().users().labels().get("me", label.getId()).execute();
@@ -104,11 +104,6 @@ public class GoogleMailStreamEndpoint extends ScheduledPollEndpoint {
 
     public GoogleMailStreamConfiguration getConfiguration() {
         return configuration;
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     public Exchange createExchange(ExchangePattern pattern, com.google.api.services.gmail.model.Message mail) {

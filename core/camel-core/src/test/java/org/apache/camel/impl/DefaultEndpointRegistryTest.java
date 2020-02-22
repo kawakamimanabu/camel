@@ -16,6 +16,7 @@
  */
 package org.apache.camel.impl;
 
+import org.apache.camel.impl.engine.DefaultEndpointRegistry;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
@@ -26,7 +27,7 @@ public class DefaultEndpointRegistryTest {
     public void testMigration() throws Exception {
         DefaultCamelContext ctx = new DefaultCamelContext();
         ctx.start();
-        DefaultEndpointRegistry reg = (DefaultEndpointRegistry) ctx.getEndpointRegistry();
+        DefaultEndpointRegistry reg = (DefaultEndpointRegistry)ctx.getEndpointRegistry();
 
         ctx.getEndpoint("direct:error");
         assertTrue(reg.isDynamic("direct:error"));

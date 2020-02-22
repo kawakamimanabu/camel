@@ -27,10 +27,11 @@ import org.apache.camel.spi.UriParams;
 @UriParams
 public class FtpsConfiguration extends FtpConfiguration {
 
-    @UriParam(defaultValue = "TLS", label = "security")
-    private String securityProtocol = "TLS";
+    @UriParam(defaultValue = "TLSv1.2", label = "security")
+    // TODO : switch to TLSv1.3 when we fully upgrade to JDK11
+    private String securityProtocol = "TLSv1.2";
     @UriParam(label = "security")
-    private boolean isImplicit;
+    private boolean implicit;
     @UriParam(label = "security")
     private boolean disableSecureDataChannelDefaults;
     @UriParam(label = "security")
@@ -65,15 +66,15 @@ public class FtpsConfiguration extends FtpConfiguration {
      * true - Implicit Mode / False - Explicit Mode
      */
     public boolean isImplicit() {
-        return isImplicit;
+        return implicit;
     }
 
     /**
-     * Set the security mode(Implicit/Explicit).
+     * Set the security mode (Implicit/Explicit).
      * true - Implicit Mode / False - Explicit Mode
      */
-    public void setIsImplicit(boolean isImplicit) {
-        this.isImplicit = isImplicit;
+    public void setImplicit(boolean implicit) {
+        this.implicit = implicit;
     }
 
     public boolean isDisableSecureDataChannelDefaults() {

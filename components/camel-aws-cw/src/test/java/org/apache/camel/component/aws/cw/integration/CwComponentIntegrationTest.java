@@ -16,7 +16,6 @@
  */
 package org.apache.camel.component.aws.cw.integration;
 
-
 import org.apache.camel.EndpointInject;
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
@@ -28,11 +27,10 @@ import org.apache.camel.test.junit4.CamelTestSupport;
 import org.junit.Ignore;
 import org.junit.Test;
 
-
 @Ignore("Must be manually tested. Provide your own accessKey and secretKey!")
 public class CwComponentIntegrationTest extends CamelTestSupport {
 
-    @EndpointInject(uri = "mock:result")
+    @EndpointInject("mock:result")
     private MockEndpoint mock;
 
     @Test
@@ -50,6 +48,7 @@ public class CwComponentIntegrationTest extends CamelTestSupport {
         assertMockEndpointsSatisfied();
     }
 
+    @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             @Override

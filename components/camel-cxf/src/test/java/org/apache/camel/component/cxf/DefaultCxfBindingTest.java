@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+
 import javax.activation.DataHandler;
 import javax.activation.FileDataSource;
 import javax.xml.parsers.DocumentBuilder;
@@ -35,6 +36,7 @@ import org.w3c.dom.Node;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
+import org.apache.camel.attachment.AttachmentMessage;
 import org.apache.camel.component.cxf.common.message.CxfConstants;
 import org.apache.camel.converter.IOConverter;
 import org.apache.camel.impl.DefaultCamelContext;
@@ -156,8 +158,8 @@ public class DefaultCxfBindingTest extends Assert {
         exchange.getIn().setHeader("soapAction", "urn:hello:world");
         exchange.getIn().setHeader("MyFruitHeader", "peach");
         exchange.getIn().setHeader("MyBrewHeader", Arrays.asList("cappuccino", "espresso"));
-        exchange.getIn().addAttachment("att-1", new DataHandler(new FileDataSource("pom.xml")));
-        exchange.getIn().getAttachmentObject("att-1").setHeader("attachment-header", "value 1");
+        exchange.getIn(AttachmentMessage.class).addAttachment("att-1", new DataHandler(new FileDataSource("pom.xml")));
+        exchange.getIn(AttachmentMessage.class).getAttachmentObject("att-1").setHeader("attachment-header", "value 1");
 
         cxfBinding.populateCxfRequestFromExchange(cxfExchange, exchange, requestContext);
         
@@ -246,7 +248,7 @@ public class DefaultCxfBindingTest extends Assert {
         assertNotNull(camelHeaders);
         assertEquals(responseContext, camelHeaders.get(Client.RESPONSE_CONTEXT));
         
-        Map<String, org.apache.camel.Attachment> camelAttachments = exchange.getOut().getAttachmentObjects();
+        Map<String, org.apache.camel.attachment.Attachment> camelAttachments = exchange.getOut(AttachmentMessage.class).getAttachmentObjects();
         assertNotNull(camelAttachments);
         assertNotNull(camelAttachments.get("att-1"));
         assertEquals("value 1", camelAttachments.get("att-1").getHeader("additional-header"));
@@ -286,8 +288,8 @@ public class DefaultCxfBindingTest extends Assert {
         
         exchange.getOut().setHeader("soapAction", "urn:hello:world");
         exchange.getOut().setHeader("MyFruitHeader", "peach");
-        exchange.getOut().addAttachment("att-1", new DataHandler(new FileDataSource("pom.xml")));
-        exchange.getOut().getAttachmentObject("att-1").setHeader("attachment-header", "value 1");
+        exchange.getOut(AttachmentMessage.class).addAttachment("att-1", new DataHandler(new FileDataSource("pom.xml")));
+        exchange.getOut(AttachmentMessage.class).getAttachmentObject("att-1").setHeader("attachment-header", "value 1");
         
         Endpoint endpoint = mock(Endpoint.class);
         Binding binding = mock(Binding.class);
@@ -355,7 +357,7 @@ public class DefaultCxfBindingTest extends Assert {
         assertEquals("peach", camelHeaders.get("MyFruitHeader"));
         assertEquals(Arrays.asList("cappuccino", "espresso"), camelHeaders.get("MyBrewHeader"));
 
-        Map<String, org.apache.camel.Attachment> camelAttachments = exchange.getIn().getAttachmentObjects();
+        Map<String, org.apache.camel.attachment.Attachment> camelAttachments = exchange.getIn(AttachmentMessage.class).getAttachmentObjects();
         assertNotNull(camelAttachments);
         assertNotNull(camelAttachments.get("att-1"));
         assertEquals("value 1", camelAttachments.get("att-1").getHeader("attachment-header"));

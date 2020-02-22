@@ -16,10 +16,12 @@
  */
 package org.apache.camel.component.jooq;
 
+import org.apache.camel.PropertyBindingException;
 import org.apache.camel.component.jooq.db.tables.records.BookStoreRecord;
 import org.junit.Test;
 
 public class JooqComponentTest extends BaseJooqTest {
+
     @Test
     public void testEndpointConfiguration() throws Exception {
         JooqComponent component = (JooqComponent) context().getComponent("jooq");
@@ -28,18 +30,18 @@ public class JooqComponentTest extends BaseJooqTest {
         assertEquals(JooqOperation.NONE, ep1.getConfiguration().getOperation());
         assertEquals(BookStoreRecord.class, ep1.getConfiguration().getEntityType());
 
-        JooqEndpoint ep2 = (JooqEndpoint) component.createEndpoint("jooq://org.apache.camel.component.jooq.db.tables.records.BookStoreRecord/execute");
+        JooqEndpoint ep2 = (JooqEndpoint) component.createEndpoint("jooq://org.apache.camel.component.jooq.db.tables.records.BookStoreRecord?operation=execute");
         assertEquals(JooqOperation.EXECUTE, ep2.getConfiguration().getOperation());
         assertEquals(BookStoreRecord.class, ep2.getConfiguration().getEntityType());
 
-        JooqEndpoint ep3 = (JooqEndpoint) component.createEndpoint("jooq://org.apache.camel.component.jooq.db.tables.records.BookStoreRecord/fetch");
+        JooqEndpoint ep3 = (JooqEndpoint) component.createEndpoint("jooq://org.apache.camel.component.jooq.db.tables.records.BookStoreRecord?operation=fetch");
         assertEquals(JooqOperation.FETCH, ep3.getConfiguration().getOperation());
         assertEquals(BookStoreRecord.class, ep3.getConfiguration().getEntityType());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = PropertyBindingException.class)
     public void testNonDefaultConfig() throws Exception {
         JooqComponent component = (JooqComponent) context().getComponent("jooq");
-        component.createEndpoint("jooq://org.apache.camel.component.jooq.db.tables.records.BookStoreRecord/unexpectedOperation");
+        component.createEndpoint("jooq://org.apache.camel.component.jooq.db.tables.records.BookStoreRecord?operation=unexpectedOperation");
     }
 }

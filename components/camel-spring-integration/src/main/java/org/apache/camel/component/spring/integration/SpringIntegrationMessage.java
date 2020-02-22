@@ -76,7 +76,6 @@ public class SpringIntegrationMessage extends DefaultMessage {
             SpringIntegrationMessage orig = (SpringIntegrationMessage) that;
             setMessage(orig.getMessage());
         }
-        getAttachments().putAll(that.getAttachments());
     }
 
     @Override
@@ -88,6 +87,7 @@ public class SpringIntegrationMessage extends DefaultMessage {
         }
     }
 
+    @Override
     public Object getHeader(String name) {
         if (siMessage != null) {
             return siMessage.getHeaders().get(name);

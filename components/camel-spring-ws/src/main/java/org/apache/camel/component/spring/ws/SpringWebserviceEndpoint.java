@@ -40,6 +40,7 @@ public class SpringWebserviceEndpoint extends DefaultEndpoint {
         this.configuration = configuration;
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         SpringWebserviceConsumer consumer = new SpringWebserviceConsumer(this, processor);
         if (configuration.getEndpointDispatcher() != null) {
@@ -49,12 +50,9 @@ public class SpringWebserviceEndpoint extends DefaultEndpoint {
         return consumer;
     }
 
+    @Override
     public Producer createProducer() throws Exception {
         return new SpringWebserviceProducer(this);
-    }
-
-    public boolean isSingleton() {
-        return true;
     }
 
     public SpringWebserviceConfiguration getConfiguration() {

@@ -17,15 +17,14 @@
     limitations under the License.
 
 -->
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.apache.camel</groupId>
         <artifactId>camel-parent</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.1.0-SNAPSHOT</version>
         <relativePath>../parent</relativePath>
     </parent>
 
@@ -42,6 +41,7 @@
         <module>camel-archetype-dataformat</module>
         <module>camel-archetype-java</module>
         <module>camel-archetype-java8</module>
+        <module>camel-archetype-main</module>
         <module>camel-archetype-spring</module>
         <module>camel-archetype-spring-boot</module>
         <module>camel-archetype-web</module>
@@ -49,6 +49,25 @@
 
     <build>
         <plugins>
+
+            <!-- skip flattern plugin as this breaks all the archetypes -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.1.0</version>
+                <executions>
+                    <execution>
+                        <id>default-cli</id>
+                        <phase>none</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                        <configuration>
+                            <updatePomFile>false</updatePomFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
             <!-- generate and attach Camel archetype catalog -->
             <plugin>

@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 package org.apache.camel.spring.processor;
+
 import org.apache.camel.FailedToCreateRouteException;
-import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.spring.SpringTestSupport;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,8 +30,8 @@ public class SpringFilterNoChildTest extends SpringTestSupport {
         try {
             new ClassPathXmlApplicationContext("org/apache/camel/spring/processor/filterNoChild.xml");
             fail("Should thrown an exception");
-        } catch (RuntimeCamelException e) {
-            FailedToCreateRouteException cause = assertIsInstanceOf(FailedToCreateRouteException.class, e.getCause());
+        } catch (Exception e) {
+            FailedToCreateRouteException cause = assertIsInstanceOf(FailedToCreateRouteException.class, e);
             IllegalArgumentException iae = assertIsInstanceOf(IllegalArgumentException.class, cause.getCause());
             assertEquals("Definition has no children on Filter[xpath{$foo = 'bar'} -> []]", iae.getMessage());
         }
