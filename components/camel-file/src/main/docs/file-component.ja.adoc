@@ -59,7 +59,7 @@ You can append query options to the URI in the following format,
 ////
 *Only directories*
 ////
-*ディレクトリのみ*
+*ディレクトリのみ指定する*
 
 ////
 Camel supports only endpoints configured with a starting directory. So
@@ -70,16 +70,21 @@ option, e.g. by setting `fileName=thefilename`.
 `${ }` placeholders. Again use the `fileName` option to specify the
 dynamic part of the filename.
 ////
-Camel はディレクトリ名で設定されたエンドポイントのみサポートしている。よって *directoryName* はディレクトリでなくてはならない。
-単一のファイルのみを扱う場合は、たとえば `fileName=thefilename` のようにして *fileName* オプションが使用できる。
-また、ディレクトリは `${ }` プレースホルダのような動的な Expression を含んではいけない。
+Camel は処理を開始するディレクトリ名が設定されたエンドポイントのみサポートしている。よって *directoryName* はディレクトリでなくてはならない。
+単一のファイルのみを処理したい場合は、たとえば `fileName=thefilename` のようにして *fileName* オプションが使用できる。
+また、処理を開始するディレクトリは `${ }` プレースホルダのような動的な Expression を含んではいけない。
 繰り返しになるが、ファイル名の動的な部分を指定するには `fileName` オプションを使用すること。
 
 
 [WARNING]
 ====
+////
 *Avoid reading files currently being written by another application*
+////
+*他のアプリケーションで同時に書き込まれているファイルの読み込みを避けること*
 
+
+////
 Beware the JDK File IO API is a bit limited in detecting whether another
 application is currently writing/copying a file. And the implementation
 can be different depending on OS platform as well. This could lead to
@@ -88,6 +93,13 @@ consuming it. Therefore you have to do you own investigation what suites
 your environment. To help with this Camel provides different `readLock`
 options and `doneFileName` option that you can use. See also the section
 <<File2-Consumingfilesfromfolderswhereothersdropfilesdirectly, Consuming files from folders where others drop files directly>>.
+////
+JDK File IO API は、他のアプリケーションが、ファイルに対して同時に書き込んだりコピーしているかを検知するには、少々制限がある。
+また OS プラットフォームにより実装は異なる可能性がある。Camel がファイルの処理を開始する際には、他のプロセスによってロックされていないことを仮定する。
+よって、環境により必要な調査を自分で行う必要がある。このために Camel は異なる `readLock` オプションと `doneFileName` オプションを提供している。
+以下のセクションを参照のこと。<<File2-Consumingfilesfromfolderswhereothersdropfilesdirectly, 他のアプリケーションがファイルを直接削除しているフォルダからファイルを読み込む>>。
+
+
 ====
 
 == URI Options
@@ -596,8 +608,12 @@ string-based xref:manual::file-language.adoc[File Language] expression in the
 for syntax and samples.
 
 [[File2-Consumingfilesfromfolderswhereothersdropfilesdirectly]]
+////
 == Consuming files from folders where others drop files directly
+////
+== 他のアプリケーションがファイルを直接削除しているフォルダからファイルを読み込む
 
+////
 Beware if you consume files from a folder where other applications write
 files to directly. Take a look at the different readLock options to see
 what suits your use cases. The best approach is however to write to
@@ -610,6 +626,12 @@ readLock options rely on Java File API that sadly is not always very
 good at detecting this. You may also want to look at the doneFileName
 option, which uses a marker file (done file) to signal when a file is
 done and ready to be consumed.
+////
+他のアプリケーションがファイルを直接削除しているフォルダからファイルを読み込む場合は、気を付けること。
+異なる readLock オプションで、どれが自分のユースケースに合うかを確認すること。
+ベストアプローチは、フォルダに対して書き込みを行ってから、削除するファイルがあるフォルダのファイルを move することである。
+
+
 
 == Using done files
 
