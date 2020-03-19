@@ -333,9 +333,9 @@ Notice: The various read locks is not all suited to work in clustered mode, wher
 
  - none - 使用中の読み取りロックが無い
 
- - markerFile - Camel creates a marker file (fileName.camelLock) and then holds a lock on it. This option is not available for the FTP component
+ - markerFile - Camel が（ファイル名 camelLock という名前で）マーカファイルを作成し、それに対してロックを保持する。FTP コンポーネントに対しては本オプションは利用できない。
 
- - changed - Changed is using file length/modification timestamp to detect whether the file is currently being copied or not. Will at least use 1 sec to determine this, so this option cannot consume files as fast as the others, but can be more reliable as the JDK IO API cannot always determine whether a file is currently being used by another process. The option readLockCheckInterval can be used to set the check frequency.
+ - changed - 本オプションはファイルが現在コピーされているか否かを検知するために、ファイルの長さや更新時刻を検知している。検知するために短くて 1 秒であるため、他のオプションのように早くファイルを読み込めないが信頼できる。というのも JDK IO API は、ファイルが他のプロセスにより使われているか否かをいつも検知できるとは限らないからである。readLockCheckInterval オプションがチェックの頻度を設定するために使用される。
 
  - fileLock - is for using java.nio.channels.FileLock. This option is not avail for Windows OS and the FTP component. This approach should be avoided when accessing a remote file system via a mount/share unless that file system supports distributed file locks.
 
@@ -758,8 +758,8 @@ done and ready to be consumed.
 ベストアプローチは、フォルダに対して書き込みを行ってから、削除するファイルがあるフォルダ内のファイルを move することである。
 削除するファイルがあるフォルダ内のファイルに直接書き込みを行っている場合は、
 changed オプションを使用することでファイルが同時に書き込み、またはコピーされているかを検出できる。
-というのも、changed オプションは一定時間での間でファイルのサイズまたは変更を確認するアルゴリズムを使用しているためである。
-他の readLock オプションは Java のファイル API に依存しており、このように検知するのはあまり得意とは言えない。
+というのも、changed オプションは一定期間でファイルのサイズまたは変更を確認するアルゴリズムを使用しているためである。
+他の readLock オプションは Java のファイル API に依存しており、このような検知を行うのはあまり得意ではない。
 doneFileName を試してもよい。これはファイルが扱えるようになったら知らせるようなマーカファイル（done ファイル）を使用する。
 
 
