@@ -872,21 +872,40 @@ the _done file_ name as either prefix or suffix (not both).
 from("file:bar?doneFileName=${file:name}.done");
 ----
 
+////
 In this example only files will be polled if there exists a done file
 with the name _file name_.done. For example
+////
+たとえば以下の例では、_file name_.done のファイル名で done ファイルが存在した場合にファイルがポーリングされる。
 
+
+////
 * `hello.txt` - is the file to be consumed
+////
+* `hello.txt` - は処理されるファイルである
+////
 * `hello.txt.done` - is the associated done file
+////
+* `hello.txt.done` - は関連付けられた done ファイルである
 
+////
 You can also use a prefix for the done file, such as:
+////
+以下のようにして done ファイルに対してプレフィックスを用いることもできる。
 
 [source,java]
 ----
 from("file:bar?doneFileName=ready-${file:name}");
 ----
 
+////
 * `hello.txt` - is the file to be consumed
+////
+* `hello.txt` - は処理されるファイルである
+////
 * `ready-hello.txt` - is the associated done file
+////
+* `ready-hello.txt` - は関連付けられた done ファイルである
 
 == Writing done files
 
