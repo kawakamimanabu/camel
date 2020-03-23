@@ -842,18 +842,30 @@ done ファイルが存在する場合にのみファイルを処理したい場
 from("file:bar?doneFileName=done");
 ----
 
+////
 Will only consume files from the bar folder, if a done _file_ exists in
 the same directory as the target files. Camel will automatically delete
 the _done file_ when it's done consuming the files.
 Camel does not delete automatically the _done file_ if
 `noop=true` is configured.
+////
+これは done _file_ が目的のファイルと同じディレクトリ存在している場合に bar フォルダからファイルを処理するのみである。
+Camel はファイルの処理が完了したときに _done file_ を自動的に削除する。
+Camel は `noop=true` が設定されている場合には _done file_ を自動的に削除しない。
 
+////
 However it is more common to have one _done file_ per target file. This
 means there is a 1:1 correlation. To do this you must use dynamic
 placeholders in the `doneFileName` option. Currently Camel supports the
 following two dynamic tokens: `file:name` and `file:name.noext` which
 must be enclosed in $\{ }. The consumer only supports the static part of
 the _done file_ name as either prefix or suffix (not both).
+////
+目的のファイルごとに 1 つの _done file_ を保持するのは普通のことである。
+これは、1:1 の関係があることを意味する。このために、動的なプレースホルダを `doneFileName` オプション内で使用しなくてはならない。
+現在 Camel は次の 2 つの動的なトークンをサポートしている: $\{ } で囲まれた `file:name` と `file:name.noext` である。
+コンシューマはプレフィックスもしくはサフィックス（両方はない）として _done file_ のファイル名の静的な部分のみサポートしている。
+
 
 [source,java]
 ----
