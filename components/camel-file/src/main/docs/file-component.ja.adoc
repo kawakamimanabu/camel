@@ -95,20 +95,26 @@ options and `doneFileName` option that you can use. See also the section
 <<File2-Consumingfilesfromfolderswhereothersdropfilesdirectly, Consuming files from folders where others drop files directly>>.
 ////
 JDK File IO API は、他のアプリケーションが、ファイルに対して同時に書き込んだりコピーしているかを検知するには、少々制限がある。
-また OS プラットフォームにより実装は異なる可能性がある。Camel がファイルの処理を開始する際には、他のプロセスによってロックされていないことを仮定する。
+また OS プラットフォームにより実装が異なる可能性がある。Camel がファイルの処理を開始する際には、他のプロセスによってロックされていないことを仮定する。
 よって、環境により必要な調査を自分で行う必要がある。このために Camel は異なる `readLock` オプションと `doneFileName` オプションを提供している。
 以下のセクションを参照のこと。<<File2-Consumingfilesfromfolderswhereothersdropfilesdirectly, 他のアプリケーションがファイルを直接削除しているフォルダからファイルを読み込む>>。
 
 
 ====
 
+////
+== URI Options
+////
 == URI Options
 
 // component options: START
+////
 The File component supports 3 options, which are listed below.
+////
+ファイルコンポーネントは以下の 3 つのオプションを持つ。
 
 
-
+////
 [width="100%",cols="2,5,^1,2",options="header"]
 |===
 | Name | Description | Default | Type
@@ -116,26 +122,52 @@ The File component supports 3 options, which are listed below.
 | *lazyStartProducer* (producer) | Whether the producer should be started lazy (on the first message). By starting lazy you can use this to allow CamelContext and routes to startup in situations where a producer may otherwise fail during starting and cause the route to fail being started. By deferring this startup to be lazy then the startup failure can be handled during routing messages via Camel's routing error handlers. Beware that when the first message is processed then creating and starting the producer may take a little time and prolong the total processing time of the processing. | false | boolean
 | *bridgeErrorHandler* (consumer) | Allows for bridging the consumer to the Camel routing Error Handler, which mean any exceptions occurred while the consumer is trying to pickup incoming messages, or the likes, will now be processed as a message and handled by the routing Error Handler. By default the consumer will use the org.apache.camel.spi.ExceptionHandler to deal with exceptions, that will be logged at WARN or ERROR level and ignored. | false | boolean
 |===
+////
+[width="100%",cols="2,5,^1,2",options="header"]
+|===
+| 名前 | 説明 | デフォルト値 | 型
+| *basicPropertyBinding* （上級者向け） | コンポーネントが基本的なプロパティバインディング(Camel 2.x)を使用するか付加的な機能を使用する、より新しいプロパティバインディングを使用するかを指定する。 | false | boolean
+| *lazyStartProducer* （プロデューサ） | (最初のメッセージで)遅延でプロデューサが開始されるか否かを指定する。遅延で開始することにより、CamelContext とルートがプロデューサが開始時に失敗する、もしくはルートが失敗するかもしれない状況において開始できるようになる。遅延で開始すると、開始時の失敗は Camel のルーティングエラーハンドラを介してメッセージがルーティングされて扱われる。最初のメッセージが処理されたときに、プロデューサを作成して開始するには少し時間が掛かり、全体の処理時間は長くなることに注意すること。 | false | boolean
+| *bridgeErrorHandler* （コンシューマ） | コンシューマから Camel エラーハンドラへ橋渡しすることを許可する。コンシューマが入力のメッセージを扱っている際に発生する、どのような例外もエラーハンドラによってメッセージとして処理されることを意味する。デフォルトではコンシューマは例外を扱うために org.apache.camel.spi.ExceptionHandler を使用し、 WARN か ERROR でログに残り無視される。 | false | boolean
+|===
 // component options: END
 
 
 // endpoint options: START
+////
 The File endpoint is configured using URI syntax:
+////
+ファイルエンドポイントは URI シンタックスを用いて設定される。
 
 ----
 file:directoryName
 ----
 
+////
 with the following path and query parameters:
+////
+次のパスとクエリパラメータで設定される:
 
+
+////
 === Path Parameters (1 parameters):
+////
+=== パスパラメータ （1 個）:
 
 
+////
 [width="100%",cols="2,5,^1,2",options="header"]
 |===
 | Name | Description | Default | Type
 | *directoryName* | *Required* The starting directory |  | File
 |===
+////
+[width="100%",cols="2,5,^1,2",options="header"]
+|===
+| 名前 | 説明 | デフォルト値 | 型
+| *directoryName* | *必須* 開始ディレクトリ |  | File
+|===
+
 
 
 ////
@@ -753,7 +785,7 @@ good at detecting this. You may also want to look at the doneFileName
 option, which uses a marker file (done file) to signal when a file is
 done and ready to be consumed.
 ////
-他のアプリケーションがファイルを直接削除しているフォルダからファイルを読み込む場合は、気を付けること。
+他のアプリケーションがファイルを直接削除しているフォルダから、ファイルを読み込む場合は気を付けること。
 異なる readLock オプションで、どれが自分のユースケースに合うかを確認すること。
 ベストアプローチは、フォルダに対して書き込みを行ってから、削除するファイルがあるフォルダ内のファイルを move することである。
 削除するファイルがあるフォルダ内のファイルに直接書き込みを行っている場合は、
