@@ -416,13 +416,21 @@ Notice: 様々な読み取りロックは、すべてがクラスタモードで
 // endpoint options: END
 
 
+////
 TIP: *Default behavior for file producer* By default it will override any existing file, if one exist with the same name.
+////
+TIP: *ファイルプロデューサのデフォルトのふるまい* デフォルトで同名のファイルが存在した場合に、既存のファイルをオーバライドする。
 
 // spring-boot-auto-configure options: START
 == Spring Boot Auto-Configuration
 
+////
 When using Spring Boot make sure to use the following Maven dependency to have support for auto configuration:
+////
+Spring Boot を使用する場合は、自動設定を有効にするために、次の Maven 依存性を使用する:
 
+
+////
 [source,xml]
 ----
 <dependency>
@@ -432,9 +440,23 @@ When using Spring Boot make sure to use the following Maven dependency to have s
   <!-- use the same version as your Camel core version -->
 </dependency>
 ----
+////
+[source,xml]
+----
+<dependency>
+  <groupId>org.apache.camel.springboot</groupId>
+  <artifactId>camel-file-starter</artifactId>
+  <version>x.x.x</version>
+  <!-- Camel コアバージョンと同じバージョンを使うこと。 -->
+</dependency>
+----
 
 
+
+////
 The component supports 4 options, which are listed below.
+////
+コンポーネントは以下のリストにある 4 つのオプションをサポートしている。
 
 
 
@@ -797,14 +819,23 @@ doneFileName を試してもよい。これはファイルが扱えるように�
 
 
 
+////
 == Using done files
+////
+== done ファイルの使用
 
-*Since Camel 2.6*
+*Camel 2.6 から利用可能*
 
+////
 See also section _writing done files_ below.
+////
+下記の _done fileの書き込み_ も参照のこと。
 
+////
 If you want only to consume files when a done file exists, then you can
 use the `doneFileName` option on the endpoint.
+////
+done ファイルが存在する場合にのみファイルを処理したい場合は、エンドポイントの `doneFileName` オプションが使用できる。
 
 [source,java]
 ----
