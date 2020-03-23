@@ -907,56 +907,90 @@ from("file:bar?doneFileName=ready-${file:name}");
 ////
 * `ready-hello.txt` - は関連付けられた done ファイルである
 
+////
 == Writing done files
+////
+== done file の書き込み
 
-*Since Camel 2.6*
+*Camel 2.6 から利用可能*
 
+////
 After you have written a file you may want to write an additional _done_
 _file_ as a kind of marker, to indicate to others that the file is
 finished and has been written. To do that you can use the `doneFileName`
 option on the file producer endpoint.
+////
+ファイルに書きこんだ後に他のアプリケーションに対してファイル書き込みが完了したことを知らせるために _done__file_ をマーカとして書き込みたくなるかもしれない。
+これを行うには、プロデューサエンドポイントの `doneFileName` オプションが利用できる。
 
 [source,java]
 ----
 .to("file:bar?doneFileName=done");
 ----
 
+////
 Will simply create a file named `done` in the same directory as the
 target file.
+////
+目的のファイルとして同じディレクトリ内の `done` と名が付いたファイルを単純に作成する。
 
+////
 However it is more common to have one done file per target file. This
 means there is a 1:1 correlation. To do this you must use dynamic
 placeholders in the `doneFileName` option. Currently Camel supports the
 following two dynamic tokens: `file:name` and `file:name.noext` which
 must be enclosed in $\{ }.
+////
+目的のファイルごとに 1 つの done ファイルを保持するのは普通のことである。
+これは、1:1 の関係があることを意味する。このために、動的なプレースホルダを `doneFileName` オプション内で使用しなくてはならない。
+現在 Camel は次の 2 つの動的なトークンをサポートしている: $\{ } で囲まれた `file:name` と `file:name.noext` である。
+
 
 [source,java]
 ----
 .to("file:bar?doneFileName=done-${file:name}");
 ----
 
+////
 Will for example create a file named `done-foo.txt` if the target file
 was `foo.txt` in the same directory as the target file.
+////
+この例では、目的のファイルが `foo.txt` の場合に同じディレクトリに `done-foo.txt` の名前のファイルを作成する。
+
 
 [source,java]
 ----
 .to("file:bar?doneFileName=${file:name}.done");
 ----
 
+////
 Will for example create a file named `foo.txt.done` if the target file
 was `foo.txt` in the same directory as the target file.
+////
+この例では、目的のファイルが `foo.txt` の場合に同じディレクトリに `foo.txt.done` の名前のファイルを作成する。
+
 
 [source,java]
 ----
 .to("file:bar?doneFileName=${file:name.noext}.done");
 ----
 
+////
 Will for example create a file named `foo.done` if the target file was
 `foo.txt` in the same directory as the target file.
+////
+この例では、目的のファイルが `foo.txt` の場合に同じディレクトリに `foo.done` の名前のファイルを作成する。
 
+
+////
 == Samples
+////
+== サンプル
 
+////
 #=== Read from a directory and write to another directory
+////
+#=== ディレクトリから読み込んで、別のディレクトリに書き込む
 
 [source,java]
 ----
