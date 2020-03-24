@@ -366,7 +366,7 @@ Notice: The various read locks is not all suited to work in clustered mode, wher
 | *minDepth* （フィルタ） | The minimum depth to start processing when recursively processing a directory. Using minDepth=1 means the base directory. Using minDepth=2 means the first sub directory. |  | int
 | *move* （フィルタ） | Expression (such as Simple Language) used to dynamically set the filename when moving it after processing. To move files into a .done subdirectory just enter .done. |  | String
 | *exclusiveReadLockStrategy* (lock) | Pluggable read-lock as a org.apache.camel.component.file.GenericFileExclusiveReadLockStrategy implementation. |  | GenericFileExclusiveReadLockStrategy
-| *readLock* （ロック） | コンシューマで使用される。ファイルに対して排他的な読み込みロックを保持している（たとえばファイルが処理中だったり、書き込まれている途中ではない）場合にファイルをポーリングするために使用される。Camel はファイルのロックが付与されるまで待機する。このオプションは以下のビルトインの方法がある:
+| *readLock* （ロック） a| コンシューマで使用される。ファイルに対して排他的な読み込みロックを保持している（たとえばファイルが処理中だったり、書き込まれている途中ではない）場合にファイルをポーリングするために使用される。Camel はファイルのロックが付与されるまで待機する。このオプションは以下のビルトインの方法がある:
 
  - none - 使用中の読み取りロックが無い
 
