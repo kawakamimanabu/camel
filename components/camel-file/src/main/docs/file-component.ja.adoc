@@ -464,7 +464,7 @@ The component supports 4 options, which are listed below.
 コンポーネントは以下のリストにある 4 つのオプションをサポートしている。
 
 
-
+////
 [width="100%",cols="2,5,^1,2",options="header"]
 |===
 | Name | Description | Default | Type
@@ -473,15 +473,34 @@ The component supports 4 options, which are listed below.
 | *camel.component.file.enabled* | Whether to enable auto configuration of the file component. This is enabled by default. |  | Boolean
 | *camel.component.file.lazy-start-producer* | Whether the producer should be started lazy (on the first message). By starting lazy you can use this to allow CamelContext and routes to startup in situations where a producer may otherwise fail during starting and cause the route to fail being started. By deferring this startup to be lazy then the startup failure can be handled during routing messages via Camel's routing error handlers. Beware that when the first message is processed then creating and starting the producer may take a little time and prolong the total processing time of the processing. | false | Boolean
 |===
+////
+[width="100%",cols="2,5,^1,2",options="header"]
+|===
+| 名前 | 説明 | デフォルト値 | 型
+| *camel.component.file.basic-property-binding* | コンポーネントが基本的なプロパティバインディング(Camel 2.x)を使用するか付加的な機能を使用するより新しいプロパティバインディングを使用するかを指定する。 | false | Boolean
+| *camel.component.file.bridge-error-handler* | コンシューマが Camel のルーティングエラーハンドラに渡すことを許可する。これはコンシューマがメッセージを受信しようとして例外が発生した場合に、メッセージとして処理されルーティングエラーハンドラに渡されることを意味する。デフォルトでは、コンシューマは例外を扱うのに org.apache.camel.spi.ExceptionHandler を使用し、WARN もしくは ERROR レベルでログ出力され、無視される。 | false | Boolean
+| *camel.component.file.enabled* | file コンポーネントの auto configuration を可能にするように指定する。デフォルトで enabled になっている。 |  | Boolean
+| *camel.component.file.lazy-start-producer* | （最初のメッセージで）遅延でプロデューサが開始されるか否かを指定する。遅延で開始することにより、CamelContext とルートがプロデューサが開始時に失敗する、もしくはルートが失敗するかもしれない状況において開始できるようになる。遅延で開始すると、開始時の失敗は Camel のルーティングエラーハンドラを介してメッセージがルーティングされて扱われる。最初のメッセージが処理されたときに、プロデューサを作成して開始するには少し時間が掛かり、全体の処理時間は長くなることに注意すること。 | false | Boolean
+|===
 // spring-boot-auto-configure options: END
 
+////
 == Move and Delete operations
+////
+== 移動と削除の操作
 
+////
 Any move or delete operations is executed after (post command) the
 routing has completed; so during processing of the `Exchange` the file
 is still located in the inbox folder.
+////
+移動や削除の操作はルーティングが完了した後（コマンドの後）で実行される:
+よって `Exchange` の処理中では、ファイルは inbox フォルダに置かれたままとなる。
 
+////
 Lets illustrate this with an example:
+////
+例を示す。
 
 [source,java]
 ----
