@@ -301,7 +301,7 @@ Notice: The various read locks is not all suited to work in clustered mode, wher
 | *delete* （コンシューマ） | If true, the file will be deleted after it is processed successfully. | false | boolean
 | *moveFailed* （コンシューマ） | Sets the move failure expression based on Simple language. For example, to move files into a .error subdirectory use: .error. Note: When moving the files to the fail location Camel will handle the error and will not pick up the file again. |  | String
 | *noop* （コンシューマ） | If true, the file is not moved or deleted in any way. This option is good for readonly data, or for ETL type requirements. If noop=true, Camel will set idempotent=true as well, to avoid consuming the same files over and over again. | false | boolean
-| *preMove* （コンシューマ） | Expression (such as File Language) used to dynamically set the filename when moving it before processing. For example to move in-progress files into the order directory set this value to order. |  | String
+| *preMove* （コンシューマ） | 処理前にファイル名を動的に設定するために使用される（File Language のような）式。たとえば処理中のファイルを order ディレクトリに移動する場合は、この値を order に設定する。 |  | String
 | *preSort* （コンシューマ） | When pre-sort is enabled then the consumer will sort the file and directory names during polling, that was retrieved from the file system. You may want to do this in case you need to operate on the files in a sorted order. The pre-sort is executed before the consumer starts to filter, and accept files to process by Camel. This option is default=false meaning disabled. | false | boolean
 | *recursive* （コンシューマ） | If a directory, will look for files in all the sub-directories as well. | false | boolean
 | *sendEmptyMessageWhenIdle* （コンシューマ） | If the polling consumer did not poll any files, you can enable this option to send an empty message (no body) instead. | false | boolean
@@ -507,40 +507,65 @@ Lets illustrate this with an example:
 from("file://inbox?move=.done").to("bean:handleOrder");
 ----
 
+////
 When a file is dropped in the `inbox` folder, the file consumer notices
 this and creates a new `FileExchange` that is routed to the
 `handleOrder` bean. The bean then processes the `File` object. At this
 point in time the file is still located in the `inbox` folder. After the
 bean completes, and thus the route is completed, the file consumer will
 perform the move operation and move the file to the `.done` sub-folder.
+////
+`inbox` フォルダにファイルがドロップされると、ファイルコンシューマがこれを検知して、新規の `FileExchange` を生成する。これは `handleOrder` ビーンにルーティングされる。
+ビーンは `File` オブジェクトを処理する。この時点ではファイルは、まだ `inbox` フォルダにある。
+ビーンの処理が終わるとルートは完了し、ファイルコンシューマはファイルの移動処理を行いファイルを `done` サブフォルダに移動する。
 
+////
 The *move* and the *preMove* options are considered as a directory name
 (though if you use an expression such as xref:manual::file-language.adoc[File Language], or xref:manual::simple-language.adoc[Simple] then the result of the expression
 evaluation is the file name to be used - eg if you set
+////
+*move* と *preMove* オプションは、相対もしくは絶対のいずれかのディレクトリ名であると解釈される
+（もし xref:manual::file-language.adoc[File Language] もしくは xref:manual::simple-language.adoc[Simple] の式を使用している場合、式の評価の結果は使用されるファイル名となる。たとえば以下のように設定したとする
 
 [source]
 ----
 move=../backup/copy-of-${file:name}
 ----
 
+////
 then that's using the xref:manual::file-language.adoc[File Language] which we
 use return the file name to be used), which can be either relative or
 absolute. If relative, the directory is created as a sub-folder from
 within the folder where the file was consumed.
+////
+このとき xref:manual::file-language.adoc[File Language] は使用されているファイル名を返却する）。
+相対の場合は、ファイルが処理されたフォルダからサブフォルダとしてディレクトリが作成される。
 
+////
 By default, Camel will move consumed files to the `.camel` sub-folder
 relative to the directory where the file was consumed.
+////
+デフォルトでは、Camel は、ファイルが処理されたディレクトリ配下の `.camel` サブフォルダに処理済みのファイルを移動する。
 
+////
 If you want to delete the file after processing, the route should be:
+////
+処理後にファイルを削除したい場合は、ルートを以下のようにする。
 
 [source,java]
 ----
 from("file://inobox?delete=true").to("bean:handleOrder");
 ----
 
+////
 We have introduced a *pre* move operation to move files *before* they
 are processed. This allows you to mark which files have been scanned as
 they are moved to this sub folder before being processed.
+////
+
+ファイルが処理される *前に* ファイルを移動する *pre* 移動オプションを紹介した。
+これは
+
 
 [source,java]
 ----
