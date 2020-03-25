@@ -564,7 +564,7 @@ they are moved to this sub folder before being processed.
 ////
 
 ファイルが処理される *前に* ファイルを移動する *pre* 移動オプションを紹介した。
-これは
+これにより処理される前にサブフォルダに移動されるので、どのファイルがスキャンされたかをマークすることができる。
 
 
 [source,java]
@@ -572,18 +572,29 @@ they are moved to this sub folder before being processed.
 from("file://inbox?preMove=inprogress").to("bean:handleOrder");
 ----
 
+////
 You can combine the *pre* move and the regular move:
+////
+通常の move と *pre* オプションを組み合わせることができる。
 
 [source,java]
 ----
 from("file://inbox?preMove=inprogress&move=.done").to("bean:handleOrder");
 ----
 
+////
 So in this situation, the file is in the `inprogress` folder when being
 processed and after it's processed, it's moved to the `.done` folder.
+////
+この場合は、ファイルは処理中は `inprogress` フォルダにあり、処理後は `.done` フォルダに移動される。
 
+////
 == Fine grained control over Move and PreMove option
+////
+== Move と PreMove オプションの詳細な制御
 
+
+////
 The *move* and *preMove* options
 are Expression-based, so we have the full power of
 the xref:manual::file-language.adoc[File Language] to do advanced configuration
@@ -595,9 +606,19 @@ enter `move=.done` Camel will convert this into:
 Camel detects that you have not provided a $\{ } in the option value
 yourself. So when you enter a $\{ } Camel will *not* convert it and thus
 you have the full power.
+////
+*move* と *preMove* オプションは式ベースであり、ディレクトリと名前のパターンの高等な設定を行うために xref:manual::file-language.adoc[File Language] を使用する。+
+実際 Camel は xref:manual::file-language.adoc[File Language] 式で入力したディレクトリ名を内部的に変換している。 `move=.done` このように入力した場合に、Camel は次のように変換する:
+`\${file:parent}/.done/${file:onlyname}`
+この変換はオプションの値に $\{ } を含めていないことを Camel が検知した場合にのみ発生する。よって $\{ } を含めた場合は、Camel は変換は *行わず* xref:manual::file-language.adoc[File Language] のすべてを利用できる。
 
+
+
+////
 So if we want to move the file into a backup folder with today's date as
 the pattern, we can do:
+////
+本日日付でバックアップフォルダにファイルを移動させたい場合は、以下のようにする。
 
 [source]
 ----
